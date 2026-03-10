@@ -38,8 +38,41 @@ jobs:
       - name: Run Pint
         run: ./vendor/bin/pint --test
 
-  tests:
-    name: Tests (Pest)
+  tests-unit:
+    name: Tests · Unit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Run Unit tests
+        run: php artisan test --compact --testsuite=Unit
+
+  tests-feature:
+    name: Tests · Feature
     runs-on: ubuntu-latest
 
     services:
@@ -93,8 +126,8 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: password
 
-      - name: Run Pest
-        run: php artisan test --compact
+      - name: Run Feature tests
+        run: php artisan test --compact --testsuite=Feature
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
