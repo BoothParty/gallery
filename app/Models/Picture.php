@@ -6,6 +6,7 @@ use Database\Factories\PictureFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -37,6 +38,9 @@ class Picture extends Model
      */
     public function url(): string
     {
-        return Storage::disk('s3')->url($this->path);
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+        return $disk->url($this->path);
     }
 }
