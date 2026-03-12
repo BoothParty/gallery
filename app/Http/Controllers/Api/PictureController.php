@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Storage;
 
 class PictureController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Party $party): AnonymousResourceCollection
     {
-        return PictureResource::collection(Picture::query()->latest()->get());
+        return PictureResource::collection($party->pictures()->latest()->get());
     }
 
     public function store(StorePictureRequest $request, Party $party): PictureResource
