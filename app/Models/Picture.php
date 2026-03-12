@@ -26,6 +26,10 @@ class Picture extends Model
         static::creating(function (Picture $picture): void {
             $picture->path ??= 'pictures/'.Str::uuid().'.jpg';
         });
+
+        static::deleted(function (Picture $picture): void {
+            Storage::disk('s3')->delete($picture->path);
+        });
     }
 
     public function party(): BelongsTo
