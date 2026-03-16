@@ -184,6 +184,9 @@ jobs:
       - name: Build frontend assets
         run: npm ci && npm run build
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
       - name: Generate app key
         run: php artisan key:generate
 
@@ -198,7 +201,7 @@ jobs:
           DB_PASSWORD: password
 
       - name: Run Web tests
-        run: php artisan test --compact --testsuite=Web
+        run: php artisan test --compact --parallel --testsuite=Web
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
