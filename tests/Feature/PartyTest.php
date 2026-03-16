@@ -95,3 +95,23 @@ it('factory expiresAt state sets the given date', function () {
 
     expect($party->expire_at->toDateString())->toBe($date->toDateString());
 });
+
+// ── hidePictures ─────────────────────────────────────────────────────────────
+
+it('hides pictures when expire_at is in the past', function () {
+    $party = Party::factory()->expired()->create();
+
+    expect($party->hidePictures())->toBeTrue();
+});
+
+it('does not hide pictures when expire_at is in the future', function () {
+    $party = Party::factory()->expiresAt(now()->addDay())->create();
+
+    expect($party->hidePictures())->toBeFalse();
+});
+
+it('does not hide pictures when expire_at is null', function () {
+    $party = Party::factory()->create(['expire_at' => null]);
+
+    expect($party->hidePictures())->toBeFalse();
+});

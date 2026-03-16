@@ -68,7 +68,7 @@ it('returns the correct JSON structure for the index', function () {
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'party_id', 'created_at', 'updated_at'],
+                '*' => ['id', 'party_id', 'url', 'created_at', 'updated_at'],
             ],
         ]);
 });
@@ -101,7 +101,7 @@ it('returns the correct JSON structure for a picture resource', function () {
     $this->getJson("/api/parties/{$party->id}/pictures/{$picture->id}")
         ->assertOk()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'url', 'created_at', 'updated_at'],
         ]);
 });
 
@@ -162,7 +162,7 @@ it('returns the correct JSON structure on store', function () {
     ])
         ->assertCreated()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'url', 'created_at', 'updated_at'],
         ]);
 });
 

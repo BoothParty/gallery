@@ -36,4 +36,13 @@ class Party extends Model
     {
         return $this->hasMany(Picture::class);
     }
+
+    /**
+     * Determine whether the party's pictures should be hidden.
+     * Pictures are hidden once the party's expiry date has passed.
+     */
+    public function hidePictures(): bool
+    {
+        return $this->expire_at !== null && $this->expire_at->isPast();
+    }
 }
