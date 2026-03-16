@@ -140,8 +140,13 @@ jobs:
           DB_PASSWORD: password
 
   tests-web:
-    name: Tests · Web
+    name: Tests · Web (${{ matrix.browser }})
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox, safari]
 
     services:
       mariadb:
@@ -201,7 +206,7 @@ jobs:
           DB_PASSWORD: password
 
       - name: Run Web tests
-        run: php artisan test --compact --parallel --testsuite=Web
+        run: php artisan test --compact --testsuite=Web --browser=${{ matrix.browser }}
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
