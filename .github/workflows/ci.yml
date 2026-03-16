@@ -206,7 +206,7 @@ jobs:
           DB_PASSWORD: password
 
       - name: Run Web tests
-        run: php artisan test --compact --testsuite=Web --browser=${{ matrix.browser }}
+        run: php artisan test --compact --testsuite=Web --browser ${{ matrix.browser }}
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
