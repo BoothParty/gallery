@@ -14,16 +14,28 @@ class PartyController extends Controller
 
     public function show(Party $party): Response
     {
-        $pictures = $party->pictures()
-            ->latest()
-            ->paginate(self::PICTURES_PER_PAGE);
+        $hidePictures = $party->hidePictures();
+
+        if ($hidePictures) {
+            $pictures = [];
+            $page = 1;
+            $pagesCount = 1;
+        } else {
+            $picturesPaginator = $party->pictures()
+                ->latest()
+                ->paginate(self::PICTURES_PER_PAGE);
+
+            $pictures = PictureResource::collection($picturesPaginator)->resolve();
+            $page = $picturesPaginator->currentPage();
+            $pagesCount = max(1, $picturesPaginator->lastPage());
+        }
 
         return Inertia::render('party/gallery', [
             'party' => PartyResource::make($party)->resolve(),
-            'pictures' => PictureResource::collection($pictures)->resolve(),
-            'page' => $pictures->currentPage(),
-            'pagesCount' => max(1, $pictures->lastPage()),
-            'hidePictures' => $party->hidePictures(),
+            'pictures' => $pictures,
+            'page' => $page,
+            'pagesCount' => $pagesCount,
+            'hidePictures' => $hidePictures,
         ]);
     }
 }
