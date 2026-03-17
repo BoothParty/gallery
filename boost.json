@@ -9,6 +9,8 @@
     "nightwatch_mcp": false,
     "sail": true,
     "skills": [
-        "pest-testing"
+        "pest-testing",
+        "inertia-react-development",
+        "tailwindcss-development"
     ]
 }

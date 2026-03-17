@@ -1,11 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@theme {
+    --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-syne: 'Syne', sans-serif;
+
+    --color-primary: #ab76f6;
+    --color-secondary: #000122;
+}
+
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
-@source '../**/*.js';
+@source '../**/*.tsx';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+body {
+    background: url('https://assets.getpartiful.com/backgrounds/midnight/web.jpg'),
+        linear-gradient(to right,
+            rgb(26, 26, 90) 0%,
+            8%,
+            rgb(1, 1, 35) 20%,
+            rgb(1, 1, 35) 80%,
+            92%,
+            rgb(26, 25, 91) 100%);
+    background-size: cover;
 }
