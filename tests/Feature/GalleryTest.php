@@ -151,3 +151,45 @@ it('returns pictures in latest-first order', function () {
             ->where('pictures.1.id', $oldest->id)
         );
 });
+
+// ── Umami analytics ───────────────────────────────────────────────────────────
+
+it('includes the umami script tag when script_url and website_id are configured', function () {
+    config([
+        'umami.script_url' => 'http://localhost:3000/script.js',
+        'umami.website_id' => 'test-website-id',
+    ]);
+
+    $party = Party::factory()->create();
+
+    $this->get("/parties/{$party->id}")
+        ->assertOk()
+        ->assertSee('http://localhost:3000/script.js', false)
+        ->assertSee('data-website-id="test-website-id"', false);
+});
+
+it('does not include the umami script tag when script_url is missing', function () {
+    config([
+        'umami.script_url' => null,
+        'umami.website_id' => 'test-website-id',
+    ]);
+
+    $party = Party::factory()->create();
+
+    $this->get("/parties/{$party->id}")
+        ->assertOk()
+        ->assertDontSee('data-website-id', false);
+});
+
+it('does not include the umami script tag when website_id is missing', function () {
+    config([
+        'umami.script_url' => 'http://localhost:3000/script.js',
+        'umami.website_id' => null,
+    ]);
+
+    $party = Party::factory()->create();
+
+    $this->get("/parties/{$party->id}")
+        ->assertOk()
+        ->assertDontSee('data-website-id', false);
+});

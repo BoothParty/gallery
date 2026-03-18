@@ -15,6 +15,10 @@ export default function usePhotoSwipe(gallerySelector: string) {
             pswpModule: () => import('photoswipe'),
         });
 
+        lightbox.on('open', () => {
+            window.umami?.track('gallery_image_open');
+        });
+
         lightbox.on('uiRegister', () => {
             lightbox.pswp!.ui!.registerElement({
                 name: 'download-button',
@@ -30,6 +34,10 @@ export default function usePhotoSwipe(gallerySelector: string) {
                     el.setAttribute('download', '');
                     el.setAttribute('target', '_blank');
                     el.setAttribute('rel', 'noopener');
+
+                    el.addEventListener('click', () => {
+                        window.umami?.track('gallery_image_download');
+                    });
 
                     pswp.on('change', () => {
                         (el as HTMLAnchorElement).href = pswp.currSlide!.data.src!;
