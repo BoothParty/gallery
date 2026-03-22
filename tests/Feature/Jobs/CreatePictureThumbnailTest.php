@@ -3,10 +3,13 @@
 use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
+
+uses(RefreshDatabase::class);
 
 it('creates a thumbnail for a given picture', function () {
     Storage::fake('s3');
