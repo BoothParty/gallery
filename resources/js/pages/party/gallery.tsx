@@ -19,6 +19,9 @@ interface Picture {
     id: number;
     party_id: number;
     url: string;
+    thumbnail_url: string;
+    width: number | null;
+    height: number | null;
     created_at: string;
     updated_at: string;
 }
@@ -74,7 +77,7 @@ export default function Gallery({ party, pictures, page, pagesCount, hidePicture
                                 </div>
                             ) : (
                                 pictures.map((picture) => (
-                                    <PictureCard key={picture.id} url={picture.url} id={picture.id} />
+                                    <PictureCard key={picture.id} url={picture.url} thumbnailUrl={picture.thumbnail_url} id={picture.id} width={picture.width} height={picture.height} />
                                 ))
                             )}
                         </div>

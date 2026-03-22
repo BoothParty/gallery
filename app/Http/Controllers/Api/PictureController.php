@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePictureRequest;
 use App\Http\Resources\PictureResource;
+use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,11 +21,18 @@ class PictureController extends Controller
 
     public function store(StorePictureRequest $request, Party $party): PictureResource
     {
-        $path = Storage::disk('s3')->putFile("pictures/{$party->id}", $request->file('photo'));
+        $photo = $request->file('photo');
+        [$width, $height] = getimagesize($photo->getPathname());
+
+        $path = Storage::disk('s3')->putFile("pictures/{$party->id}", $photo);
 
         $picture = $party->pictures()->create([
             'path' => $path,
+            'width' => $width,
+            'height' => $height,
         ]);
+
+        CreatePictureThumbnail::dispatch($picture);
 
         return new PictureResource($picture);
     }
