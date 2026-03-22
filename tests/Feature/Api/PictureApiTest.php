@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
 use App\Models\User;
@@ -68,7 +69,7 @@ it('returns the correct JSON structure for the index', function () {
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'party_id', 'url', 'created_at', 'updated_at'],
+                '*' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
             ],
         ]);
 });
@@ -101,7 +102,7 @@ it('returns the correct JSON structure for a picture resource', function () {
     $this->getJson("/api/parties/{$party->id}/pictures/{$picture->id}")
         ->assertOk()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'url', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
         ]);
 });
 
@@ -162,8 +163,35 @@ it('returns the correct JSON structure on store', function () {
     ])
         ->assertCreated()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'url', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
         ]);
+});
+
+it('stores the picture dimensions in the database', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+
+    $this->postJson("/api/parties/{$party->id}/pictures", [
+        'photo' => UploadedFile::fake()->image('booth.jpg', 1600, 1200),
+    ])->assertCreated();
+
+    $this->assertDatabaseHas('pictures', [
+        'party_id' => $party->id,
+        'width' => 1600,
+        'height' => 1200,
+    ]);
+});
+
+it('returns the picture dimensions in the response', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+
+    $this->postJson("/api/parties/{$party->id}/pictures", [
+        'photo' => UploadedFile::fake()->image('booth.jpg', 1600, 1200),
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.width', 1600)
+        ->assertJsonPath('data.height', 1200);
 });
 
 it('returns 404 when the party does not exist', function () {
@@ -242,4 +270,20 @@ it('returns 404 on destroy when the picture does not exist', function () {
 
     $this->deleteJson("/api/parties/{$party->id}/pictures/99999")
         ->assertNotFound();
+});
+
+it('dispatches the CreatePictureThumbnail job on store', function () {
+    Queue::fake();
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+
+    $this->postJson("/api/parties/{$party->id}/pictures", [
+        'photo' => UploadedFile::fake()->image('booth.jpg'),
+    ])->assertCreated();
+
+    $picture = Picture::query()->where('party_id', $party->id)->first();
+
+    Queue::assertPushed(CreatePictureThumbnail::class, function ($job) use ($picture) {
+        return $job->picture->id === $picture->id;
+    });
 });

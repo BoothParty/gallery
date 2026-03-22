@@ -19,6 +19,9 @@ class Picture extends Model
     protected $fillable = [
         'party_id',
         'path',
+        'thumbnail_path',
+        'width',
+        'height',
     ];
 
     protected static function booting(): void
@@ -28,7 +31,8 @@ class Picture extends Model
         });
 
         static::deleted(function (Picture $picture): void {
-            Storage::disk('s3')->delete($picture->path);
+            $paths = array_filter([$picture->path, $picture->thumbnail_path]);
+            Storage::disk('s3')->delete($paths);
         });
     }
 
@@ -46,5 +50,20 @@ class Picture extends Model
         $disk = Storage::disk('s3');
 
         return $disk->url($this->path);
+    }
+
+    /**
+     * Get the full URL to the thumbnail on S3/Minio.
+     */
+    public function thumbnailUrl(): string
+    {
+        if (! $this->thumbnail_path) {
+            return $this->url();
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+        return $disk->url($this->thumbnail_path);
     }
 }
