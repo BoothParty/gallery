@@ -6,8 +6,12 @@ use App\Services\UmamiClient;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Traits\RefreshUmamiWebsite;
 
 uses(RefreshDatabase::class);
+uses(RefreshUmamiWebsite::class)
+    ->beforeEach(fn () => $this->createUmamiWebsite())
+    ->afterEach(fn () => $this->deleteUmamiWebsite());
 
 beforeEach(function () {
     if (! config('umami.base_url') || ! config('umami.website_id')) {

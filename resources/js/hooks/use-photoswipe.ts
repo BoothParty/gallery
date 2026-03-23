@@ -15,7 +15,7 @@ export default function usePhotoSwipe(gallerySelector: string) {
             pswpModule: () => import('photoswipe'),
         });
 
-        lightbox.on('open', () => {
+        lightbox.on('beforeOpen', () => {
             window.umami?.track('gallery_image_open');
         });
 

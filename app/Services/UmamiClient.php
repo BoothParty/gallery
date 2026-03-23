@@ -55,6 +55,16 @@ class UmamiClient
     }
 
     /**
+     * Delete a website from Umami by its ID.
+     */
+    public function deleteWebsite(string $websiteId): void
+    {
+        $this->http()
+            ->delete("{$this->baseUrl}/api/websites/{$websiteId}")
+            ->throw();
+    }
+
+    /**
      * Return the names of all custom events tracked for a website between $startAt and now (or $endAt).
      *
      * @return array<int, string>
@@ -62,7 +72,7 @@ class UmamiClient
     public function getEventNames(string $websiteId, Carbon $startAt, ?Carbon $endAt = null): array
     {
         $response = $this->http()
-            ->get("{$this->baseUrl}/api/websites/{$websiteId}/event-data/events", [
+            ->get("{$this->baseUrl}/api/websites/{$websiteId}/events", [
                 'startAt' => $startAt->timestamp * 1000,
                 'endAt' => ($endAt ?? now())->addSecond()->timestamp * 1000,
             ])
