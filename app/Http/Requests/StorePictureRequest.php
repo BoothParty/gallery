@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePictureRequest extends FormRequest
 {
@@ -24,6 +25,7 @@ class StorePictureRequest extends FormRequest
     {
         return [
             'photo' => ['required', 'image', 'max:10240'],
+            'unique_code' => ['nullable', 'string', 'max:255', Rule::unique('pictures', 'unique_code')],
         ];
     }
 }

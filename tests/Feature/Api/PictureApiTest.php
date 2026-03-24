@@ -70,7 +70,7 @@ it('returns the correct JSON structure for the index', function () {
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
-                '*' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
+                '*' => ['id', 'party_id', 'unique_code', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
             ],
         ]);
 });
@@ -103,7 +103,7 @@ it('returns the correct JSON structure for a picture resource', function () {
     $this->getJson("/api/parties/{$party->id}/pictures/{$picture->id}")
         ->assertOk()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'unique_code', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
         ]);
 });
 
@@ -164,7 +164,7 @@ it('returns the correct JSON structure on store', function () {
     ])
         ->assertCreated()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'unique_code', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
         ]);
 });
 
@@ -234,6 +234,44 @@ it('rejects store when photo exceeds max size', function () {
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrorFor('photo');
+});
+
+it('stores the unique_code when provided', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+
+    $this->postJson("/api/parties/{$party->id}/pictures", [
+        'photo' => UploadedFile::fake()->image('booth.jpg'),
+        'unique_code' => 'BOOTH001',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.unique_code', 'BOOTH001');
+
+    $this->assertDatabaseHas('pictures', ['unique_code' => 'BOOTH001']);
+});
+
+it('stores null unique_code when not provided', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+
+    $this->postJson("/api/parties/{$party->id}/pictures", [
+        'photo' => UploadedFile::fake()->image('booth.jpg'),
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.unique_code', null);
+});
+
+it('rejects store when unique_code is already taken', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->create(['unique_code' => 'TAKEN001']);
+
+    $this->postJson("/api/parties/{$party->id}/pictures", [
+        'photo' => UploadedFile::fake()->image('booth.jpg'),
+        'unique_code' => 'TAKEN001',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrorFor('unique_code');
 });
 
 // ── Destroy ───────────────────────────────────────────────────────────────────

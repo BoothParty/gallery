@@ -17,6 +17,7 @@ class PictureResource extends JsonResource
         return [
             'id' => $this->id,
             'party_id' => $this->party_id,
+            'unique_code' => $this->unique_code,
             'url' => $this->url(),
             'thumbnail_url' => $this->thumbnailUrl(),
             'width' => $this->width,

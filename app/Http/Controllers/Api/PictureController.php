@@ -30,6 +30,7 @@ class PictureController extends Controller
             'path' => $path,
             'width' => $width,
             'height' => $height,
+            'unique_code' => $request->input('unique_code'),
         ]);
 
         CreatePictureThumbnail::dispatch($picture);
