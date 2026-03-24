@@ -22,6 +22,7 @@ class Picture extends Model
         'thumbnail_path',
         'width',
         'height',
+        'unique_code',
     ];
 
     protected static function booting(): void

@@ -2,6 +2,7 @@
 
 use App\Models\Party;
 use App\Models\Picture;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 
@@ -70,6 +71,27 @@ it('returns an empty collection when party has no pictures', function () {
     $party = Party::factory()->create();
 
     expect($party->pictures)->toHaveCount(0);
+});
+
+// ── Unique code ──────────────────────────────────────────────────────────────
+
+it('unique_code is null by default', function () {
+    $picture = Picture::factory()->create();
+
+    expect($picture->unique_code)->toBeNull();
+});
+
+it('stores a provided unique_code', function () {
+    $picture = Picture::factory()->create(['unique_code' => 'BOOTH001']);
+
+    expect($picture->fresh()->unique_code)->toBe('BOOTH001');
+});
+
+it('enforces unique_code uniqueness', function () {
+    Picture::factory()->create(['unique_code' => 'DUPCODE1']);
+
+    expect(fn () => Picture::factory()->create(['unique_code' => 'DUPCODE1']))
+        ->toThrow(QueryException::class);
 });
 
 // ── URL generation ──────────────────────────────────────────────────────────
