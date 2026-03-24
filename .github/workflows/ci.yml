@@ -93,6 +93,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -143,6 +149,9 @@ jobs:
     name: Tests · Web (${{ matrix.browser }})
     runs-on: ubuntu-latest
 
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-jammy
+
     strategy:
       fail-fast: false
       matrix:
@@ -165,6 +174,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -191,18 +206,13 @@ jobs:
 
       - name: Cache Playwright browsers
         uses: actions/cache@v5
-        id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-
 
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
-
-      - name: Install system deps only (cache hit)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
+        run: npx playwright install
 
       - name: Generate app key
         run: php artisan key:generate
