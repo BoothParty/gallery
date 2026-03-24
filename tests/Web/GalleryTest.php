@@ -171,3 +171,30 @@ it('has no smoke on the gallery page', function () {
 
     $page->assertNoSmoke();
 });
+
+// ── Umami analytics ───────────────────────────────────────────────────────────
+
+it('loads the umami script when configured', function () {
+    config([
+        'umami.script_url' => 'data:text/javascript,window.umami={track:function(){}};',
+        'umami.website_id' => 'test-website-id',
+    ]);
+
+    $party = Party::factory()->create();
+
+    $page = visit("/parties/{$party->id}");
+
+    $page->assertCount('script[data-website-id="test-website-id"]', 1)
+        ->assertNoJavaScriptErrors();
+});
+
+it('tracks pagination without javascript errors when umami is not loaded', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(31)->for($party)->create();
+
+    $page = visit("/parties/{$party->id}");
+
+    $page->click('Page suivante')
+        ->assertQueryStringHas('page', '2')
+        ->assertNoJavaScriptErrors();
+});
