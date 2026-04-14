@@ -21,14 +21,14 @@ beforeEach(function () {
 it('rejects unauthenticated requests on index', function () {
     $party = Party::factory()->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures")
+    $this->getJson(route('pictures.index', $party))
         ->assertUnauthorized();
 });
 
 it('rejects unauthenticated requests on store', function () {
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])->assertUnauthorized();
 });
@@ -37,7 +37,7 @@ it('rejects unauthenticated requests on show', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures/{$picture->id}")
+    $this->getJson(route('pictures.show', ['party' => $party, 'picture' => $picture]))
         ->assertUnauthorized();
 });
 
@@ -45,7 +45,7 @@ it('rejects unauthenticated requests on destroy', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $this->deleteJson("/api/parties/{$party->id}/pictures/{$picture->id}")
+    $this->deleteJson(route('pictures.destroy', ['party' => $party, 'picture' => $picture]))
         ->assertUnauthorized();
 });
 
@@ -56,7 +56,7 @@ it('returns all pictures for a given party', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures")
+    $this->getJson(route('pictures.index', $party))
         ->assertOk()
         ->assertJsonCount(3, 'data');
 });
@@ -66,7 +66,7 @@ it('returns the correct JSON structure for the index', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures")
+    $this->getJson(route('pictures.index', $party))
         ->assertOk()
         ->assertJsonStructure([
             'data' => [
@@ -78,7 +78,7 @@ it('returns the correct JSON structure for the index', function () {
 it('returns 404 on index when the party does not exist', function () {
     Sanctum::actingAs(User::factory()->create());
 
-    $this->getJson('/api/parties/99999/pictures')
+    $this->getJson('/api/unknown-party/pictures')
         ->assertNotFound();
 });
 
@@ -89,7 +89,7 @@ it('returns a single picture', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures/{$picture->id}")
+    $this->getJson(route('pictures.show', ['party' => $party, 'picture' => $picture]))
         ->assertOk()
         ->assertJsonPath('data.id', $picture->id)
         ->assertJsonPath('data.party_id', $party->id);
@@ -100,7 +100,7 @@ it('returns the correct JSON structure for a picture resource', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures/{$picture->id}")
+    $this->getJson(route('pictures.show', ['party' => $party, 'picture' => $picture]))
         ->assertOk()
         ->assertExactJsonStructure([
             'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
@@ -111,7 +111,7 @@ it('returns 404 on show when the picture does not exist', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->getJson("/api/parties/{$party->id}/pictures/99999")
+    $this->getJson(route('pictures.show', ['party' => $party, 'picture' => 99999]))
         ->assertNotFound();
 });
 
@@ -122,7 +122,7 @@ it('creates a picture for a given party', function () {
     Sanctum::actingAs($user);
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])
         ->assertCreated()
@@ -135,7 +135,7 @@ it('stores the file on the s3 disk', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $response = $this->postJson("/api/parties/{$party->id}/pictures", [
+    $response = $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])->assertCreated();
 
@@ -147,7 +147,7 @@ it('stores the file under the pictures/{party_id} directory', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])->assertCreated();
 
@@ -159,7 +159,7 @@ it('returns the correct JSON structure on store', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])
         ->assertCreated()
@@ -172,7 +172,7 @@ it('stores the picture dimensions in the database', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg', 1600, 1200),
     ])->assertCreated();
 
@@ -187,7 +187,7 @@ it('returns the picture dimensions in the response', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg', 1600, 1200),
     ])
         ->assertCreated()
@@ -198,7 +198,7 @@ it('returns the picture dimensions in the response', function () {
 it('returns 404 when the party does not exist', function () {
     Sanctum::actingAs(User::factory()->create());
 
-    $this->postJson('/api/parties/99999/pictures', [
+    $this->postJson('/api/unknown-party/pictures', [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])->assertNotFound();
 });
@@ -209,7 +209,7 @@ it('rejects store when photo is missing', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [])
+    $this->postJson(route('pictures.store', $party), [])
         ->assertUnprocessable()
         ->assertJsonValidationErrorFor('photo');
 });
@@ -218,7 +218,7 @@ it('rejects store when photo is not an image', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
     ])
         ->assertUnprocessable()
@@ -229,7 +229,7 @@ it('rejects store when photo exceeds max size', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('huge.jpg')->size(10241),
     ])
         ->assertUnprocessable()
@@ -243,7 +243,7 @@ it('deletes a picture and returns no content', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $this->deleteJson("/api/parties/{$party->id}/pictures/{$picture->id}")
+    $this->deleteJson(route('pictures.destroy', ['party' => $party, 'picture' => $picture]))
         ->assertNoContent();
 
     $this->assertDatabaseMissing('pictures', ['id' => $picture->id]);
@@ -259,7 +259,7 @@ it('deletes the file from s3 when a picture is destroyed', function () {
 
     Storage::disk('s3')->assertExists($path);
 
-    $this->deleteJson("/api/parties/{$party->id}/pictures/{$picture->id}")
+    $this->deleteJson(route('pictures.destroy', ['party' => $party, 'picture' => $picture]))
         ->assertNoContent();
 
     Storage::disk('s3')->assertMissing($path);
@@ -269,7 +269,7 @@ it('returns 404 on destroy when the picture does not exist', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->deleteJson("/api/parties/{$party->id}/pictures/99999")
+    $this->deleteJson(route('pictures.destroy', ['party' => $party, 'picture' => 99999]))
         ->assertNotFound();
 });
 
@@ -278,7 +278,7 @@ it('dispatches the CreatePictureThumbnail job on store', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
 
-    $this->postJson("/api/parties/{$party->id}/pictures", [
+    $this->postJson(route('pictures.store', $party), [
         'photo' => UploadedFile::fake()->image('booth.jpg'),
     ])->assertCreated();
 

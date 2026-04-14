@@ -1,0 +1,23 @@
+<?php
+
+use App\Models\Party;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+it('can search parties in the switcher including expired ones', function () {
+    $currentParty = Party::factory()->create(['name' => 'Alpha Party']);
+    Party::factory()->create(['name' => 'Beta Party']);
+    $expiredParty = Party::factory()->expired()->create(['name' => 'Zeta Expired']);
+
+    $page = visit(route('party.dashboard.show', $currentParty));
+
+    $page->click($currentParty->name)
+        ->assertSee('Parties')
+        ->assertDontSee($expiredParty->name)
+        ->fill('input[aria-label="Search parties"]', 'Zeta')
+        ->assertSee($expiredParty->name)
+        ->assertSee('Expired')
+        ->assertDontSee('Beta Party')
+        ->assertNoJavaScriptErrors();
+});
