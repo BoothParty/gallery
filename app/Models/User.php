@@ -2,13 +2,25 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Attributes\CrudCountColumn;
+use App\Attributes\CrudResource;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+#[CrudResource(
+    label: 'User',
+    labelPlural: 'Users',
+)]
+#[CrudCountColumn(
+    name: 'parties_count',
+    label: 'Parties',
+    relation: 'parties',
+    linkHref: '/admin/parties',
+)]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -46,5 +58,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function parties(): HasMany
+    {
+        return $this->hasMany(Party::class);
     }
 }

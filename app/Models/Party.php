@@ -2,12 +2,30 @@
 
 namespace App\Models;
 
+use App\Attributes\CrudCountColumn;
+use App\Attributes\CrudRelationColumn;
+use App\Attributes\CrudResource;
 use Database\Factories\PartyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[CrudResource(
+    label: 'Party',
+    labelPlural: 'Parties',
+)]
+#[CrudRelationColumn(
+    column: 'user_id',
+    model: User::class,
+    labelColumn: 'name',
+)]
+#[CrudCountColumn(
+    name: 'pictures_count',
+    label: 'Pictures',
+    relation: 'pictures',
+    linkHref: '/admin/parties',
+)]
 class Party extends Model
 {
     /** @use HasFactory<PartyFactory> */
@@ -44,5 +62,10 @@ class Party extends Model
     public function hidePictures(): bool
     {
         return $this->expire_at !== null && $this->expire_at->isPast();
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'name';
     }
 }

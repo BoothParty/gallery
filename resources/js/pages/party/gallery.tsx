@@ -39,7 +39,7 @@ export default function Gallery({ party, pictures, page, pagesCount, hidePicture
 
     const goToPage = (targetPage: number) => {
         window.umami?.track(targetPage > page ? 'gallery_page_next' : 'gallery_page_prev');
-        router.visit(`/parties/${party.id}?page=${targetPage}`, {
+        router.visit(`/${encodeURIComponent(party.name)}?page=${targetPage}`, {
             preserveScroll: false,
         });
     };
