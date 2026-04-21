@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Select,
     SelectContent,
@@ -63,6 +64,8 @@ export default function PartiesIndex({
     const form = useForm({
         name: "",
         user_id: null as number | null,
+        pictures_enabled: true,
+        audios_enabled: false,
     })
     const editForm = useForm({
         name: "",
@@ -76,6 +79,12 @@ export default function PartiesIndex({
         form.post("/admin/parties", {
             onSuccess: () => {
                 form.reset()
+                form.setData({
+                    name: "",
+                    user_id: null,
+                    pictures_enabled: true,
+                    audios_enabled: false,
+                })
                 setCreateModalOpen(false)
             },
         })
@@ -219,6 +228,38 @@ export default function PartiesIndex({
                                 </SelectContent>
                             </Select>
                             {form.errors.user_id && <p className="text-xs text-red-500">{form.errors.user_id}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Media enabled</Label>
+                            <div className="space-y-3 rounded-md border p-3">
+                                <label className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                        id="create-party-pictures-enabled"
+                                        checked={form.data.pictures_enabled}
+                                        onCheckedChange={(checked) => {
+                                            form.setData("pictures_enabled", checked === true)
+                                        }}
+                                    />
+                                    <span>Pictures enabled</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                        id="create-party-audios-enabled"
+                                        checked={form.data.audios_enabled}
+                                        onCheckedChange={(checked) => {
+                                            form.setData("audios_enabled", checked === true)
+                                        }}
+                                    />
+                                    <span>Audios enabled</span>
+                                </label>
+                            </div>
+                            {form.errors.pictures_enabled && (
+                                <p className="text-xs text-red-500">{form.errors.pictures_enabled}</p>
+                            )}
+                            {form.errors.audios_enabled && (
+                                <p className="text-xs text-red-500">{form.errors.audios_enabled}</p>
+                            )}
                         </div>
 
                         <DialogFooter>

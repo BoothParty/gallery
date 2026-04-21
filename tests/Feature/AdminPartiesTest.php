@@ -33,12 +33,16 @@ it('stores a new party from administration create modal', function () {
     $this->post('/admin/parties', [
         'name' => 'Birthday Bash',
         'user_id' => $owner->id,
+        'pictures_enabled' => false,
+        'audios_enabled' => true,
     ])->assertRedirect('/admin/parties');
 
     $party = Party::query()->where('name', 'Birthday Bash')->first();
 
     expect($party)->not->toBeNull();
-    expect($party?->user_id)->toBe($owner->id);
+    expect($party?->user_id)->toBe($owner->id)
+        ->and($party?->pictures_enabled)->toBeFalse()
+        ->and($party?->audios_enabled)->toBeTrue();
 });
 
 it('maps relation labels and exposes count-link metadata in parties datatable', function () {
