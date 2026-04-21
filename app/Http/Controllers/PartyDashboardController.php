@@ -55,9 +55,7 @@ class PartyDashboardController extends Controller
 
         if ($mediaType === 'pictures') {
             $party->update(['pictures_enabled' => true]);
-        }
-
-        if ($mediaType === 'audios') {
+        } elseif ($mediaType === 'audios') {
             $party->update(['audios_enabled' => true]);
         }
 

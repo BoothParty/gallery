@@ -51,7 +51,7 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
   const currentPartyName = currentParty ? encodeURIComponent(currentParty.name) : null
   const dashboardUrl = currentPartyName ? `/${currentPartyName}/dashboard` : "#"
   const galleryUrl = currentPartyName ? `/${currentPartyName}/dashboard/pictures` : "#"
-  const audioUrl = currentPartyName ? `/${currentPartyName}/dashboard` : "#"
+  const audiosUrl = currentPartyName ? `/${currentPartyName}/dashboard` : "#"
   const picturesEnabled = currentParty?.pictures_enabled ?? true
   const audiosEnabled = currentParty?.audios_enabled ?? false
 
@@ -119,7 +119,7 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
               <SidebarMenuItem>
                 {audiosEnabled ? (
                   <SidebarMenuButton asChild tooltip="Audios">
-                    <Link href={audioUrl}>
+                    <Link href={audiosUrl}>
                       <MusicIcon />
                       <span>Audios</span>
                     </Link>
