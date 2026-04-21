@@ -6,7 +6,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('renders the party dashboard page with sidebar data', function () {
-    $currentParty = Party::factory()->create(['name' => 'Alpha']);
+    $currentParty = Party::factory()->create([
+        'name' => 'Alpha',
+        'pictures_enabled' => false,
+        'audios_enabled' => true,
+    ]);
 
     $this->get(route('party.dashboard.show', $currentParty))
         ->assertOk()
@@ -21,6 +25,8 @@ it('renders the party dashboard page with sidebar data', function () {
             ->where('searchableParties.0.id', $currentParty->id)
             ->where('searchableParties.0.name', 'Alpha')
             ->where('searchableParties.0.expired', false)
+            ->where('searchableParties.0.pictures_enabled', false)
+            ->where('searchableParties.0.audios_enabled', true)
         );
 });
 

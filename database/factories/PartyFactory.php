@@ -23,6 +23,8 @@ class PartyFactory extends Factory
             'name' => fake()->words(3, true),
             'user_id' => null,
             'expire_at' => null,
+            'pictures_enabled' => true,
+            'audios_enabled' => false,
         ];
     }
 

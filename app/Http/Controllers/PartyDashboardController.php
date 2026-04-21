@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdatePartyMediaAvailabilityRequest;
 use App\Models\Party;
 use App\Models\Picture;
 use App\Services\AdminDashboardDataService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -45,5 +47,20 @@ class PartyDashboardController extends Controller
             'pictures' => $pictures,
             'perPage' => $perPage,
         ]);
+    }
+
+    public function enableMedia(UpdatePartyMediaAvailabilityRequest $request, Party $party): RedirectResponse
+    {
+        $mediaType = $request->validated('media_type');
+
+        if ($mediaType === 'pictures') {
+            $party->update(['pictures_enabled' => true]);
+        }
+
+        if ($mediaType === 'audios') {
+            $party->update(['audios_enabled' => true]);
+        }
+
+        return to_route('party.dashboard.show', $party);
     }
 }

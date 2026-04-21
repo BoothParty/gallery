@@ -15,7 +15,9 @@ it('can be created with only a name', function () {
     expect($party->exists)->toBeTrue()
         ->and($party->name)->toBe('My Party')
         ->and($party->user_id)->toBeNull()
-        ->and($party->expire_at)->toBeNull();
+        ->and($party->expire_at)->toBeNull()
+        ->and($party->pictures_enabled)->toBeTrue()
+        ->and($party->audios_enabled)->toBeFalse();
 });
 
 it('persists all fillable attributes', function () {
@@ -26,12 +28,16 @@ it('persists all fillable attributes', function () {
         'name' => 'Booth Night',
         'user_id' => $user->id,
         'expire_at' => $expiresAt,
+        'pictures_enabled' => false,
+        'audios_enabled' => true,
     ]);
 
     expect($party->fresh())
         ->name->toBe('Booth Night')
         ->user_id->toBe($user->id)
-        ->expire_at->toEqual($expiresAt);
+        ->expire_at->toEqual($expiresAt)
+        ->pictures_enabled->toBeFalse()
+        ->audios_enabled->toBeTrue();
 });
 
 // ── Casts ───────────────────────────────────────────────────────────────────
@@ -46,6 +52,16 @@ it('leaves expire_at null when not set', function () {
     $party = Party::factory()->create();
 
     expect($party->expire_at)->toBeNull();
+});
+
+it('casts media flags as booleans', function () {
+    $party = Party::factory()->create([
+        'pictures_enabled' => 0,
+        'audios_enabled' => 1,
+    ]);
+
+    expect($party->pictures_enabled)->toBeBool()->toBeFalse()
+        ->and($party->audios_enabled)->toBeBool()->toBeTrue();
 });
 
 // ── Relationship: User ──────────────────────────────────────────────────────

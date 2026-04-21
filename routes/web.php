@@ -16,6 +16,9 @@ Route::prefix('{party}')->name('party.')->group(function () {
         Route::get('/pictures', [PartyDashboardController::class, 'pictures'])->name('pictures');
         Route::post('/pictures', [AdminGalleryController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminGalleryController::class, 'bulkDelete'])->name('pictures.bulk-delete');
+        Route::post('/media/{media_type}/enable', [PartyDashboardController::class, 'enableMedia'])
+            ->whereIn('media_type', ['pictures', 'audios'])
+            ->name('media.enable');
     });
 });
 

@@ -30,11 +30,13 @@ class AdminDashboardDataService
             ->values();
 
         $searchableParties = Party::query()
-            ->get(['id', 'name', 'expire_at'])
+            ->get(['id', 'name', 'expire_at', 'pictures_enabled', 'audios_enabled'])
             ->map(fn (Party $availableParty) => [
                 'id' => $availableParty->id,
                 'name' => $availableParty->name,
                 'expired' => $availableParty->expire_at !== null && $availableParty->expire_at->isPast(),
+                'pictures_enabled' => $availableParty->pictures_enabled,
+                'audios_enabled' => $availableParty->audios_enabled,
             ])
             ->values();
 

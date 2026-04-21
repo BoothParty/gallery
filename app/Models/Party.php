@@ -36,12 +36,16 @@ class Party extends Model
         'name',
         'user_id',
         'expire_at',
+        'pictures_enabled',
+        'audios_enabled',
     ];
 
     protected function casts(): array
     {
         return [
             'expire_at' => 'datetime',
+            'pictures_enabled' => 'boolean',
+            'audios_enabled' => 'boolean',
         ];
     }
 
