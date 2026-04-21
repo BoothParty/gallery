@@ -1,5 +1,5 @@
-import { FormEvent, useState } from "react"
-import { useForm } from "@inertiajs/react"
+import { FormEvent, useEffect, useState } from "react"
+import { useForm, usePage } from "@inertiajs/react"
 
 import { AdminLayout } from "@/components/admin-layout"
 import { DataTable } from "@/components/data-table"
@@ -56,6 +56,7 @@ export default function PartiesIndex({
     editableParties,
     tableData,
 }: PageProps) {
+    const { url } = usePage()
     const [isCreateModalOpen, setCreateModalOpen] = useState(false)
     const [isDetailsModalOpen, setDetailsModalOpen] = useState(false)
     const [selectedPartyId, setSelectedPartyId] = useState<number | null>(null)
@@ -69,6 +70,15 @@ export default function PartiesIndex({
         user_id: null as number | null,
     })
     const quickDeleteForm = useForm({})
+
+    useEffect(() => {
+        const [, queryString = ""] = url.split("?")
+        const searchParams = new URLSearchParams(queryString)
+
+        if (searchParams.get("create") === "1") {
+            setCreateModalOpen(true)
+        }
+    }, [url])
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()

@@ -172,7 +172,13 @@ export function PartySwitcher({
               )}
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="m-1 gap-2 rounded-md p-2">
+            <DropdownMenuItem
+              className="m-1 gap-2 rounded-md p-2"
+              onClick={() => {
+                setOpen(false)
+                router.visit("/admin/parties?create=1")
+              }}
+            >
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <PlusIcon className="size-4" />
               </div>
