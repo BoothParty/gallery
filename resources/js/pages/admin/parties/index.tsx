@@ -72,8 +72,7 @@ export default function PartiesIndex({
     const quickDeleteForm = useForm({})
 
     useEffect(() => {
-        const [, queryString = ""] = url.split("?")
-        const searchParams = new URLSearchParams(queryString)
+        const searchParams = new URL(url, window.location.origin).searchParams
 
         if (searchParams.get("create") === "1") {
             setCreateModalOpen(true)
