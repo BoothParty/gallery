@@ -38,7 +38,6 @@ export default function Gallery({ party, pictures, page, pagesCount, hidePicture
     usePhotoSwipe('#gallery');
 
     const goToPage = (targetPage: number) => {
-        window.umami?.track(targetPage > page ? 'gallery_page_next' : 'gallery_page_prev');
         router.visit(`/${encodeURIComponent(party.name)}?page=${targetPage}`, {
             preserveScroll: false,
         });

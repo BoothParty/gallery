@@ -80,35 +80,6 @@ services:
             timeout: 10s
             retries: 3
             start_period: 40s
-    umami:
-        image: 'ghcr.io/umami-software/umami:postgresql-latest'
-        ports:
-            - '${FORWARD_UMAMI_PORT:-3000}:3000'
-        environment:
-            DATABASE_URL: 'postgresql://umami:password@umami-db:5432/umami'
-            DATABASE_TYPE: postgresql
-            APP_SECRET: '${UMAMI_APP_SECRET:-umami-app-secret}'
-        depends_on:
-            umami-db:
-                condition: service_healthy
-        networks:
-            - sail
-    umami-db:
-        image: 'postgres:16'
-        environment:
-            POSTGRES_DB: umami
-            POSTGRES_USER: umami
-            POSTGRES_PASSWORD: password
-        volumes:
-            - 'sail-umami-db:/var/lib/postgresql/data'
-        networks:
-            - sail
-        healthcheck:
-            test:
-                - CMD-SHELL
-                - pg_isready -U umami
-            retries: 3
-            timeout: 5s
 networks:
     sail:
         driver: bridge
@@ -116,6 +87,4 @@ volumes:
     sail-mysql:
         driver: local
     sail-rustfs:
-        driver: local
-    sail-umami-db:
         driver: local

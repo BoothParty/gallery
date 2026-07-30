@@ -7,9 +7,6 @@
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     @inertiaHead
-    @if(config('umami.script_url') && config('umami.website_id'))
-        <script async src="{{ config('umami.script_url') }}" data-website-id="{{ config('umami.website_id') }}"></script>
-    @endif
 </head>
 
 <body class="font-sans antialiased">
