@@ -92,18 +92,21 @@ export default function GalleryIndex({
         })
     }, [selected, party.name, deleteForm])
 
+    const closeUploadDialog = useCallback(() => {
+        uploadForm.reset()
+        uploadForm.clearErrors()
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+        }
+        setUploadDialogOpen(false)
+    }, [uploadForm])
+
     const handleUpload = useCallback(() => {
         uploadForm.post(`/${encodeURIComponent(party.name)}/dashboard/pictures`, {
             forceFormData: true,
-            onSuccess: () => {
-                uploadForm.reset()
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = ""
-                }
-                setUploadDialogOpen(false)
-            },
+            onSuccess: closeUploadDialog,
         })
-    }, [party.name, uploadForm])
+    }, [party.name, uploadForm, closeUploadDialog])
 
     return (
         <AdminLayout
@@ -156,10 +159,9 @@ export default function GalleryIndex({
                 open={uploadDialogOpen}
                 onOpenChange={(open) => {
                     if (!open) {
-                        uploadForm.reset()
-                        if (fileInputRef.current) {
-                            fileInputRef.current.value = ""
-                        }
+                        closeUploadDialog()
+
+                        return
                     }
                     setUploadDialogOpen(open)
                 }}
@@ -209,7 +211,7 @@ export default function GalleryIndex({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setUploadDialogOpen(false)}
+                                onClick={closeUploadDialog}
                                 disabled={uploadForm.processing}
                             >
                                 Cancel
