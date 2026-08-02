@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-import Footer from '@/components/footer';
-import Navbar from '@/components/navbar';
+import Footer from '@/components/party/footer';
+import Navbar from '@/components/party/navbar';
 
 interface PartyLayoutProps {
     children: ReactNode;

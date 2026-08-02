@@ -1,4 +1,4 @@
-import ApplicationLogo from '@/components/application-logo';
+import ApplicationLogo from '@/components/party/application-logo';
 
 interface FooterProps {
     partyId?: number;

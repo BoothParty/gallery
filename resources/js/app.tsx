@@ -1,20 +1,17 @@
 import { createInertiaApp } from '@inertiajs/react'
 import { createRoot } from 'react-dom/client'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
-    resolve: name => {
-        const pages = import.meta.glob('./pages/**/*.tsx', { eager: true })
-        return pages[`./pages/${name}.tsx`]
-    },
+    resolve: name =>
+        resolvePageComponent(
+            `./pages/${name}.tsx`,
+            import.meta.glob('./pages/**/*.tsx'),
+        ),
     setup({ el, App, props }) {
-        createRoot(el).render(
-            <TooltipProvider>
-                <App {...props} />
-            </TooltipProvider>
-        )
+        createRoot(el).render(<App {...props} />)
     },
 })

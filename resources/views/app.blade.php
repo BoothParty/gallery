@@ -5,7 +5,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @viteReactRefresh
-    @vite(['resources/css/app.css', 'resources/js/app.tsx'])
+    @php
+        $stylesheet = str_starts_with(data_get($page, 'component', ''), 'party/')
+            ? 'resources/css/app.css'
+            : 'resources/css/admin.css';
+    @endphp
+    @vite([$stylesheet, 'resources/js/app.tsx'])
     @inertiaHead
 </head>
 

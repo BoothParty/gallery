@@ -1,8 +1,8 @@
 import { Head, router } from '@inertiajs/react';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
 
-import PictureCard from '@/components/picture-card';
-import PrimaryButton from '@/components/primary-button';
+import PictureCard from '@/components/party/picture-card';
+import PrimaryButton from '@/components/party/primary-button';
 import usePhotoSwipe from '@/hooks/use-photoswipe';
 import PartyLayout from '@/layouts/party-layout';
 
