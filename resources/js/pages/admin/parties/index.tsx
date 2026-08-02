@@ -22,6 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import type { CrudRow, CrudRowAction, CrudTableData } from "@/components/data-table/types"
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime"
 
 type PageProps = {
     currentPartyId: number | null
@@ -43,6 +44,7 @@ type PageProps = {
         id: number
         name: string
         user_id: number | null
+        expire_at: string | null
         route_key: string
     }[]
     tableData: CrudTableData
@@ -63,16 +65,19 @@ export default function PartiesIndex({
     const form = useForm({
         name: "",
         user_id: null as number | null,
+        expire_at: "",
     })
     const editForm = useForm({
         name: "",
         user_id: null as number | null,
+        expire_at: "",
     })
     const quickDeleteForm = useForm({})
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
+        form.transform((data) => ({ ...data, expire_at: fromDateTimeLocalValue(data.expire_at) }))
         form.post("/admin/parties", {
             onSuccess: () => {
                 form.reset()
@@ -113,6 +118,7 @@ export default function PartiesIndex({
         editForm.setData({
             name: editableParty.name,
             user_id: editableParty.user_id,
+            expire_at: toDateTimeLocalValue(editableParty.expire_at),
         })
         setDetailsModalOpen(true)
     }
@@ -124,6 +130,7 @@ export default function PartiesIndex({
             return
         }
 
+        editForm.transform((data) => ({ ...data, expire_at: fromDateTimeLocalValue(data.expire_at) }))
         editForm.put(`/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}`, {
             onSuccess: () => {
                 setDetailsModalOpen(false)
@@ -221,6 +228,20 @@ export default function PartiesIndex({
                             {form.errors.user_id && <p className="text-xs text-red-500">{form.errors.user_id}</p>}
                         </div>
 
+                        <div className="space-y-2">
+                            <Label htmlFor="create-party-expire-at">Expiry date (optional)</Label>
+                            <Input
+                                id="create-party-expire-at"
+                                type="datetime-local"
+                                value={form.data.expire_at}
+                                onChange={(event) => form.setData("expire_at", event.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Leave empty to keep the gallery available indefinitely.
+                            </p>
+                            {form.errors.expire_at && <p className="text-xs text-red-500">{form.errors.expire_at}</p>}
+                        </div>
+
                         <DialogFooter>
                             <Button
                                 type="button"
@@ -290,6 +311,20 @@ export default function PartiesIndex({
                                 </SelectContent>
                             </Select>
                             {editForm.errors.user_id && <p className="text-xs text-red-500">{editForm.errors.user_id}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-party-expire-at">Expiry date (optional)</Label>
+                            <Input
+                                id="edit-party-expire-at"
+                                type="datetime-local"
+                                value={editForm.data.expire_at}
+                                onChange={(event) => editForm.setData("expire_at", event.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Leave empty to keep the gallery available indefinitely.
+                            </p>
+                            {editForm.errors.expire_at && <p className="text-xs text-red-500">{editForm.errors.expire_at}</p>}
                         </div>
 
                         <DialogFooter>

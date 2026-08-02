@@ -101,6 +101,71 @@ it('updates an existing party from administration', function () {
     expect($party->user_id)->toBe($newOwner->id);
 });
 
+it('stores a party with an expiry date from administration', function () {
+    $this->post('/admin/parties', [
+        'name' => 'Expiring Party',
+        'user_id' => null,
+        'expire_at' => '2030-06-15T16:00:00.000Z',
+    ])->assertRedirect('/admin/parties');
+
+    $party = Party::query()->where('name', 'Expiring Party')->first();
+
+    expect($party?->expire_at?->toDateTimeString())->toBe('2030-06-15 16:00:00');
+});
+
+it('updates the expiry date of an existing party from administration', function () {
+    $party = Party::factory()->create(['expire_at' => null]);
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'user_id' => null,
+        'expire_at' => '2031-01-02T09:30:00.000Z',
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh()->expire_at?->toDateTimeString())->toBe('2031-01-02 09:30:00');
+});
+
+it('clears the expiry date when the field is submitted empty', function () {
+    $party = Party::factory()->create(['expire_at' => now()->addWeek()]);
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'user_id' => null,
+        'expire_at' => null,
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh()->expire_at)->toBeNull();
+});
+
+it('exposes the expiry date to the administration forms as an absolute instant', function () {
+    $party = Party::factory()->create(['expire_at' => '2030-06-15 18:00:00']);
+
+    $this->get(route('admin.parties.edit', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('party.expire_at', '2030-06-15T18:00:00+00:00'));
+
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('editableParties.0.expire_at', '2030-06-15T18:00:00+00:00'));
+});
+
+it('exposes a null expiry date when the party never expires', function () {
+    $party = Party::factory()->create(['expire_at' => null]);
+
+    $this->get(route('admin.parties.edit', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('party.expire_at', null));
+});
+
+it('rejects an invalid expiry date from administration', function () {
+    $this->post('/admin/parties', [
+        'name' => 'Bad Date Party',
+        'expire_at' => 'not-a-date',
+    ])->assertSessionHasErrors('expire_at');
+
+    expect(Party::query()->where('name', 'Bad Date Party')->exists())->toBeFalse();
+});
+
 it('deletes a party from administration', function () {
     $party = Party::factory()->create();
 

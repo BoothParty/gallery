@@ -21,11 +21,12 @@ class PartyController extends Controller
             'tableData' => $adminDashboardDataService->tableDataForResource('parties'),
             'users' => $this->userOptions(),
             'editableParties' => Party::query()
-                ->get(['id', 'name', 'user_id'])
+                ->get(['id', 'name', 'user_id', 'expire_at'])
                 ->map(fn (Party $party): array => [
                     'id' => $party->id,
                     'name' => $party->name,
                     'user_id' => $party->user_id,
+                    'expire_at' => $this->expiryForInput($party),
                     'route_key' => $party->name,
                 ])
                 ->values(),
@@ -48,6 +49,7 @@ class PartyController extends Controller
                 'id' => $party->id,
                 'name' => $party->name,
                 'user_id' => $party->user_id,
+                'expire_at' => $this->expiryForInput($party),
             ],
         ]);
     }
@@ -64,6 +66,15 @@ class PartyController extends Controller
         $party->delete();
 
         return to_route('admin.parties.index');
+    }
+
+    /**
+     * Expose the expiry date as an absolute instant; the admin forms convert it
+     * to and from the browser's local time for their datetime-local input.
+     */
+    private function expiryForInput(Party $party): ?string
+    {
+        return $party->expire_at?->toIso8601String();
     }
 
     private function userOptions()

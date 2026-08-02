@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime"
 
 type PageProps = {
     currentPartyId: number | null
@@ -33,6 +34,7 @@ type PageProps = {
         id: number
         name: string
         user_id: number | null
+        expire_at: string | null
     }
 }
 
@@ -46,10 +48,12 @@ export default function PartiesEdit({
     const form = useForm({
         name: party.name,
         user_id: party.user_id as number | null,
+        expire_at: toDateTimeLocalValue(party.expire_at),
     })
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
+        form.transform((data) => ({ ...data, expire_at: fromDateTimeLocalValue(data.expire_at) }))
         form.put(`/admin/parties/${encodeURIComponent(party.name)}`)
     }
 
@@ -91,6 +95,20 @@ export default function PartiesEdit({
                         </SelectContent>
                     </Select>
                     {form.errors.user_id && <p className="text-xs text-red-500">{form.errors.user_id}</p>}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="expire_at">Expiry date (optional)</Label>
+                    <Input
+                        id="expire_at"
+                        type="datetime-local"
+                        value={form.data.expire_at}
+                        onChange={(event) => form.setData("expire_at", event.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Leave empty to keep the gallery available indefinitely.
+                    </p>
+                    {form.errors.expire_at && <p className="text-xs text-red-500">{form.errors.expire_at}</p>}
                 </div>
 
                 <div className="flex items-center gap-2">
