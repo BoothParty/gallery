@@ -83,7 +83,12 @@ export default function GalleryIndex({
     const openPhotoSwipe = useGalleryPhotoSwipe(pictures.data)
 
     const handleBulkDelete = useCallback(() => {
-        deleteForm.setData("ids", Array.from(selected))
+        /*
+         * setData schedules a state update, so submitting in the same tick sent
+         * the previous (empty) selection and the request was rejected. transform
+         * runs at submit time instead, with the selection as it is right now.
+         */
+        deleteForm.transform(() => ({ ids: Array.from(selected) }))
         deleteForm.delete(`/${encodeURIComponent(party.name)}/dashboard/pictures`, {
             onSuccess: () => {
                 setSelected(new Set())

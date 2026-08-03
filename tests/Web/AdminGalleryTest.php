@@ -139,6 +139,92 @@ it('shows a placeholder instead of the original when the thumbnail is missing', 
         ->assertNoJavaScriptErrors();
 });
 
+// ── Delete flow ───────────────────────────────────────────────────────────────
+
+it('hides the delete button until pictures are selected', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(3)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->assertSee('3 pictures')
+        ->assertDontSee('Delete 1 picture')
+        ->assertNoJavaScriptErrors();
+});
+
+it('shows the delete button with the number of selected pictures', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(3)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->click(':nth-match([aria-label="Select picture"], 1)')
+        ->assertSee('1 of 3 selected')
+        ->assertSee('Delete 1 picture')
+        ->assertNoJavaScriptErrors();
+});
+
+it('deletes nothing when the confirmation is cancelled', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(3)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->click(':nth-match([aria-label="Select picture"], 1)')
+        ->click('Delete 1 picture')
+        ->assertSee('This action cannot be undone')
+        ->click('[data-slot="alert-dialog-cancel"]')
+        ->assertDontSee('This action cannot be undone')
+        ->assertNoJavaScriptErrors();
+
+    expect(Picture::query()->where('party_id', $party->id)->count())->toBe(3);
+});
+
+it('deletes the selected picture and refreshes the grid', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(3)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->click(':nth-match([aria-label="Select picture"], 1)')
+        ->click('Delete 1 picture')
+        ->click('[data-slot="alert-dialog-action"]')
+        ->assertSee('2 pictures')
+        ->assertNoJavaScriptErrors();
+
+    expect(Picture::query()->where('party_id', $party->id)->count())->toBe(2);
+});
+
+it('deletes every picture on the page when selecting all', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(3)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->click('[aria-label="Select all pictures on this page"]')
+        ->assertSee('3 of 3 selected')
+        ->click('Delete 3 pictures')
+        ->click('[data-slot="alert-dialog-action"]')
+        ->assertSee('No pictures yet')
+        ->assertNoJavaScriptErrors();
+
+    expect(Picture::query()->where('party_id', $party->id)->exists())->toBeFalse();
+});
+
+it('clears the selection after a successful delete', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(3)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->click(':nth-match([aria-label="Select picture"], 1)')
+        ->click('Delete 1 picture')
+        ->click('[data-slot="alert-dialog-action"]')
+        ->assertSee('2 pictures')
+        ->assertDontSee('selected')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 it('has no smoke on the administration gallery page', function () {
