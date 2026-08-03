@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
 
@@ -37,14 +38,37 @@ interface Props {
 /** Roughly the first row on a desktop viewport — loaded eagerly, the rest lazily. */
 const EAGER_PICTURES_COUNT = 6;
 
+/**
+ * Paginating only changes the pictures; the party and its expiry never do.
+ * Requesting just those props keeps the payload small and lets Inertia reuse
+ * a prefetched response, which requires identical visit options.
+ */
+const PAGE_VISIT_OPTIONS = {
+    only: ['pictures', 'page', 'pagesCount'],
+    preserveScroll: false,
+};
+
 export default function Gallery({ party, pictures, page, pagesCount, hidePictures }: Props) {
     usePhotoSwipe('#gallery');
 
+    const pageUrl = (targetPage: number) => `/${encodeURIComponent(party.name)}?page=${targetPage}`;
+
     const goToPage = (targetPage: number) => {
-        router.visit(`/${encodeURIComponent(party.name)}?page=${targetPage}`, {
-            preserveScroll: false,
-        });
+        router.visit(pageUrl(targetPage), PAGE_VISIT_OPTIONS);
     };
+
+    /**
+     * Warm the adjacent pages so paginating feels instant. Inertia serves the
+     * next visit straight from its prefetch cache when the options match.
+     */
+    useEffect(() => {
+        [page - 1, page + 1]
+            .filter((target) => target >= 1 && target <= pagesCount && target !== page)
+            .forEach((target) => {
+                router.prefetch(pageUrl(target), { method: 'get', ...PAGE_VISIT_OPTIONS }, { cacheFor: '2m' });
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, pagesCount, party.name]);
 
     return (
         <PartyLayout partyId={party.id}>

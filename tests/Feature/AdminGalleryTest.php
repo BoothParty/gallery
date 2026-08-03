@@ -108,6 +108,24 @@ it('validates uploaded pictures from administration gallery', function () {
     ])->assertSessionHasErrors('photos.0');
 });
 
+it('serves only the picture props on a partial reload', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(30)->create();
+
+    $this->get(route('party.dashboard.pictures', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('parties')
+            ->reloadOnly(['pictures', 'perPage'], fn ($reload) => $reload
+                ->has('pictures')
+                ->has('perPage')
+                ->missing('parties')
+                ->missing('searchableParties')
+                ->missing('party')
+            )
+        );
+});
+
 it('supports allowed per_page values and falls back to default for invalid values', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(30)->create();

@@ -150,6 +150,24 @@ it('returns the correct page when page query param is provided', function () {
         );
 });
 
+it('serves only the picture props on a partial reload', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(31)->for($party)->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('party')
+            ->reloadOnly(['pictures', 'page', 'pagesCount'], fn ($reload) => $reload
+                ->has('pictures')
+                ->has('page')
+                ->has('pagesCount')
+                ->missing('party')
+                ->missing('hidePictures')
+            )
+        );
+});
+
 it('returns pictures in latest-first order', function () {
     $party = Party::factory()->create();
     $oldest = Picture::factory()->for($party)->create(['created_at' => now()->subHour()]);
