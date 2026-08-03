@@ -58,6 +58,16 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
+
+            /*
+             * Default write options forwarded to the S3 adapter. Pictures and
+             * thumbnails are stored under an immutable UUID path and are never
+             * rewritten, so browsers can cache them indefinitely instead of
+             * re-downloading every thumbnail on each pagination step.
+             */
+            'options' => [
+                'CacheControl' => env('AWS_CACHE_CONTROL', 'public, max-age=31536000, immutable'),
+            ],
         ],
 
     ],
