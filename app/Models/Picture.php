@@ -54,11 +54,15 @@ class Picture extends Model
 
     /**
      * Get the full URL to the thumbnail on S3/Minio.
+     *
+     * Returns null while the thumbnail job has not run yet. Callers must render
+     * a placeholder rather than fall back to the original, which weighs several
+     * megabytes and would be downscaled to a grid cell by the browser.
      */
-    public function thumbnailUrl(): string
+    public function thumbnailUrl(): ?string
     {
         if (! $this->thumbnail_path) {
-            return $this->url();
+            return null;
         }
 
         /** @var FilesystemAdapter $disk */

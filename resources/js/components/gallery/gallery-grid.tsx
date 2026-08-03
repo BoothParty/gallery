@@ -7,7 +7,8 @@ const EAGER_PICTURES_COUNT = 6
 export type GalleryPicture = {
     id: number
     url: string
-    thumbnailUrl: string
+    /** Null while the thumbnail job has not run yet — a placeholder is shown instead. */
+    thumbnailUrl: string | null
     width: number | null
     height: number | null
 }
@@ -28,15 +29,25 @@ function GalleryItem({ picture, index, isSelected, onToggle, onOpen }: GalleryIt
                 isSelected && "ring-2 ring-primary ring-offset-2",
             )}
         >
-            <img
-                src={picture.thumbnailUrl}
-                alt=""
-                className="h-full w-full cursor-zoom-in object-cover transition-transform duration-200 group-hover:scale-105"
-                onClick={() => onOpen(index)}
-                loading={index < EAGER_PICTURES_COUNT ? 'eager' : 'lazy'}
-                decoding="async"
-                fetchPriority={index < EAGER_PICTURES_COUNT ? 'high' : 'low'}
-            />
+            {picture.thumbnailUrl ? (
+                <img
+                    src={picture.thumbnailUrl}
+                    alt=""
+                    className="h-full w-full cursor-zoom-in object-cover transition-transform duration-200 group-hover:scale-105"
+                    onClick={() => onOpen(index)}
+                    loading={index < EAGER_PICTURES_COUNT ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchPriority={index < EAGER_PICTURES_COUNT ? 'high' : 'low'}
+                />
+            ) : (
+                <div
+                    className="h-full w-full animate-pulse cursor-zoom-in bg-muted-foreground/20"
+                    onClick={() => onOpen(index)}
+                    role="img"
+                    aria-label="Thumbnail being generated"
+                    data-picture-placeholder
+                />
+            )}
 
             {isSelected && (
                 <div className="pointer-events-none absolute inset-0 bg-primary/20" />

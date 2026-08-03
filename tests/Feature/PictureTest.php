@@ -85,6 +85,22 @@ it('generates a url from the s3 disk', function () {
         ->and($url)->toContain('pictures/test.jpg');
 });
 
+it('generates a thumbnail url from the s3 disk', function () {
+    Storage::fake('s3');
+
+    $picture = Picture::factory()->create(['thumbnail_path' => 'pictures/test_thumb.jpg']);
+
+    expect($picture->thumbnailUrl())->toContain('pictures/test_thumb.jpg');
+});
+
+it('returns a null thumbnail url rather than falling back to the full-size original', function () {
+    Storage::fake('s3');
+
+    $picture = Picture::factory()->withoutThumbnail()->create(['path' => 'pictures/original.jpg']);
+
+    expect($picture->thumbnailUrl())->toBeNull();
+});
+
 // ── Factory ─────────────────────────────────────────────────────────────────
 
 it('factory creates the associated party automatically', function () {

@@ -57,6 +57,17 @@ it('passes picture url in the pictures collection', function () {
         );
 });
 
+it('passes a null thumbnail url when the thumbnail is not generated yet', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->withoutThumbnail()->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pictures.0.thumbnail_url', null)
+        );
+});
+
 it('passes an empty pictures collection when the party has no pictures', function () {
     $party = Party::factory()->create();
 

@@ -19,7 +19,7 @@ interface Picture {
     id: number;
     party_id: number;
     url: string;
-    thumbnail_url: string;
+    thumbnail_url: string | null;
     width: number | null;
     height: number | null;
     created_at: string;

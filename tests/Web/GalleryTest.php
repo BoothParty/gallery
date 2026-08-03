@@ -79,6 +79,17 @@ it('does not lazy load anything when a party has only a first row of pictures', 
         ->assertNoJavaScriptErrors();
 });
 
+it('shows a placeholder instead of the original when the thumbnail is missing', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->withoutThumbnail()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertCount('#gallery [data-picture-placeholder]', 1)
+        ->assertCount('#gallery img', 0)
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Expired party ─────────────────────────────────────────────────────────────
 
 it('shows hidden message for an expired party', function () {

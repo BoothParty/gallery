@@ -129,6 +129,16 @@ it('lazy loads pictures below the first row', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('shows a placeholder instead of the original when the thumbnail is missing', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->withoutThumbnail()->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->assertCount('[data-picture-placeholder]', 1)
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 it('has no smoke on the administration gallery page', function () {

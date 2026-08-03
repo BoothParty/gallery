@@ -20,7 +20,18 @@ class PictureFactory extends Factory
     {
         return [
             'party_id' => Party::factory(),
+            'thumbnail_path' => 'pictures/'.fake()->uuid().'_thumb.jpg',
         ];
+    }
+
+    /**
+     * A picture whose thumbnail job has not run yet.
+     */
+    public function withoutThumbnail(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'thumbnail_path' => null,
+        ]);
     }
 
     public function forParty(Party $party): static

@@ -15,7 +15,7 @@ export function useGalleryPhotoSwipe(pictures: GalleryPicture[]) {
                     src: p.url,
                     width: p.width ?? 1920,
                     height: p.height ?? 1080,
-                    msrc: p.thumbnailUrl,
+                    msrc: p.thumbnailUrl ?? undefined,
                     alt: "",
                 })),
                 index,
