@@ -34,6 +34,8 @@ function GalleryItem({ picture, index, isSelected, onToggle, onOpen }: GalleryIt
                     src={picture.thumbnailUrl}
                     alt=""
                     className="h-full w-full cursor-zoom-in object-cover transition-transform duration-200 group-hover:scale-105"
+                    width={picture.width ?? undefined}
+                    height={picture.height ?? undefined}
                     onClick={() => onOpen(index)}
                     loading={index < EAGER_PICTURES_COUNT ? 'eager' : 'lazy'}
                     decoding="async"

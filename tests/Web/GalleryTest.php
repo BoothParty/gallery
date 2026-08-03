@@ -90,6 +90,27 @@ it('shows a placeholder instead of the original when the thumbnail is missing', 
         ->assertNoJavaScriptErrors();
 });
 
+it('reserves the picture height up front to avoid layout shift', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertAttribute('#gallery img', 'width', '1600')
+        ->assertAttribute('#gallery img', 'height', '1200')
+        ->assertNoJavaScriptErrors();
+});
+
+it('falls back to a square ratio for a picture stored without dimensions', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->withoutDimensions()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertPresent('#gallery img')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Expired party ─────────────────────────────────────────────────────────────
 
 it('shows hidden message for an expired party', function () {

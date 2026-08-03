@@ -21,7 +21,20 @@ class PictureFactory extends Factory
         return [
             'party_id' => Party::factory(),
             'thumbnail_path' => 'pictures/'.fake()->uuid().'_thumb.jpg',
+            'width' => 1600,
+            'height' => 1200,
         ];
+    }
+
+    /**
+     * A legacy picture stored before dimensions were recorded.
+     */
+    public function withoutDimensions(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'width' => null,
+            'height' => null,
+        ]);
     }
 
     /**
