@@ -1,6 +1,9 @@
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 
+/** Roughly the first row of the widest grid (lg:grid-cols-6) — loaded eagerly, the rest lazily. */
+const EAGER_PICTURES_COUNT = 6
+
 export type GalleryPicture = {
     id: number
     url: string
@@ -30,7 +33,9 @@ function GalleryItem({ picture, index, isSelected, onToggle, onOpen }: GalleryIt
                 alt=""
                 className="h-full w-full cursor-zoom-in object-cover transition-transform duration-200 group-hover:scale-105"
                 onClick={() => onOpen(index)}
-                loading="lazy"
+                loading={index < EAGER_PICTURES_COUNT ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchPriority={index < EAGER_PICTURES_COUNT ? 'high' : 'low'}
             />
 
             {isSelected && (

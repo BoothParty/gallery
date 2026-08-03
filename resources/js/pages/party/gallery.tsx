@@ -34,6 +34,9 @@ interface Props {
     hidePictures: boolean;
 }
 
+/** Roughly the first row on a desktop viewport — loaded eagerly, the rest lazily. */
+const EAGER_PICTURES_COUNT = 6;
+
 export default function Gallery({ party, pictures, page, pagesCount, hidePictures }: Props) {
     usePhotoSwipe('#gallery');
 
@@ -76,8 +79,16 @@ export default function Gallery({ party, pictures, page, pagesCount, hidePicture
                                     </span>
                                 </div>
                             ) : (
-                                pictures.map((picture) => (
-                                    <PictureCard key={picture.id} url={picture.url} thumbnailUrl={picture.thumbnail_url} id={picture.id} width={picture.width} height={picture.height} />
+                                pictures.map((picture, index) => (
+                                    <PictureCard
+                                        key={picture.id}
+                                        url={picture.url}
+                                        thumbnailUrl={picture.thumbnail_url}
+                                        id={picture.id}
+                                        width={picture.width}
+                                        height={picture.height}
+                                        priority={index < EAGER_PICTURES_COUNT}
+                                    />
                                 ))
                             )}
                         </div>

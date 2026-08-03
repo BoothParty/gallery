@@ -115,6 +115,20 @@ it('closes the upload dialog and clears the attached file when pressing escape',
     Queue::assertNothingPushed();
 });
 
+// ── Picture grid ──────────────────────────────────────────────────────────────
+
+it('lazy loads pictures below the first row', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->forParty($party)->count(10)->create();
+
+    $page = visit(route('party.dashboard.pictures', $party));
+
+    $page->assertCount('img[loading="eager"]', 6)
+        ->assertCount('img[loading="lazy"]', 4)
+        ->assertCount('img[decoding="async"]', 10)
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 it('has no smoke on the administration gallery page', function () {

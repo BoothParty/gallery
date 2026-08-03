@@ -56,6 +56,29 @@ it('displays pictures when the party has some', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('lazy loads pictures below the first row', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(10)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertCount('#gallery img[loading="eager"]', 6)
+        ->assertCount('#gallery img[loading="lazy"]', 4)
+        ->assertCount('#gallery img[decoding="async"]', 10)
+        ->assertNoJavaScriptErrors();
+});
+
+it('does not lazy load anything when a party has only a first row of pictures', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertCount('#gallery img[loading="eager"]', 3)
+        ->assertCount('#gallery img[loading="lazy"]', 0)
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Expired party ─────────────────────────────────────────────────────────────
 
 it('shows hidden message for an expired party', function () {
