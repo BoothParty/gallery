@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react"
 import { useForm } from "@inertiajs/react"
-import { WandSparklesIcon } from "lucide-react"
+import { DownloadIcon, WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout } from "@/components/admin-layout"
 import { DataTable } from "@/components/data-table"
@@ -166,10 +166,27 @@ export default function PartiesIndex({
         quickDeleteForm.delete(`/admin/parties/${routeKey}`)
     }
 
+    const posterHref = (routeKey: string): string =>
+        `/admin/parties/${encodeURIComponent(routeKey)}/poster`
+
+    const downloadPosterFromRow = (row: CrudRow) => {
+        const routeKey = resolvePartyRouteKey(row)
+
+        if (!routeKey) {
+            return
+        }
+
+        window.location.href = `/admin/parties/${routeKey}/poster`
+    }
+
     const rowActions: CrudRowAction[] = [
         {
             label: "Edit",
             onClick: openPartyEdit,
+        },
+        {
+            label: "Download poster",
+            onClick: downloadPosterFromRow,
         },
         {
             label: "Delete",
@@ -355,6 +372,14 @@ export default function PartiesIndex({
                         </div>
 
                         <DialogFooter>
+                            {selectedPartyRouteKey && (
+                                <Button asChild type="button" variant="outline" className="sm:mr-auto">
+                                    <a id="download-party-poster" href={posterHref(selectedPartyRouteKey)} download>
+                                        <DownloadIcon className="size-4" />
+                                        Download poster
+                                    </a>
+                                </Button>
+                            )}
                             <Button
                                 type="button"
                                 variant="outline"

@@ -9,9 +9,11 @@ use App\Http\Requests\UpdateAdminPartyRequest;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
+use App\Services\PartyPosterGenerator;
 use App\Services\PartySources\PartySourceManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -71,6 +73,20 @@ class PartyController extends Controller
         });
 
         return to_route('admin.parties.index');
+    }
+
+    /**
+     * Stream the party's printable poster: the template with its QR code and
+     * gallery address filled in.
+     */
+    public function poster(Party $party, PartyPosterGenerator $partyPosterGenerator): HttpResponse
+    {
+        $filename = Str::slug($party->name).'-affiche.png';
+
+        return response($partyPosterGenerator->generate($party), 200, [
+            'Content-Type' => 'image/png',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 
     public function edit(Party $party, AdminDashboardDataService $adminDashboardDataService): Response

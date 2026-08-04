@@ -144,6 +144,19 @@ it('clears the expiry date from the edit dialog', function () {
     expect($party->refresh()->expire_at)->toBeNull();
 });
 
+// ── Poster ────────────────────────────────────────────────────────────────────
+
+it('links to the poster download from the details dialog', function () {
+    $party = Party::factory()->create(['name' => 'poster-party']);
+
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->assertVisible('#download-party-poster')
+        ->assertAttribute('#download-party-poster', 'href', route('admin.parties.poster', $party, absolute: false))
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Edit page ─────────────────────────────────────────────────────────────────
 
 it('offers an expiry date field on the edit page', function () {

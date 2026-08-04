@@ -66,6 +66,23 @@ class Party extends Model
         return $this->expire_at !== null && $this->expire_at->isPast();
     }
 
+    /**
+     * Host the party's gallery is published under, the name being the
+     * subdomain part. This is what gets printed on the party's poster.
+     */
+    public function publicHost(): string
+    {
+        return $this->name.'.'.config('party.domain');
+    }
+
+    /**
+     * Absolute URL of the party's gallery, as encoded in the poster QR code.
+     */
+    public function publicUrl(): string
+    {
+        return 'https://'.$this->publicHost();
+    }
+
     public function getRouteKeyName(): string
     {
         return 'name';
