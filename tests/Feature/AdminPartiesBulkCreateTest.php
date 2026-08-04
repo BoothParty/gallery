@@ -2,8 +2,24 @@
 
 use App\Models\Party;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
+
+/**
+ * Seed the provider cache with an event no source would ever return, so a
+ * refreshed listing is told apart from a cached one.
+ */
+function cacheStaleSourceEvents(): void
+{
+    Cache::put('party-sources.upcoming-events', [[
+        'id' => 'stale:1',
+        'name' => 'Stale event',
+        'starts_at' => null,
+        'source_key' => 'stale',
+        'source_label' => 'Stale',
+    ]], now()->addMinutes(10));
+}
 
 it('exposes the party domain and defers the upcoming source events', function () {
     $this->get('/admin/parties')
@@ -18,9 +34,36 @@ it('exposes the party domain and defers the upcoming source events', function ()
                     ->has('id')
                     ->has('name')
                     ->has('starts_at')
-                    ->where('source_key', 'notion')
-                    ->where('source_label', 'Notion')
+                    ->has('already_imported')
+                    ->where('source_key', 'stub')
+                    ->where('source_label', 'Local stub')
                 )
+            )
+            ->etc()
+        );
+});
+
+it('serves the cached source events by default', function () {
+    cacheStaleSourceEvents();
+
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->loadDeferredProps(fn ($reload) => $reload
+                ->where('upcomingSourceEvents.0.id', 'stale:1')
+            )
+            ->etc()
+        );
+});
+
+it('bypasses the cache when the refresh flag is set', function () {
+    cacheStaleSourceEvents();
+
+    $this->get('/admin/parties?refresh=1')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->loadDeferredProps(fn ($reload) => $reload
+                ->where('upcomingSourceEvents.0.source_key', 'stub')
             )
             ->etc()
         );
@@ -29,13 +72,37 @@ it('exposes the party domain and defers the upcoming source events', function ()
 it('creates several parties at once from the selected events', function () {
     $this->post('/admin/parties/bulk', [
         'parties' => [
-            ['name' => 'domaine-des-tilleuls', 'source_event_id' => 'notion:stub-domaine-des-tilleuls'],
-            ['name' => 'chateau-de-la-motte', 'source_event_id' => 'notion:stub-chateau-de-la-motte'],
+            ['name' => 'domaine-des-tilleuls', 'source_event_id' => 'stub:stub-domaine-des-tilleuls'],
+            ['name' => 'chateau-de-la-motte', 'source_event_id' => 'stub:stub-chateau-de-la-motte'],
         ],
     ])->assertRedirect('/admin/parties');
 
     expect(Party::query()->pluck('name')->all())
         ->toBe(['domaine-des-tilleuls', 'chateau-de-la-motte']);
+});
+
+it('keeps track of the source event each party was created from', function () {
+    $this->post('/admin/parties/bulk', [
+        'parties' => [
+            ['name' => 'domaine-des-tilleuls', 'source_event_id' => 'stub:stub-domaine-des-tilleuls'],
+        ],
+    ])->assertRedirect('/admin/parties');
+
+    $party = Party::query()->where('name', 'domaine-des-tilleuls')->firstOrFail();
+
+    expect($party->source_key)->toBe('stub');
+    expect($party->source_event_id)->toBe('stub:stub-domaine-des-tilleuls');
+});
+
+it('leaves the source columns empty when no event is provided', function () {
+    $this->post('/admin/parties/bulk', [
+        'parties' => [['name' => 'manual-party']],
+    ])->assertRedirect('/admin/parties');
+
+    $party = Party::query()->where('name', 'manual-party')->firstOrFail();
+
+    expect($party->source_key)->toBeNull();
+    expect($party->source_event_id)->toBeNull();
 });
 
 it('requires at least one selected event', function () {

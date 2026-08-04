@@ -71,6 +71,30 @@ it('creates the selected parties from the bulk create dialog', function () {
     expect(Party::query()->where('name', 'browser-bulk-party')->exists())->toBeTrue();
 });
 
+it('reloads the upcoming events from the bulk create dialog', function () {
+    $page = visit(route('admin.parties.index'));
+
+    $page->click('Create from events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->click('#bulk-create-refresh')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->assertNoJavaScriptErrors();
+});
+
+it('marks the events already turned into a party', function () {
+    Party::factory()
+        ->fromSourceEvent('stub:stub-domaine-des-tilleuls')
+        ->create(['name' => 'mariage-domaine-des-tilleuls']);
+
+    $page = visit(route('admin.parties.index'));
+
+    $page->click('Create from events')
+        ->assertSee('Already created')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->attribute('#bulk-create-party-name-0', 'disabled'))->not->toBeNull();
+});
+
 // ── Edit dialog ───────────────────────────────────────────────────────────────
 
 it('prefills the expiry date in the edit dialog', function () {

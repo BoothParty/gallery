@@ -34,5 +34,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="NOTION_API_TOKEN" value=""/>
+        <env name="PARTY_SOURCE_STUB" value="true"/>
     </php>
 </phpunit>

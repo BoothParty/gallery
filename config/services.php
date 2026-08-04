@@ -28,6 +28,18 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'notion' => [
+        'token' => env('NOTION_API_TOKEN'),
+        'database_id' => env('NOTION_DATABASE_ID'),
+        'properties' => [
+            'name' => env('NOTION_PROPERTY_NAME', 'Name'),
+            'date' => env('NOTION_PROPERTY_DATE', 'Date'),
+            'status' => env('NOTION_PROPERTY_STATUS', 'Status'),
+            'options' => env('NOTION_PROPERTY_OPTIONS', 'Options'),
+        ],
+        'timeout' => (int) env('NOTION_TIMEOUT', 5),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

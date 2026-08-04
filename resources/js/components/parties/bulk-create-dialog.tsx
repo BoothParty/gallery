@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react"
-import { Deferred, useForm } from "@inertiajs/react"
+import { Deferred, router, useForm } from "@inertiajs/react"
+import { RefreshCwIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -34,6 +35,7 @@ export type PartySourceEvent = {
     starts_at: string | null
     source_key: string
     source_label: string
+    already_imported: boolean
 }
 
 interface PartyBulkCreateDialogProps {
@@ -87,6 +89,7 @@ export function PartyBulkCreateDialog({
     const events = upcomingSourceEvents ?? []
     const [selections, setSelections] = useState<Record<string, EventSelection>>({})
     const [submittedEventIds, setSubmittedEventIds] = useState<string[]>([])
+    const [isRefreshing, setRefreshing] = useState(false)
     const form = useForm<{ parties: { name: string; source_event_id: string }[] }>({
         parties: [],
     })
@@ -103,8 +106,10 @@ export function PartyBulkCreateDialog({
     }, [upcomingSourceEvents])
 
     const sourceLabels = new Set(events.map((event) => event.source_label))
-    const selectedEvents = events.filter((event) => selections[event.id]?.selected)
-    const allSelected = events.length > 0 && selectedEvents.length === events.length
+    const selectableEvents = events.filter((event) => !event.already_imported)
+    const selectedEvents = selectableEvents.filter((event) => selections[event.id]?.selected)
+    const allSelected =
+        selectableEvents.length > 0 && selectedEvents.length === selectableEvents.length
     const someSelected = selectedEvents.length > 0
 
     const toggleAll = () => {
@@ -113,12 +118,25 @@ export function PartyBulkCreateDialog({
                 events.map((event) => [
                     event.id,
                     {
-                        selected: !allSelected,
+                        selected: !allSelected && !event.already_imported,
                         name: current[event.id]?.name ?? toPartyName(event.name),
                     },
                 ]),
             ),
         )
+    }
+
+    /**
+     * Bypass the cached provider events; the deferred prop is reloaded on its own.
+     */
+    const refresh = () => {
+        router.reload({
+            only: ["upcomingSourceEvents"],
+            data: { refresh: 1 },
+            preserveUrl: true,
+            onStart: () => setRefreshing(true),
+            onFinish: () => setRefreshing(false),
+        })
     }
 
     const updateSelection = (eventId: string, changes: Partial<EventSelection>) => {
@@ -233,6 +251,7 @@ export function PartyBulkCreateDialog({
                                                                     selected: checked === true,
                                                                 })
                                                             }
+                                                            disabled={event.already_imported}
                                                             aria-label={`Select ${event.name}`}
                                                             id={`bulk-create-select-${index}`}
                                                         />
@@ -242,6 +261,11 @@ export function PartyBulkCreateDialog({
                                                             <span className="font-medium">
                                                                 {event.name}
                                                             </span>
+                                                            {event.already_imported && (
+                                                                <Badge variant="secondary">
+                                                                    Already created
+                                                                </Badge>
+                                                            )}
                                                             {sourceLabels.size > 1 && (
                                                                 <Badge variant="outline">
                                                                     {event.source_label}
@@ -268,6 +292,7 @@ export function PartyBulkCreateDialog({
                                                                 aria-invalid={
                                                                     error ? true : undefined
                                                                 }
+                                                                disabled={event.already_imported}
                                                             />
                                                             <InputGroupAddon align="inline-end">
                                                                 <InputGroupText>
@@ -298,6 +323,18 @@ export function PartyBulkCreateDialog({
                         <Button
                             type="button"
                             variant="outline"
+                            size="sm"
+                            className="my-auto me-auto"
+                            onClick={refresh}
+                            disabled={isRefreshing}
+                            id="bulk-create-refresh"
+                        >
+                            <RefreshCwIcon className={isRefreshing ? "animate-spin" : undefined} />
+                            {isRefreshing ? "Refreshing…" : "Refresh"}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
                             onClick={close}
                             disabled={form.processing}
                         >
@@ -307,9 +344,8 @@ export function PartyBulkCreateDialog({
                             type="submit"
                             disabled={form.processing || selectedEvents.length === 0}
                         >
-                            {`Create ${selectedEvents.length} part${
-                                selectedEvents.length === 1 ? "y" : "ies"
-                            }`}
+                            {`Create ${selectedEvents.length} part${selectedEvents.length === 1 ? "y" : "ies"
+                                }`}
                         </Button>
                     </DialogFooter>
                 </form>

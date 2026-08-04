@@ -1,0 +1,34 @@
+{
+    "object": "database",
+    "id": "11111111-2222-3333-4444-555555555555",
+    "created_time": "2026-01-05T10:00:00.000Z",
+    "last_edited_time": "2026-07-01T10:00:00.000Z",
+    "title": [
+        {
+            "type": "text",
+            "text": { "content": "Locations", "link": null },
+            "annotations": {
+                "bold": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false,
+                "code": false,
+                "color": "default"
+            },
+            "plain_text": "Locations",
+            "href": null
+        }
+    ],
+    "description": [],
+    "icon": null,
+    "cover": null,
+    "properties": {
+        "Name": { "id": "title", "name": "Name", "type": "title", "title": {} },
+        "Date": { "id": "date~", "name": "Date", "type": "date", "date": {} }
+    },
+    "parent": { "type": "workspace", "workspace": true },
+    "url": "https://www.notion.so/11111111222233334444555555555555",
+    "in_trash": false,
+    "archived": false,
+    "is_inline": false
+}

@@ -1,16 +1,20 @@
 <?php
 
-use App\Services\PartySources\NotionPartySource;
+use App\Models\Party;
 use App\Services\PartySources\PartySource;
 use App\Services\PartySources\PartySourceEvent;
 use App\Services\PartySources\PartySourceManager;
+use App\Services\PartySources\StubPartySource;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 it('resolves the sources enabled in the configuration', function () {
     $sources = app(PartySourceManager::class)->sources();
 
     expect($sources)->toHaveCount(1);
-    expect($sources[0])->toBeInstanceOf(NotionPartySource::class);
+    expect($sources[0])->toBeInstanceOf(StubPartySource::class);
 });
 
 it('rejects a source that does not implement the contract', function () {
@@ -31,15 +35,61 @@ it('drops past events and orders the upcoming ones by date', function () {
     expect($events[2]['starts_at'])->toBeNull();
 });
 
-it('exposes the notion stub events to the administration', function () {
+it('exposes the stub events to the administration', function () {
     $events = app(PartySourceManager::class)->upcomingEvents();
 
     expect($events)->not->toBeEmpty();
 
     foreach ($events as $event) {
-        expect($event['source_key'])->toBe('notion');
+        expect($event['source_key'])->toBe('stub');
         expect($event['name'])->toBeString()->not->toBeEmpty();
     }
+});
+
+it('queries the sources once and serves the cache afterwards', function () {
+    config()->set('party.sources', ['counting' => CountingPartySource::class]);
+    CountingPartySource::$calls = 0;
+
+    $manager = app(PartySourceManager::class);
+
+    $manager->upcomingEvents();
+    $manager->upcomingEvents();
+
+    expect(CountingPartySource::$calls)->toBe(1);
+});
+
+it('queries the sources again when asked for fresh events', function () {
+    config()->set('party.sources', ['counting' => CountingPartySource::class]);
+    CountingPartySource::$calls = 0;
+
+    $manager = app(PartySourceManager::class);
+
+    $manager->upcomingEvents();
+    $manager->upcomingEvents(fresh: true);
+
+    expect(CountingPartySource::$calls)->toBe(2);
+});
+
+it('flags the events already imported as a party', function () {
+    config()->set('party.sources', ['fake' => FakePartySource::class]);
+    Party::factory()->fromSourceEvent('fake:soon', 'fake')->create();
+
+    $events = collect(app(PartySourceManager::class)->upcomingEvents())->keyBy('id');
+
+    expect($events['fake:soon']['already_imported'])->toBeTrue();
+    expect($events['fake:later']['already_imported'])->toBeFalse();
+});
+
+it('flags a freshly imported event even though the events are cached', function () {
+    config()->set('party.sources', ['fake' => FakePartySource::class]);
+    $manager = app(PartySourceManager::class);
+
+    $manager->upcomingEvents();
+    Party::factory()->fromSourceEvent('fake:soon', 'fake')->create();
+
+    $events = collect($manager->upcomingEvents())->keyBy('id');
+
+    expect($events['fake:soon']['already_imported'])->toBeTrue();
 });
 
 class FakePartySource implements PartySource
@@ -61,6 +111,30 @@ class FakePartySource implements PartySource
             new PartySourceEvent(id: 'later', name: 'Later', startsAt: CarbonImmutable::now()->addMonth()),
             new PartySourceEvent(id: 'past', name: 'Past', startsAt: CarbonImmutable::now()->subDay()),
             new PartySourceEvent(id: 'soon', name: 'Soon', startsAt: CarbonImmutable::now()->addDay()),
+        ];
+    }
+}
+
+class CountingPartySource implements PartySource
+{
+    public static int $calls = 0;
+
+    public function key(): string
+    {
+        return 'counting';
+    }
+
+    public function label(): string
+    {
+        return 'Counting';
+    }
+
+    public function events(): array
+    {
+        self::$calls++;
+
+        return [
+            new PartySourceEvent(id: 'only', name: 'Only', startsAt: CarbonImmutable::now()->addWeek()),
         ];
     }
 }

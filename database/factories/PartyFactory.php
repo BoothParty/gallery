@@ -23,7 +23,17 @@ class PartyFactory extends Factory
             'name' => fake()->words(3, true),
             'user_id' => null,
             'expire_at' => null,
+            'source_key' => null,
+            'source_event_id' => null,
         ];
+    }
+
+    public function fromSourceEvent(string $sourceEventId, string $sourceKey = 'stub'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'source_key' => $sourceKey,
+            'source_event_id' => $sourceEventId,
+        ]);
     }
 
     public function withOwner(): static

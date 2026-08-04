@@ -36,6 +36,8 @@ class Party extends Model
         'name',
         'user_id',
         'expire_at',
+        'source_key',
+        'source_event_id',
     ];
 
     protected function casts(): array

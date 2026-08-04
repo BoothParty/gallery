@@ -11,22 +11,29 @@ use App\Models\User;
 use App\Services\AdminDashboardDataService;
 use App\Services\PartySources\PartySourceManager;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PartyController extends Controller
 {
     public function index(
+        Request $request,
         AdminDashboardDataService $adminDashboardDataService,
         PartySourceManager $partySourceManager,
     ): Response {
+        $refreshSources = $request->boolean('refresh');
+
         return Inertia::render('admin/parties/index', [
             ...$adminDashboardDataService->sidebarData(),
             'tableData' => $adminDashboardDataService->tableDataForResource('parties'),
             'users' => $this->userOptions(),
             'partyDomain' => config('party.domain'),
-            'upcomingSourceEvents' => Inertia::defer(fn (): array => $partySourceManager->upcomingEvents()),
+            'upcomingSourceEvents' => Inertia::defer(
+                fn (): array => $partySourceManager->upcomingEvents($refreshSources)
+            ),
             'editableParties' => Party::query()
                 ->get(['id', 'name', 'user_id', 'expire_at'])
                 ->map(fn (Party $party): array => [
@@ -53,7 +60,13 @@ class PartyController extends Controller
 
         DB::transaction(function () use ($parties): void {
             foreach ($parties as $party) {
-                Party::query()->create(['name' => $party['name']]);
+                $sourceEventId = $party['source_event_id'] ?? null;
+
+                Party::query()->create([
+                    'name' => $party['name'],
+                    'source_key' => $sourceEventId === null ? null : Str::before($sourceEventId, ':'),
+                    'source_event_id' => $sourceEventId,
+                ]);
             }
         });
 
