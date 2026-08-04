@@ -1,8 +1,13 @@
 import { FormEvent, useState } from "react"
 import { useForm } from "@inertiajs/react"
+import { WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout } from "@/components/admin-layout"
 import { DataTable } from "@/components/data-table"
+import {
+    PartyBulkCreateDialog,
+    type PartySourceEvent,
+} from "@/components/parties/bulk-create-dialog"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -48,6 +53,8 @@ type PageProps = {
         route_key: string
     }[]
     tableData: CrudTableData
+    partyDomain: string
+    upcomingSourceEvents?: PartySourceEvent[]
 }
 
 export default function PartiesIndex({
@@ -57,8 +64,11 @@ export default function PartiesIndex({
     users,
     editableParties,
     tableData,
+    partyDomain,
+    upcomingSourceEvents,
 }: PageProps) {
     const [isCreateModalOpen, setCreateModalOpen] = useState(false)
+    const [isBulkCreateModalOpen, setBulkCreateModalOpen] = useState(false)
     const [isDetailsModalOpen, setDetailsModalOpen] = useState(false)
     const [selectedPartyId, setSelectedPartyId] = useState<number | null>(null)
     const [selectedPartyRouteKey, setSelectedPartyRouteKey] = useState<string | null>(null)
@@ -178,10 +188,27 @@ export default function PartiesIndex({
                 onRowClick={openPartyDetails}
                 rowActions={rowActions}
                 toolbarAction={
-                    <Button size="sm" onClick={() => setCreateModalOpen(true)}>
-                        Create party
-                    </Button>
+                    <>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setBulkCreateModalOpen(true)}
+                        >
+                            <WandSparklesIcon className="size-4" />
+                            Create from events
+                        </Button>
+                        <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+                            Create party
+                        </Button>
+                    </>
                 }
+            />
+
+            <PartyBulkCreateDialog
+                open={isBulkCreateModalOpen}
+                onOpenChange={setBulkCreateModalOpen}
+                partyDomain={partyDomain}
+                upcomingSourceEvents={upcomingSourceEvents}
             />
 
             <Dialog open={isCreateModalOpen} onOpenChange={setCreateModalOpen}>

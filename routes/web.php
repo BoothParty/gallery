@@ -20,6 +20,7 @@ Route::prefix('{party}')->name('party.')->group(function () {
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::post('parties/bulk', [AdminPartyController::class, 'bulkStore'])->name('parties.bulk-store');
     Route::resource('parties', AdminPartyController::class)->except(['show', 'create']);
     Route::resource('users', AdminUserController::class)->except(['show']);
 });

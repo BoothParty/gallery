@@ -3,23 +3,30 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkStorePartiesRequest;
 use App\Http\Requests\StorePartyRequest;
 use App\Http\Requests\UpdateAdminPartyRequest;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
+use App\Services\PartySources\PartySourceManager;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PartyController extends Controller
 {
-    public function index(AdminDashboardDataService $adminDashboardDataService): Response
-    {
+    public function index(
+        AdminDashboardDataService $adminDashboardDataService,
+        PartySourceManager $partySourceManager,
+    ): Response {
         return Inertia::render('admin/parties/index', [
             ...$adminDashboardDataService->sidebarData(),
             'tableData' => $adminDashboardDataService->tableDataForResource('parties'),
             'users' => $this->userOptions(),
+            'partyDomain' => config('party.domain'),
+            'upcomingSourceEvents' => Inertia::defer(fn (): array => $partySourceManager->upcomingEvents()),
             'editableParties' => Party::query()
                 ->get(['id', 'name', 'user_id', 'expire_at'])
                 ->map(fn (Party $party): array => [
@@ -36,6 +43,19 @@ class PartyController extends Controller
     public function store(StorePartyRequest $request): RedirectResponse
     {
         Party::query()->create($request->validated());
+
+        return to_route('admin.parties.index');
+    }
+
+    public function bulkStore(BulkStorePartiesRequest $request): RedirectResponse
+    {
+        $parties = $request->validated('parties');
+
+        DB::transaction(function () use ($parties): void {
+            foreach ($parties as $party) {
+                Party::query()->create(['name' => $party['name']]);
+            }
+        });
 
         return to_route('admin.parties.index');
     }

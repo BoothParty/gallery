@@ -44,6 +44,33 @@ it('round-trips an expiry date entered in the create dialog', function () {
         ->assertNoJavaScriptErrors();
 });
 
+// ── Bulk create dialog ────────────────────────────────────────────────────────
+
+it('prefills party names from the upcoming events in the bulk create dialog', function () {
+    $page = visit(route('admin.parties.index'));
+
+    $page->click('Create from events')
+        ->assertSee('Create parties from upcoming events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->assertSee('.'.config('party.domain'))
+        ->assertNoJavaScriptErrors();
+
+    expect($page->value('#bulk-create-party-name-0'))->toMatch('/^[a-z0-9-]+$/');
+});
+
+it('creates the selected parties from the bulk create dialog', function () {
+    $page = visit(route('admin.parties.index'));
+
+    $page->click('Create from events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->click('#bulk-create-select-0')
+        ->fill('#bulk-create-party-name-0', 'browser-bulk-party')
+        ->click('Create 1 party')
+        ->assertNoJavaScriptErrors();
+
+    expect(Party::query()->where('name', 'browser-bulk-party')->exists())->toBeTrue();
+});
+
 // ── Edit dialog ───────────────────────────────────────────────────────────────
 
 it('prefills the expiry date in the edit dialog', function () {
