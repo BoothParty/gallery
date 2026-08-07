@@ -1,0 +1,128 @@
+service: boothparty-gallery
+image: boothparty/gallery
+
+servers:
+  web:
+    hosts:
+      - 10.117.19.66
+    env:
+      clear:
+        # Un seul rôle joue les migrations (cf. docker/entrypoint.sh).
+        RUN_MIGRATIONS: "true"
+  job:
+    hosts:
+      - 10.117.19.66
+    cmd: php artisan queue:work --tries=3 --max-time=3600
+    options:
+      # L'image FrankenPHP embarque un HEALTHCHECK sur le port admin de Caddy,
+      # que le worker ne démarre pas : le conteneur serait "unhealthy" en boucle.
+      no-healthcheck: true
+
+proxy:
+  app_port: 80
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 90
+
+# L'entrypoint attend MySQL, migre et génère les caches avant la 1re requête.
+deploy_timeout: 120
+
+registry:
+  server: ghcr.io
+  # Compte GitHub (pas l'organisation) dont le PAT a write:packages sur BoothParty.
+  username: BoothParty
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch:
+    - amd64
+
+env:
+  clear:
+    APP_NAME: BoothParty
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_URL: http://10.117.19.66
+
+    LOG_CHANNEL: stderr
+    LOG_LEVEL: warning
+
+    # Les accessoires sont joignables sous <service>-<accessoire> sur le réseau "kamal".
+    DB_CONNECTION: mysql
+    DB_HOST: boothparty-gallery-db
+    DB_PORT: "3306"
+    DB_DATABASE: boothparty
+    DB_USERNAME: boothparty
+
+    SESSION_DRIVER: database
+    CACHE_STORE: database
+    QUEUE_CONNECTION: database
+
+    FILESYSTEM_DISK: s3
+    AWS_DEFAULT_REGION: us-east-1
+    AWS_BUCKET: boothparty
+    AWS_USE_PATH_STYLE_ENDPOINT: "true"
+    AWS_ENDPOINT: http://boothparty-gallery-s3:9000
+    # URL par laquelle les navigateurs téléchargent les photos.
+    AWS_URL: http://10.117.19.66:9000/boothparty
+
+    NOTION_DATABASE_ID: a436d78a826a4ed783bbcf64fff0a2c7
+    NOTION_PROPERTY_NAME: Name
+    NOTION_PROPERTY_DATE: Date
+    NOTION_PROPERTY_STATUS: Status
+    NOTION_PROPERTY_OPTIONS: Options
+
+    PARTY_DOMAIN: boothparty.fr
+
+  secret:
+    - APP_KEY
+    - DB_PASSWORD
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - NOTION_API_TOKEN
+
+aliases:
+  shell: app exec --interactive --reuse "bash"
+  artisan: app exec --interactive --reuse "php artisan"
+
+asset_path: /app/public/build
+
+accessories:
+  db:
+    image: mysql:9.7.2
+    host: 10.117.19.66
+    port: "127.0.0.1:3306:3306"
+    env:
+      clear:
+        MYSQL_DATABASE: boothparty
+        MYSQL_USER: boothparty
+      secret:
+        - MYSQL_ROOT_PASSWORD
+        - MYSQL_PASSWORD
+    directories:
+      - data:/var/lib/mysql
+  s3:
+    image: rustfs/rustfs:latest
+    host: 10.117.19.66
+    options:
+      publish:
+        - "9000:9000"
+        - "127.0.0.1:9001:9001"
+    env:
+      clear:
+        RUSTFS_VOLUMES: /data
+        RUSTFS_ADDRESS: '0.0.0.0:9000'
+        RUSTFS_CONSOLE_ADDRESS: '0.0.0.0:9001'
+        RUSTFS_CONSOLE_ENABLE: 'true'
+        RUSTFS_EXTERNAL_ADDRESS: ':9000'
+        RUSTFS_CORS_ALLOWED_ORIGINS: '*'
+        RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: '*'
+      secret:
+        - RUSTFS_ACCESS_KEY
+        - RUSTFS_SECRET_KEY
+    # Volume nommé et non "directories:" : rustfs tourne en uid 10001, un dossier
+    # hôte créé par Kamal appartient à root → "Permission denied" au démarrage.
+    volumes:
+      - boothparty_gallery_s3_data:/data

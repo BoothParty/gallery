@@ -1,0 +1,14 @@
+# Destination "local" : VM Ubuntu lancée avec multipass.
+#
+#   multipass launch --name boothparty-vm --cpus 2 --memory 4G --disk 20G 24.04
+#   kamal setup -d local
+
+# Garder la forme longue : une liste d'IP remplacerait le Hash de deploy.yml
+# et le rôle web perdrait son bloc env (donc RUN_MIGRATIONS).
+servers:
+  web:
+    hosts:
+      - 10.117.19.66
+
+ssh:
+  user: root
