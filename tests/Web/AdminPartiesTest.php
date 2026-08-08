@@ -1,9 +1,14 @@
 <?php
 
 use App\Models\Party;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
 
 /*
  * The expiry input is a datetime-local field, so its value is the browser's

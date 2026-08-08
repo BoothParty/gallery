@@ -6,6 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
+
 it('renders administration users index with datatable data', function () {
     $user = User::factory()->create(['name' => 'Alice']);
     Party::factory()->count(2)->create(['user_id' => $user->id]);
@@ -15,9 +19,10 @@ it('renders administration users index with datatable data', function () {
         ->assertInertia(fn ($page) => $page
             ->component('admin/users/index')
             ->has('tableData.columns')
-            ->has('tableData.rows', 1)
-            ->where('tableData.rows.0.name', 'Alice')
-            ->where('tableData.rows.0.parties_count', 2)
+            ->has('tableData.rows', 2)
+            ->where('tableData.rows', fn ($rows) => collect($rows)
+                ->contains(fn (array $row) => $row['name'] === 'Alice' && $row['parties_count'] === 2)
+            )
         );
 });
 

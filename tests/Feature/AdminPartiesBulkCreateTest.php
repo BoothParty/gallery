@@ -1,10 +1,15 @@
 <?php
 
 use App\Models\Party;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
 
 /**
  * Seed the provider cache with an event no source would ever return, so a
