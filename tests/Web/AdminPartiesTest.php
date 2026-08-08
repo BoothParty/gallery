@@ -189,3 +189,15 @@ it('saves an expiry date from the edit page', function () {
     visit(route('admin.parties.edit', $party))
         ->assertValue('#expire_at', '2030-06-15T18:00');
 });
+
+// ── Authentication ────────────────────────────────────────────────────────────
+
+it('signs the user out from the sidebar menu', function () {
+    $page = visit(route('admin.parties.index'));
+
+    $page->click(auth()->user()->name)
+        ->click('Log out')
+        ->assertNoJavaScriptErrors();
+
+    $this->assertGuest();
+});
