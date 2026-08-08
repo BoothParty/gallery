@@ -28,8 +28,6 @@ export default function UsersCreate({
     const form = useForm({
         name: "",
         email: "",
-        password: "",
-        password_confirmation: "",
     })
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -63,27 +61,6 @@ export default function UsersCreate({
                         required
                     />
                     {form.errors.email && <p className="text-xs text-red-500">{form.errors.email}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        value={form.data.password}
-                        onChange={(event) => form.setData("password", event.target.value)}
-                        required
-                    />
-                    {form.errors.password && <p className="text-xs text-red-500">{form.errors.password}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password_confirmation">Confirm password</Label>
-                    <Input
-                        id="password_confirmation"
-                        type="password"
-                        value={form.data.password_confirmation}
-                        onChange={(event) => form.setData("password_confirmation", event.target.value)}
-                        required
-                    />
                 </div>
                 <div className="flex items-center gap-2">
                     <Button type="submit" disabled={form.processing}>Save user</Button>
