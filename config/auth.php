@@ -114,4 +114,27 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | OAuth Authentication
+    |--------------------------------------------------------------------------
+    |
+    | The administration panel is only reachable through an OAuth provider.
+    | "providers" whitelists the drivers the authentication routes accept, and
+    | "allowed_domains" lists the email domains allowed to be provisioned on
+    | their first successful login.
+    |
+    */
+
+    'oauth' => [
+        'default' => env('OAUTH_DEFAULT_PROVIDER', 'zoho'),
+
+        'providers' => ['zoho'],
+
+        'allowed_domains' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('OAUTH_ALLOWED_DOMAINS', 'boothparty.fr')),
+        ))),
+    ],
+
 ];

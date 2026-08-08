@@ -5,8 +5,11 @@ namespace App\Providers;
 use App\Services\CrudDiscoveryService;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Notion\Notion;
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Zoho\Provider as ZohoProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Event::listen(function (SocialiteWasCalled $event): void {
+            $event->extendSocialite('zoho', ZohoProvider::class);
+        });
     }
 }
