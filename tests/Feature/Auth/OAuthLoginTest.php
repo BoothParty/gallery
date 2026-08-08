@@ -84,7 +84,7 @@ it('forbids an account from a domain that is not allowed', function () {
 
     $this->get('/auth/zoho/callback')
         ->assertForbidden()
-        ->assertSee("Votre compte n'est pas autorisé à accéder à cette application.", escape: false);
+        ->assertSee("Votre compte n'est pas autorisé à accéder à cette application.");
 
     expect(User::query()->count())->toBe(0);
     $this->assertGuest();
@@ -123,7 +123,7 @@ it('logs the user out', function () {
 
     $this->actingAs($user)
         ->post('/logout')
-        ->assertRedirect(route('login'));
+        ->assertRedirect('/');
 
     $this->assertGuest();
 });

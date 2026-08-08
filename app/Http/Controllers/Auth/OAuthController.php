@@ -59,7 +59,7 @@ class OAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Inertia::location(route('login'));
+        return Inertia::location('/');
     }
 
     private function enabledProvider(string $provider): string
