@@ -7,6 +7,7 @@ use App\Services\OAuthUserResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Laravel\Socialite\Facades\Socialite;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,15 +38,23 @@ class OAuthController extends Controller
 
         try {
             $providerUser = Socialite::driver($provider)->user();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            report($e);
             abort(403, self::DENIED_MESSAGE);
         }
 
         $user = $this->oAuthUserResolver->resolve($providerUser);
 
-        abort_if($user === null, 403, self::DENIED_MESSAGE);
+        if ($user === null) {
+            Log::warning('OAuth login denied.', [
+                'provider' => $provider,
+                'email' => $providerUser->getEmail(),
+            ]);
 
-        Auth::login($user, remember: true);
+            abort(403, self::DENIED_MESSAGE);
+        }
+
+        Auth::login($user);
 
         $request->session()->regenerate();
 
