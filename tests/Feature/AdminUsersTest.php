@@ -6,6 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
+
 it('renders administration users index with datatable data', function () {
     $user = User::factory()->create(['name' => 'Alice']);
     Party::factory()->count(2)->create(['user_id' => $user->id]);
@@ -15,9 +19,10 @@ it('renders administration users index with datatable data', function () {
         ->assertInertia(fn ($page) => $page
             ->component('admin/users/index')
             ->has('tableData.columns')
-            ->has('tableData.rows', 1)
-            ->where('tableData.rows.0.name', 'Alice')
-            ->where('tableData.rows.0.parties_count', 2)
+            ->has('tableData.rows', 2)
+            ->where('tableData.rows', fn ($rows) => collect($rows)
+                ->contains(fn (array $row) => $row['name'] === 'Alice' && $row['parties_count'] === 2)
+            )
         );
 });
 
@@ -27,11 +32,23 @@ it('stores a new user from administration create page', function () {
     $this->post('/admin/users', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
     ])->assertRedirect('/admin/users');
 
     expect(User::query()->where('email', 'jane@example.com')->exists())->toBeTrue();
+});
+
+it('stores a user without any password column', function () {
+    Party::factory()->create();
+
+    $this->post('/admin/users', [
+        'name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+    ])->assertRedirect('/admin/users');
+
+    $user = User::query()->where('email', 'jane@example.com')->first();
+
+    expect($user)->not->toBeNull();
+    expect($user->getAttributes())->not->toHaveKey('password');
 });
 
 it('updates an existing user from administration edit page', function () {
@@ -44,8 +61,6 @@ it('updates an existing user from administration edit page', function () {
     $this->put("/admin/users/{$user->id}", [
         'name' => 'New Name',
         'email' => 'new@example.com',
-        'password' => '',
-        'password_confirmation' => '',
     ])->assertRedirect('/admin/users');
 
     $user->refresh();
@@ -88,23 +103,4 @@ it('renders administration edit user page', function () {
             ->where('user.name', 'Edit Me')
             ->where('user.email', 'edit@example.com')
         );
-});
-
-it('keeps existing password when updating a user with empty password', function () {
-    $user = User::factory()->create([
-        'password' => 'initial-password',
-    ]);
-
-    $originalHash = $user->password;
-
-    $this->put("/admin/users/{$user->id}", [
-        'name' => 'Same Password',
-        'email' => 'same-password@example.com',
-        'password' => '',
-        'password_confirmation' => '',
-    ])->assertRedirect('/admin/users');
-
-    $user->refresh();
-
-    expect($user->password)->toBe($originalHash);
 });

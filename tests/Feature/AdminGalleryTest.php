@@ -3,12 +3,17 @@
 use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
 
 it('renders administration gallery for a party', function () {
     $party = Party::factory()->create(['name' => 'My Party']);

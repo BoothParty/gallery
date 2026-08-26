@@ -1,9 +1,14 @@
 <?php
 
 use App\Models\Party;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
 
 /*
  * The expiry input is a datetime-local field, so its value is the browser's
@@ -183,4 +188,16 @@ it('saves an expiry date from the edit page', function () {
 
     visit(route('admin.parties.edit', $party))
         ->assertValue('#expire_at', '2030-06-15T18:00');
+});
+
+// ── Authentication ────────────────────────────────────────────────────────────
+
+it('signs the user out from the sidebar menu', function () {
+    $page = visit(route('admin.parties.index'));
+
+    $page->click(auth()->user()->name)
+        ->click('Log out')
+        ->assertNoJavaScriptErrors();
+
+    $this->assertGuest();
 });

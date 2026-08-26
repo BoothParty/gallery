@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Party;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -27,13 +28,19 @@ it('serves the party stylesheet without shadcn on the public gallery', function 
 it('serves the shadcn stylesheet on the party dashboard', function () {
     $party = Party::factory()->create();
 
-    $content = $this->get(route('party.dashboard.show', $party))->assertOk()->getContent();
+    $content = $this->actingAs(User::factory()->create())
+        ->get(route('party.dashboard.show', $party))
+        ->assertOk()
+        ->getContent();
 
     expect($content)->toMatch(stylesheetPattern('admin'));
 });
 
 it('serves the shadcn stylesheet on the admin panel', function () {
-    $content = $this->get(route('admin.parties.index'))->assertOk()->getContent();
+    $content = $this->actingAs(User::factory()->create())
+        ->get(route('admin.parties.index'))
+        ->assertOk()
+        ->getContent();
 
     expect($content)->toMatch(stylesheetPattern('admin'));
 });

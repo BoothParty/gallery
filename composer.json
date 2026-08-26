@@ -16,9 +16,11 @@
         "intervention/image": "^3.11",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
+        "laravel/socialite": "^5.29",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.0",
-        "mariosimao/notion-sdk-php": "^1.17"
+        "mariosimao/notion-sdk-php": "^1.17",
+        "socialiteproviders/zoho": "^4.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

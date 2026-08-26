@@ -34,8 +34,6 @@ export default function UsersEdit({
     const form = useForm({
         name: user.name,
         email: user.email,
-        password: "",
-        password_confirmation: "",
     })
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -69,25 +67,6 @@ export default function UsersEdit({
                         required
                     />
                     {form.errors.email && <p className="text-xs text-red-500">{form.errors.email}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password">New password (optional)</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        value={form.data.password}
-                        onChange={(event) => form.setData("password", event.target.value)}
-                    />
-                    {form.errors.password && <p className="text-xs text-red-500">{form.errors.password}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password_confirmation">Confirm new password</Label>
-                    <Input
-                        id="password_confirmation"
-                        type="password"
-                        value={form.data.password_confirmation}
-                        onChange={(event) => form.setData("password_confirmation", event.target.value)}
-                    />
                 </div>
                 <div className="flex items-center gap-2">
                     <Button type="submit" disabled={form.processing}>Update user</Button>

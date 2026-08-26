@@ -6,6 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
+
 it('renders administration parties index with datatable data', function () {
     $party = Party::factory()->create(['name' => 'My Party']);
     $owner = User::factory()->create(['name' => 'Owner User']);
@@ -16,10 +20,10 @@ it('renders administration parties index with datatable data', function () {
             ->component('admin/parties/index')
             ->has('tableData.columns')
             ->has('tableData.rows', 1)
-            ->has('users', 1)
             ->has('editableParties', 1)
-            ->where('users.0.id', $owner->id)
-            ->where('users.0.name', $owner->name)
+            ->where('users', fn ($users) => collect($users)
+                ->contains(fn (array $user) => $user['id'] === $owner->id && $user['name'] === $owner->name)
+            )
             ->where('editableParties.0.id', $party->id)
             ->where('editableParties.0.name', $party->name)
             ->where('editableParties.0.route_key', $party->name)
@@ -78,7 +82,9 @@ it('renders administration party edit page', function () {
             ->where('party.id', $party->id)
             ->where('party.name', 'Editable Party')
             ->where('party.user_id', $owner->id)
-            ->has('users', 1)
+            ->where('users', fn ($users) => collect($users)
+                ->contains(fn (array $user) => $user['id'] === $owner->id)
+            )
         );
 });
 

@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -26,7 +25,6 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
         ];
     }
 
@@ -36,8 +34,6 @@ class StoreUserRequest extends FormRequest
             'name.required' => 'Please provide a name.',
             'email.required' => 'Please provide an email address.',
             'email.unique' => 'This email is already used by another user.',
-            'password.required' => 'Please provide a password.',
-            'password.confirmed' => 'Password confirmation does not match.',
         ];
     }
 }

@@ -93,7 +93,7 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{ name: "Admin", email: "admin@example.com", avatar: "" }} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

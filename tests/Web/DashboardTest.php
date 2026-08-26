@@ -1,9 +1,14 @@
 <?php
 
 use App\Models\Party;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
 
 it('can search parties in the switcher including expired ones', function () {
     $currentParty = Party::factory()->create(['name' => 'Alpha Party']);

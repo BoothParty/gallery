@@ -44,15 +44,11 @@ export default function UsersIndex({
     const form = useForm({
         name: "",
         email: "",
-        password: "",
-        password_confirmation: "",
     })
 
     const editForm = useForm({
         name: "",
         email: "",
-        password: "",
-        password_confirmation: "",
     })
 
     const quickDeleteForm = useForm({})
@@ -84,8 +80,6 @@ export default function UsersIndex({
         editForm.setData({
             name: typeof row.name === "string" ? row.name : "",
             email: typeof row.email === "string" ? row.email : "",
-            password: "",
-            password_confirmation: "",
         })
         setDetailsModalOpen(true)
     }
@@ -99,7 +93,7 @@ export default function UsersIndex({
 
         editForm.put(`/admin/users/${selectedUserId}`, {
             onSuccess: () => {
-                editForm.reset("password", "password_confirmation")
+                editForm.reset()
                 setDetailsModalOpen(false)
             },
         })
@@ -199,29 +193,6 @@ export default function UsersIndex({
                             {form.errors.email && <p className="text-xs text-red-500">{form.errors.email}</p>}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="create-user-password">Password</Label>
-                            <Input
-                                id="create-user-password"
-                                type="password"
-                                value={form.data.password}
-                                onChange={(event) => form.setData("password", event.target.value)}
-                                required
-                            />
-                            {form.errors.password && <p className="text-xs text-red-500">{form.errors.password}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="create-user-password-confirmation">Confirm password</Label>
-                            <Input
-                                id="create-user-password-confirmation"
-                                type="password"
-                                value={form.data.password_confirmation}
-                                onChange={(event) => form.setData("password_confirmation", event.target.value)}
-                                required
-                            />
-                        </div>
-
                         <DialogFooter>
                             <Button
                                 type="button"
@@ -279,27 +250,6 @@ export default function UsersIndex({
                                 required
                             />
                             {editForm.errors.email && <p className="text-xs text-red-500">{editForm.errors.email}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-user-password">New password (optional)</Label>
-                            <Input
-                                id="edit-user-password"
-                                type="password"
-                                value={editForm.data.password}
-                                onChange={(event) => editForm.setData("password", event.target.value)}
-                            />
-                            {editForm.errors.password && <p className="text-xs text-red-500">{editForm.errors.password}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-user-password-confirmation">Confirm new password</Label>
-                            <Input
-                                id="edit-user-password-confirmation"
-                                type="password"
-                                value={editForm.data.password_confirmation}
-                                onChange={(event) => editForm.setData("password_confirmation", event.target.value)}
-                            />
                         </div>
 
                         <DialogFooter>
