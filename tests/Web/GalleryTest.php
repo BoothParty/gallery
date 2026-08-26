@@ -133,62 +133,40 @@ it('does not show pictures for an expired party', function () {
         ->assertNoJavaScriptErrors();
 });
 
-// ── Pagination ────────────────────────────────────────────────────────────────
+// ── Chargement au scroll ──────────────────────────────────────────────────────
 
-it('displays pagination controls', function () {
+it('no longer displays pagination controls', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(5)->for($party)->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('Page précédente')
-        ->assertSee('Page suivante')
-        ->assertSee('1 / 1 pages')
+    $page->assertDontSee('Page suivante')
+        ->assertDontSee('Page précédente')
         ->assertNoJavaScriptErrors();
 });
 
-it('shows correct page count with many pictures', function () {
+it('loads only the first batch of pictures on arrival', function () {
     $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
+    Picture::factory()->count(30)->for($party)->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('1 / 2 pages')
+    $page->assertCount('#gallery img', 24)
         ->assertNoJavaScriptErrors();
 });
 
-it('navigates to the next page when clicking next button', function () {
+it('loads a second batch of pictures when scrolling to the bottom', function () {
     $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
+    Picture::factory()->count(30)->for($party)->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('1 / 2 pages')
-        ->click('Page suivante')
-        ->assertQueryStringHas('page', '2')
-        ->assertSee('2 / 2 pages')
-        ->assertNoJavaScriptErrors();
-});
+    $page->assertCount('#gallery img', 24)
+        ->script('window.scrollTo(0, document.body.scrollHeight)');
 
-it('disables previous button on the first page', function () {
-    $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
-
-    $page = visit(route('party.gallery', $party));
-
-    $page->assertButtonDisabled('Page précédente')
-        ->assertButtonEnabled('Page suivante')
-        ->assertNoJavaScriptErrors();
-});
-
-it('disables next button on the last page', function () {
-    $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
-
-    $page = visit(route('party.gallery', ['party' => $party, 'page' => 2]));
-
-    $page->assertButtonDisabled('Page suivante')
-        ->assertButtonEnabled('Page précédente')
+    $page->wait(2)
+        ->assertCount('#gallery img', 30)
         ->assertNoJavaScriptErrors();
 });
 

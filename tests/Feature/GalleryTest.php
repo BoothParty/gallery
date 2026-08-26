@@ -5,6 +5,7 @@ use App\Models\Party;
 use App\Models\Picture;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 uses(RefreshDatabase::class);
 
@@ -41,7 +42,7 @@ it('passes the pictures collection to the gallery page', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('party/gallery')
-            ->has('pictures', 3)
+            ->has('pictures.data', 3)
         );
 });
 
@@ -53,7 +54,7 @@ it('passes picture url in the pictures collection', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('party/gallery')
-            ->has('pictures.0.url')
+            ->has('pictures.data.0.url')
         );
 });
 
@@ -64,7 +65,7 @@ it('passes a null thumbnail url when the thumbnail is not generated yet', functi
     $this->get(route('party.gallery', $party))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('pictures.0.thumbnail_url', null)
+            ->where('pictures.data.0.thumbnail_url', null)
         );
 });
 
@@ -75,7 +76,7 @@ it('passes an empty pictures collection when the party has no pictures', functio
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('party/gallery')
-            ->has('pictures', 0)
+            ->has('pictures.data', 0)
         );
 });
 
@@ -111,60 +112,55 @@ it('passes hidePictures as false when expire_at is null', function () {
         );
 });
 
-// ── Pagination props ──────────────────────────────────────────────────────────
+// ── Infinite scroll props ─────────────────────────────────────────────────────
 
-it('passes page and pagesCount props', function () {
+it('paginates pictures at 24 per page', function () {
     $party = Party::factory()->create();
+    Picture::factory()->count(25)->for($party)->create();
 
     $this->get(route('party.gallery', $party))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('page', 1)
-            ->where('pagesCount', 1)
-        );
-});
-
-it('paginates pictures at 30 per page', function () {
-    $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
-
-    $this->get(route('party.gallery', $party))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->has('pictures', PartyController::PICTURES_PER_PAGE)
-            ->where('page', 1)
-            ->where('pagesCount', 2)
+            ->has('pictures.data', PartyController::PICTURES_PER_PAGE)
         );
 });
 
 it('returns the correct page when page query param is provided', function () {
     $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
+    Picture::factory()->count(25)->for($party)->create();
 
     $this->get(route('party.gallery', ['party' => $party, 'page' => 2]))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('pictures', 1)
-            ->where('page', 2)
-            ->where('pagesCount', 2)
+            ->has('pictures.data', 1)
         );
 });
 
-it('serves only the picture props on a partial reload', function () {
+it('advertises the pictures prop as a scroll prop', function () {
     $party = Party::factory()->create();
-    Picture::factory()->count(31)->for($party)->create();
+    Picture::factory()->count(25)->for($party)->create();
+
+    $this->get(route('party.gallery', $party));
+
+    $payload = $this->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => Inertia::getVersion()])
+        ->get(route('party.gallery', $party))
+        ->assertOk()
+        ->json();
+
+    expect($payload['scrollProps']['pictures']['nextPage'])->toBe(2)
+        ->and($payload['scrollProps']['pictures']['currentPage'])->toBe(1)
+        ->and($payload['mergeProps'])->toContain('pictures.data');
+});
+
+it('returns an empty pictures collection for an expired party', function () {
+    $party = Party::factory()->expired()->create();
+    Picture::factory()->count(3)->for($party)->create();
 
     $this->get(route('party.gallery', $party))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('party')
-            ->reloadOnly(['pictures', 'page', 'pagesCount'], fn ($reload) => $reload
-                ->has('pictures')
-                ->has('page')
-                ->has('pagesCount')
-                ->missing('party')
-                ->missing('hidePictures')
-            )
+            ->has('pictures.data', 0)
+            ->where('hidePictures', true)
         );
 });
 
@@ -176,7 +172,7 @@ it('returns pictures in latest-first order', function () {
     $this->get(route('party.gallery', $party))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('pictures.0.id', $newest->id)
-            ->where('pictures.1.id', $oldest->id)
+            ->where('pictures.data.0.id', $newest->id)
+            ->where('pictures.data.1.id', $oldest->id)
         );
 });

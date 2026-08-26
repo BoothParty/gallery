@@ -5,37 +5,40 @@ namespace App\Http\Controllers;
 use App\Http\Resources\PartyResource;
 use App\Http\Resources\PictureResource;
 use App\Models\Party;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PartyController extends Controller
 {
-    public const PICTURES_PER_PAGE = 30;
+    public const PICTURES_PER_PAGE = 24;
 
     public function show(Party $party): Response
     {
         $hidePictures = $party->hidePictures();
 
-        if ($hidePictures) {
-            $pictures = [];
-            $page = 1;
-            $pagesCount = 1;
-        } else {
-            $picturesPaginator = $party->pictures()
-                ->latest()
-                ->paginate(self::PICTURES_PER_PAGE);
-
-            $pictures = PictureResource::collection($picturesPaginator)->resolve();
-            $page = $picturesPaginator->currentPage();
-            $pagesCount = max(1, $picturesPaginator->lastPage());
-        }
-
         return Inertia::render('party/gallery', [
             'party' => PartyResource::make($party)->resolve(),
-            'pictures' => $pictures,
-            'page' => $page,
-            'pagesCount' => $pagesCount,
+            'pictures' => Inertia::scroll(
+                fn () => PictureResource::collection($this->pictures($party, $hidePictures))
+            ),
             'hidePictures' => $hidePictures,
         ]);
+    }
+
+    /**
+     * An expired party resolves to an empty paginator rather than to a
+     * different prop shape, so the page always receives the same structure.
+     */
+    private function pictures(Party $party, bool $hidePictures): LengthAwarePaginatorContract
+    {
+        if ($hidePictures) {
+            return new LengthAwarePaginator([], 0, self::PICTURES_PER_PAGE);
+        }
+
+        return $party->pictures()
+            ->latest()
+            ->paginate(self::PICTURES_PER_PAGE);
     }
 }
