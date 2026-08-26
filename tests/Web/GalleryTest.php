@@ -192,27 +192,48 @@ it('disables next button on the last page', function () {
         ->assertNoJavaScriptErrors();
 });
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+// ── Chrome de page ────────────────────────────────────────────────────────────
 
-it('displays the navigation bar', function () {
+it('no longer displays the old navigation bar', function () {
     $party = Party::factory()->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('Accueil')
-        ->assertSee('Photos')
+    $page->assertDontSee('Accueil')
         ->assertNoJavaScriptErrors();
 });
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 
-it('displays the footer', function () {
+it('displays the footer call to action', function () {
     $party = Party::factory()->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('Louez moi')
-        ->assertSee('Mentions légales')
+    $page->assertSee('Une borne photo pour votre événement')
+        ->assertSee('Demander un devis')
+        ->assertNoJavaScriptErrors();
+});
+
+it('displays the footer legal links', function () {
+    $party = Party::factory()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertSee('Mentions légales')
+        ->assertSee('Confidentialité')
+        ->assertSee('SIRET')
+        ->assertNoJavaScriptErrors();
+});
+
+it('displays the footer social links', function () {
+    $party = Party::factory()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertPresent('footer a[aria-label="Instagram"]')
+        ->assertPresent('footer a[aria-label="Facebook"]')
+        ->assertPresent('footer a[aria-label="LinkedIn"]')
         ->assertNoJavaScriptErrors();
 });
 

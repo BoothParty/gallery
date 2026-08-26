@@ -71,7 +71,7 @@ export default function Gallery({ party, pictures, page, pagesCount, hidePicture
     }, [page, pagesCount, party.name]);
 
     return (
-        <PartyLayout partyId={party.id}>
+        <PartyLayout>
             <Head title={party.name} />
 
             <section id="photobooth" className="container mx-auto flex grow flex-col items-center justify-between pt-28">
