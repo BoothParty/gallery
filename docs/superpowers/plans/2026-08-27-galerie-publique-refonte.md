@@ -1302,7 +1302,7 @@ it('reveals the selection controls when entering select mode', function () {
     $page->click('Sélectionner')
         ->assertSee('Tout sélectionner')
         ->assertSee('Annuler')
-        ->assertDontSee('Sélectionner le mode')
+        ->assertPresent('[data-selection-count]')
         ->assertNoJavaScriptErrors();
 });
 
