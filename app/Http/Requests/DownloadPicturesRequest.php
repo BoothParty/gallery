@@ -3,9 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Models\Party;
+use App\Rules\PictureBelongsToParty;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class DownloadPicturesRequest extends FormRequest
 {
@@ -36,7 +36,8 @@ class DownloadPicturesRequest extends FormRequest
             'ids.*' => [
                 'required',
                 'integer',
-                Rule::exists('pictures', 'id')->where('party_id', $party->id),
+                'distinct',
+                new PictureBelongsToParty($party),
             ],
         ];
     }

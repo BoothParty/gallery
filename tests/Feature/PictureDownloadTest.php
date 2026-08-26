@@ -52,7 +52,8 @@ it('writes one entry per selected picture', function () {
 
     $archive = $response->streamedContent();
 
-    expect(substr_count($archive, 'photo-'))->toBeGreaterThanOrEqual(2);
+    expect($archive)->toContain('photo-1.jpg')
+        ->and($archive)->toContain('photo-2.jpg');
 });
 
 it('downloads a single selected picture as a zip too', function () {

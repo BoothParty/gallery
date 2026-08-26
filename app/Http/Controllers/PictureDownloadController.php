@@ -9,6 +9,7 @@ use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipStream\CompressionMethod;
 use ZipStream\ZipStream;
 
 class PictureDownloadController extends Controller
@@ -34,10 +35,21 @@ class PictureDownloadController extends Controller
 
         return response()->stream(
             function () use ($pictures, $filename): void {
+                /**
+                 * A large selection can take longer to stream than php-fpm's
+                 * default max_execution_time, which would otherwise truncate
+                 * the archive mid-flight without surfacing an error.
+                 */
+                set_time_limit(0);
+
                 /** @var FilesystemAdapter $disk */
                 $disk = Storage::disk('s3');
 
-                $zip = new ZipStream(outputName: $filename, sendHttpHeaders: false);
+                $zip = new ZipStream(
+                    outputName: $filename,
+                    sendHttpHeaders: false,
+                    defaultCompressionMethod: CompressionMethod::STORE,
+                );
 
                 $pictures->values()->each(function (Picture $picture, int $index) use ($zip, $disk): void {
                     $stream = $disk->readStream($picture->path);
@@ -47,6 +59,8 @@ class PictureDownloadController extends Controller
                     }
 
                     $zip->addFileFromStream('photo-'.($index + 1).'.jpg', $stream);
+
+                    fclose($stream);
                 });
 
                 $zip->finish();
