@@ -218,9 +218,9 @@ déjà couverte par `tests/Feature/AssetBundlingTest.php`.
 valeurs par défaut en dur. Le branchement futur sur de vraies colonnes se
 limitera à alimenter ces props depuis `PartyController`.
 
-La couverture utilise la photo la plus récente de la party lorsqu'il en existe
-une, et retombe sur le motif rayé de la maquette sinon, pour qu'une galerie
-vide n'affiche pas un hero vide.
+La couverture est le motif rayé de la maquette dans tous les cas, y compris
+lorsque la party a des photos : aucune photo de la galerie n'est promue en
+couverture tant que les colonnes de métadonnées n'existent pas.
 
 ## États limites
 
