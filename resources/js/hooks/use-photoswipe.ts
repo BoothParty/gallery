@@ -6,8 +6,12 @@ import 'photoswipe/style.css';
  * Initialize a PhotoSwipe lightbox on the given gallery selector.
  * Includes a custom download button in the lightbox UI.
  */
-export default function usePhotoSwipe(gallerySelector: string) {
+export default function usePhotoSwipe(gallerySelector: string, enabled: boolean = true) {
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         const lightbox = new PhotoSwipeLightbox({
             gallery: gallerySelector,
             children: 'a',
@@ -43,5 +47,5 @@ export default function usePhotoSwipe(gallerySelector: string) {
         return () => {
             lightbox.destroy();
         };
-    }, [gallerySelector]);
+    }, [gallerySelector, enabled]);
 }

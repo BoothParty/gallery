@@ -234,6 +234,74 @@ it('displays the footer social links', function () {
         ->assertNoJavaScriptErrors();
 });
 
+// ── Mode sélection ────────────────────────────────────────────────────────────
+
+it('reveals the selection controls when entering select mode', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->assertSee('Tout sélectionner')
+        ->assertSee('Annuler')
+        ->assertPresent('[data-selection-count]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('counts a picture picked in select mode', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('#gallery a:first-child')
+        ->assertSeeIn('[data-selection-count]', '1')
+        ->assertSee('photo sélectionnée')
+        ->assertNoJavaScriptErrors();
+});
+
+it('selects every loaded picture at once', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->assertSeeIn('[data-selection-count]', '3')
+        ->assertSee('photos sélectionnées')
+        ->assertSee('Tout désélectionner')
+        ->assertNoJavaScriptErrors();
+});
+
+it('clears the selection when cancelling', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->click('Annuler')
+        ->assertSee('Sélectionner')
+        ->assertDontSee('Tout désélectionner')
+        ->assertNoJavaScriptErrors();
+});
+
+it('does not open the lightbox while in select mode', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('#gallery a:first-child')
+        ->assertNotPresent('.pswp')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── No smoke ──────────────────────────────────────────────────────────────────
 
 it('has no smoke on the gallery page', function () {
