@@ -1,9 +1,7 @@
 import { useCallback } from 'react';
 
-const STACK_ELEMENT_ID = 'selection-stack';
-const THUMBNAIL_SIZE = 46;
-const THUMBNAIL_OFFSET = 15;
-const MAX_STACK_THUMBNAILS = 4;
+import { MAX_STACK_THUMBNAILS, STACK_ELEMENT_ID, THUMBNAIL_OFFSET, THUMBNAIL_SIZE } from '@/components/party/selection-stack';
+
 const FLIGHT_DURATION = 620;
 
 function prefersReducedMotion(): boolean {

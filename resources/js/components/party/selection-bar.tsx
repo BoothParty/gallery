@@ -1,10 +1,9 @@
+import { MAX_STACK_THUMBNAILS, STACK_ELEMENT_ID, THUMBNAIL_OFFSET, THUMBNAIL_SIZE } from '@/components/party/selection-stack';
+
 export interface StackPhoto {
     id: number;
     thumbnailUrl: string | null;
 }
-
-const THUMBNAIL_OFFSET = 15;
-const MAX_STACK_THUMBNAILS = 4;
 
 interface SelectionBarProps {
     open: boolean;
@@ -15,7 +14,7 @@ interface SelectionBarProps {
 
 export default function SelectionBar({ open, count, stack, onDownload }: SelectionBarProps) {
     const shown = stack.slice(-MAX_STACK_THUMBNAILS);
-    const stackWidth = shown.length === 0 ? 0 : (shown.length - 1) * THUMBNAIL_OFFSET + 46;
+    const stackWidth = shown.length === 0 ? 0 : (shown.length - 1) * THUMBNAIL_OFFSET + THUMBNAIL_SIZE;
 
     return (
         <div
@@ -26,7 +25,7 @@ export default function SelectionBar({ open, count, stack, onDownload }: Selecti
             <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] sm:px-8 lg:px-12">
                 <div className="flex min-w-0 items-center gap-3.5">
                     <div
-                        id="selection-stack"
+                        id={STACK_ELEMENT_ID}
                         className="relative h-[46px] flex-none transition-[width] duration-300"
                         style={{ width: `${stackWidth}px` }}
                     >
