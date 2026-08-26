@@ -174,7 +174,11 @@ un `fetch` suivi d'un `URL.createObjectURL` : ce dernier bufferise l'intégralit
 du ZIP en mémoire dans l'onglet, ce qui est intenable pour trois cents photos,
 alors que la soumission native laisse le navigateur consommer le flux.
 
-Les erreurs de validation remontent dans le toast via les `errors` d'Inertia.
+Le plafond est aussi connu du client, via une prop `maxDownloadPictures` : au-delà,
+la soumission est annulée et le toast affiche le message, sans aller au serveur.
+La validation serveur reste l'autorité mais ne se déclenche en pratique que sur
+une requête forgée — auquel cas le redirect d'erreur provoque un rechargement
+complet de la page, ce qui est acceptable pour ce cas-là.
 
 ## Configuration
 
