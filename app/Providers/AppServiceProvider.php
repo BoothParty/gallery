@@ -48,10 +48,16 @@ class AppServiceProvider extends ServiceProvider
          * other. Scoping the key to the party as well as the IP means the
          * quota is per event, not just per network.
          *
-         * The route model binding has not run yet at this point in the
-         * middleware pipeline (`ThrottleRequests` is prioritised ahead of
-         * `SubstituteBindings`), so the route parameter is still the raw
-         * party name rather than a resolved `Party` instance.
+         * The key uses the raw route parameter rather than a resolved
+         * `Party` model because `ThrottleRequests` is prioritised ahead of
+         * `SubstituteBindings` in the middleware pipeline, so the binding has
+         * not run yet. That raw value is exactly the identifier the public
+         * gallery is addressed by: `Party::getRouteKeyName()` returns
+         * `name`. The throttling bucket is therefore just as discriminating
+         * as the public URL itself — no more, no less. The schema does not
+         * enforce uniqueness on `parties.name`, so two homonymous parties
+         * would share a bucket; they would already be indistinguishable at
+         * the URL, which is a pre-existing, separate concern.
          */
         RateLimiter::for('party-download', function (Request $request): Limit {
             $party = (string) $request->route('party');
