@@ -118,10 +118,30 @@ it('throttles repeated download requests', function () {
     $picture = Picture::factory()->for($party)->create();
     storePictureFiles(collect([$picture]));
 
-    foreach (range(1, 10) as $ignored) {
+    foreach (range(1, 30) as $ignored) {
         $this->post(route('party.download', $party), ['ids' => [$picture->id]])->assertOk();
     }
 
     $this->post(route('party.download', $party), ['ids' => [$picture->id]])
         ->assertStatus(429);
+});
+
+it('keeps download throttling independent per party', function () {
+    $throttledParty = Party::factory()->create();
+    $throttledPicture = Picture::factory()->for($throttledParty)->create();
+    storePictureFiles(collect([$throttledPicture]));
+
+    foreach (range(1, 30) as $ignored) {
+        $this->post(route('party.download', $throttledParty), ['ids' => [$throttledPicture->id]])->assertOk();
+    }
+
+    $this->post(route('party.download', $throttledParty), ['ids' => [$throttledPicture->id]])
+        ->assertStatus(429);
+
+    $otherParty = Party::factory()->create();
+    $otherPicture = Picture::factory()->for($otherParty)->create();
+    storePictureFiles(collect([$otherPicture]));
+
+    $this->post(route('party.download', $otherParty), ['ids' => [$otherPicture->id]])
+        ->assertOk();
 });

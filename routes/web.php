@@ -18,7 +18,7 @@ Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])->name('gallery');
 
     Route::post('download', PictureDownloadController::class)
-        ->middleware('throttle:10,1')
+        ->middleware('throttle:party-download')
         ->name('download');
 
     Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
