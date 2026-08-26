@@ -13,13 +13,14 @@ beforeEach(function () {
 
 // ── Page rendering ────────────────────────────────────────────────────────────
 
-it('renders the gallery page with the party name', function () {
+it('renders the gallery hero', function () {
     $party = Party::factory()->create(['name' => 'Mariage de Paul']);
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('PhotoBooth')
-        ->assertSee('Retrouves ici toutes les photos prises avec le photobooth')
+    $page->assertPresent('[data-gallery-hero]')
+        ->assertSee('Camille & Antoine')
+        ->assertSee('Domaine des Ormes')
         ->assertNoJavaScriptErrors();
 });
 
@@ -32,6 +33,16 @@ it('displays the party name in the page title', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('displays the loaded picture count in the sticky bar', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertSeeIn('[data-gallery-count]', '3')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 it('shows empty state message when party has no pictures', function () {
@@ -40,6 +51,15 @@ it('shows empty state message when party has no pictures', function () {
     $page = visit(route('party.gallery', $party));
 
     $page->assertSee("Il n'y a pas encore de photos ici")
+        ->assertNoJavaScriptErrors();
+});
+
+it('hides the select button when the party has no pictures', function () {
+    $party = Party::factory()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertDontSee('Sélectionner')
         ->assertNoJavaScriptErrors();
 });
 
@@ -68,17 +88,6 @@ it('lazy loads pictures below the first row', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('does not lazy load anything when a party has only a first row of pictures', function () {
-    $party = Party::factory()->create();
-    Picture::factory()->count(3)->for($party)->create();
-
-    $page = visit(route('party.gallery', $party));
-
-    $page->assertCount('#gallery img[loading="eager"]', 3)
-        ->assertCount('#gallery img[loading="lazy"]', 0)
-        ->assertNoJavaScriptErrors();
-});
-
 it('shows a placeholder instead of the original when the thumbnail is missing', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->withoutThumbnail()->create();
@@ -90,24 +99,34 @@ it('shows a placeholder instead of the original when the thumbnail is missing', 
         ->assertNoJavaScriptErrors();
 });
 
-it('reserves the picture height up front to avoid layout shift', function () {
+it('links each tile to the full resolution picture for the lightbox', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertAttribute('#gallery img', 'width', '1600')
-        ->assertAttribute('#gallery img', 'height', '1200')
+    $page->assertAttribute('#gallery a', 'data-pswp-width', '1600')
+        ->assertAttribute('#gallery a', 'data-pswp-height', '1200')
         ->assertNoJavaScriptErrors();
 });
 
-it('falls back to a square ratio for a picture stored without dimensions', function () {
+it('renders a tile for a picture stored without dimensions', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->withoutDimensions()->create();
 
     $page = visit(route('party.gallery', $party));
 
     $page->assertPresent('#gallery img')
+        ->assertNoJavaScriptErrors();
+});
+
+it('shows the end of gallery marker once every picture is loaded', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertSee('Fin de la galerie')
         ->assertNoJavaScriptErrors();
 });
 
