@@ -24,6 +24,8 @@ class PartyController extends Controller
                 fn () => PictureResource::collection($this->pictures($party, $hidePictures))
             ),
             'hidePictures' => $hidePictures,
+            'maxDownloadPictures' => (int) config('party.download.max_pictures'),
+            'csrfToken' => csrf_token(),
         ]);
     }
 

@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import GalleryGrid from '@/components/party/gallery-grid';
 import GalleryHero from '@/components/party/gallery-hero';
@@ -39,6 +39,8 @@ interface Props {
     party: Party;
     pictures: PicturePage;
     hidePictures: boolean;
+    maxDownloadPictures: number;
+    csrfToken: string;
 }
 
 const EXPIRED_MESSAGE =
@@ -49,7 +51,7 @@ const EMPTY_MESSAGE =
 
 const TOAST_DURATION = 2200;
 
-export default function Gallery({ party, pictures, hidePictures }: Props) {
+export default function Gallery({ party, pictures, hidePictures, maxDownloadPictures, csrfToken }: Props) {
     const photos = hidePictures ? [] : pictures.data;
     const isEmpty = photos.length === 0;
 
@@ -91,13 +93,23 @@ export default function Gallery({ party, pictures, hidePictures }: Props) {
         [photos, selection.landedIds],
     );
 
-    const onDownload = useCallback(() => {
-        flash(
-            selection.count === 1
-                ? 'Téléchargement de 1 photo'
-                : `Préparation du ZIP · ${selection.count} photos`,
-        );
-    }, [flash, selection.count]);
+    const onSubmitDownload = useCallback(
+        (event: FormEvent<HTMLFormElement>) => {
+            if (selection.count > maxDownloadPictures) {
+                event.preventDefault();
+                flash(`Sélection trop grande : ${maxDownloadPictures} photos maximum par téléchargement`);
+
+                return;
+            }
+
+            flash(
+                selection.count === 1
+                    ? 'Téléchargement de 1 photo'
+                    : `Préparation du ZIP · ${selection.count} photos`,
+            );
+        },
+        [flash, maxDownloadPictures, selection.count],
+    );
 
     return (
         <PartyLayout>
@@ -134,7 +146,15 @@ export default function Gallery({ party, pictures, hidePictures }: Props) {
                 )}
             </main>
 
-            <SelectionBar open={selection.selectMode} count={selection.count} stack={stack} onDownload={onDownload} />
+            <SelectionBar
+                open={selection.selectMode}
+                count={selection.count}
+                stack={stack}
+                selectedIds={selection.selectedIds}
+                action={`/${encodeURIComponent(party.name)}/download`}
+                csrfToken={csrfToken}
+                onSubmit={onSubmitDownload}
+            />
 
             <GalleryToast message={toast} raised={selection.selectMode} />
         </PartyLayout>

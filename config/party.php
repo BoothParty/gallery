@@ -50,4 +50,19 @@ return [
 
     'cache_ttl' => (int) env('PARTY_SOURCES_CACHE_TTL', 600),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Selection Download
+    |--------------------------------------------------------------------------
+    |
+    | Ceiling on how many pictures a visitor may bundle into a single ZIP. The
+    | archive is streamed rather than buffered, so the limit exists to protect
+    | the S3 egress and the visitor's own connection, not the server memory.
+    |
+    */
+
+    'download' => [
+        'max_pictures' => (int) env('PARTY_DOWNLOAD_MAX_PICTURES', 300),
+    ],
+
 ];

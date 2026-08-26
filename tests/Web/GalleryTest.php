@@ -302,6 +302,35 @@ it('does not open the lightbox while in select mode', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('posts the selection to the download route', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->assertAttribute('[data-download-form]', 'method', 'post')
+        ->assertAttributeContains('[data-download-form]', 'action', '/download')
+        ->assertCount('[data-download-form] input[name="ids[]"]', 3)
+        ->assertNoJavaScriptErrors();
+});
+
+it('refuses to submit a selection above the cap', function () {
+    config()->set('party.download.max_pictures', 2);
+
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->click('Télécharger le ZIP')
+        ->assertSeeIn('[data-gallery-toast]', 'maximum')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── No smoke ──────────────────────────────────────────────────────────────────
 
 it('has no smoke on the gallery page', function () {

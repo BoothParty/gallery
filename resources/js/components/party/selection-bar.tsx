@@ -1,3 +1,5 @@
+import type { FormEvent } from 'react';
+
 import { MAX_STACK_THUMBNAILS, STACK_ELEMENT_ID, THUMBNAIL_OFFSET, THUMBNAIL_SIZE } from '@/components/party/selection-stack';
 
 export interface StackPhoto {
@@ -9,10 +11,13 @@ interface SelectionBarProps {
     open: boolean;
     count: number;
     stack: StackPhoto[];
-    onDownload: () => void;
+    selectedIds: number[];
+    action: string;
+    csrfToken: string;
+    onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-export default function SelectionBar({ open, count, stack, onDownload }: SelectionBarProps) {
+export default function SelectionBar({ open, count, stack, selectedIds, action, csrfToken, onSubmit }: SelectionBarProps) {
     const shown = stack.slice(-MAX_STACK_THUMBNAILS);
     const stackWidth = shown.length === 0 ? 0 : (shown.length - 1) * THUMBNAIL_OFFSET + THUMBNAIL_SIZE;
 
@@ -22,7 +27,17 @@ export default function SelectionBar({ open, count, stack, onDownload }: Selecti
             style={{ transform: open ? 'translateY(0)' : 'translateY(110%)' }}
             aria-hidden={!open}
         >
-            <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] sm:px-8 lg:px-12">
+            <form
+                data-download-form
+                method="post"
+                action={action}
+                onSubmit={onSubmit}
+                className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] sm:px-8 lg:px-12"
+            >
+                <input type="hidden" name="_token" value={csrfToken} />
+                {selectedIds.map((id) => (
+                    <input key={id} type="hidden" name="ids[]" value={id} />
+                ))}
                 <div className="flex min-w-0 items-center gap-3.5">
                     <div
                         id={STACK_ELEMENT_ID}
@@ -52,14 +67,13 @@ export default function SelectionBar({ open, count, stack, onDownload }: Selecti
                 </div>
 
                 <button
-                    type="button"
-                    onClick={onDownload}
+                    type="submit"
                     disabled={count === 0}
                     className="rounded-full px-5 py-3 text-sm whitespace-nowrap transition-opacity disabled:cursor-default enabled:cursor-pointer enabled:bg-cream enabled:text-ink disabled:bg-cream/20 disabled:text-cream/50"
                 >
                     {count > 1 ? 'Télécharger le ZIP' : 'Télécharger'}
                 </button>
-            </div>
+            </form>
         </div>
     );
 }

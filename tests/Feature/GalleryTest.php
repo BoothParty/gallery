@@ -176,3 +176,18 @@ it('returns pictures in latest-first order', function () {
             ->where('pictures.data.1.id', $oldest->id)
         );
 });
+
+// ── Download props ────────────────────────────────────────────────────────────
+
+it('passes the download cap to the gallery page', function () {
+    config()->set('party.download.max_pictures', 42);
+
+    $party = Party::factory()->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('maxDownloadPictures', 42)
+            ->has('csrfToken')
+        );
+});

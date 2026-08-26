@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
+use App\Http\Controllers\PictureDownloadController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', [OAuthController::class, 'redirect'])->name('login');
@@ -15,6 +16,10 @@ Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
 
 Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])->name('gallery');
+
+    Route::post('download', PictureDownloadController::class)
+        ->middleware('throttle:10,1')
+        ->name('download');
 
     Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
         Route::get('/', [PartyDashboardController::class, 'show'])->name('show');
