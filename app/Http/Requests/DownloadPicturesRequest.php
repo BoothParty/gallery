@@ -41,4 +41,21 @@ class DownloadPicturesRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * Get custom error messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'ids.required' => 'Please select at least one picture.',
+            'ids.min' => 'Please select at least one picture.',
+            'ids.max' => 'You cannot download more than :max pictures at once.',
+            'ids.*.required' => 'Please select at least one picture.',
+            'ids.*.integer' => 'The selected picture is invalid.',
+            'ids.*.distinct' => 'The same picture was selected twice.',
+        ];
+    }
 }

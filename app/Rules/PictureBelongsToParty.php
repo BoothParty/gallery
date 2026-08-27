@@ -23,7 +23,7 @@ class PictureBelongsToParty implements ValidationRule
         $this->partyPictureIds ??= $this->party->pictures()->pluck('id')->all();
 
         if (! in_array((int) $value, $this->partyPictureIds, true)) {
-            $fail('La photo sélectionnée est introuvable.');
+            $fail('The selected picture could not be found.');
         }
     }
 }
