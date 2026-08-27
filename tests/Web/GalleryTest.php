@@ -33,13 +33,13 @@ it('displays the party name in the page title', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('displays the loaded picture count in the sticky bar', function () {
+it('displays the total picture count in the sticky bar, not the loaded batch size', function () {
     $party = Party::factory()->create();
-    Picture::factory()->count(3)->for($party)->create();
+    Picture::factory()->count(30)->for($party)->create();
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSeeIn('[data-gallery-count]', '3')
+    $page->assertSeeIn('[data-gallery-count]', '30')
         ->assertNoJavaScriptErrors();
 });
 
@@ -189,6 +189,24 @@ it('loads a second batch of pictures when scrolling to the bottom', function () 
         ->assertNoJavaScriptErrors();
 });
 
+it('shows the loading skeletons while the next batch is fetched', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(30)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertCount('#gallery img', 24)
+        ->assertNotPresent('[data-gallery-skeletons]')
+        ->script('window.scrollTo(0, document.body.scrollHeight)');
+
+    $page->assertPresent('[data-gallery-skeletons]');
+
+    $page->wait(2)
+        ->assertCount('#gallery img', 30)
+        ->assertNotPresent('[data-gallery-skeletons]')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Chrome de page ────────────────────────────────────────────────────────────
 
 it('no longer displays the old navigation bar', function () {
@@ -328,6 +346,59 @@ it('refuses to submit a selection above the cap', function () {
         ->click('Tout sélectionner')
         ->click('Télécharger le ZIP')
         ->assertSeeIn('[data-gallery-toast]', 'maximum')
+        ->assertNoJavaScriptErrors();
+});
+
+// ── Sélection et défilement ────────────────────────────────────────────────────
+
+it('keeps the current selection when a new batch arrives while selecting', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(30)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('#gallery a:first-child')
+        ->assertSeeIn('[data-selection-count]', '1')
+        ->script('window.scrollTo(0, document.body.scrollHeight)');
+
+    $page->wait(2)
+        ->assertCount('#gallery img', 30)
+        ->assertSeeIn('[data-selection-count]', '1')
+        ->assertSee('Tout sélectionner')
+        ->assertNoJavaScriptErrors();
+});
+
+it('selects all 30 pictures, not just the first batch, after a new batch arrives', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(30)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertCount('#gallery img', 24)
+        ->script('window.scrollTo(0, document.body.scrollHeight)');
+
+    $page->wait(2)
+        ->assertCount('#gallery img', 30)
+        ->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->assertSeeIn('[data-selection-count]', '30')
+        ->assertNoJavaScriptErrors();
+});
+
+it('still opens the lightbox correctly after a new batch arrives', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(30)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertCount('#gallery img', 24)
+        ->script('window.scrollTo(0, document.body.scrollHeight)');
+
+    $page->wait(2)
+        ->assertCount('#gallery img', 30)
+        ->click('#gallery a:first-child')
+        ->assertPresent('.pswp')
         ->assertNoJavaScriptErrors();
 });
 
