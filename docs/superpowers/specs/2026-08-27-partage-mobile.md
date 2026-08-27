@@ -27,35 +27,37 @@ Dans le périmètre :
 - une route publique qui sert une photo depuis l'origine de l'application ;
 - un hook de partage détenant le téléchargement, l'appel à `navigator.share`
   et le traitement des erreurs ;
-- la bascule du bouton de la barre de sélection entre partage et ZIP.
+- la bascule interne du bouton de téléchargement entre partage natif et ZIP.
 
 Hors périmètre :
 
 - le partage d'un lien de sélection ;
 - des dérivées web des photos, entre la miniature de 480 px et l'original ;
+- un plafond propre au partage : celui du ZIP sert aux deux chemins ;
 - toute modification du chemin ZIP, qui reste le repli.
 
 ## Décision d'affichage
 
-La barre de sélection garde un seul bouton. Il passe en mode partage quand
-deux conditions sont réunies :
+La barre de sélection garde un seul bouton, dont le libellé reste
+« Télécharger » en toutes circonstances. Le partage natif est un détail
+d'implémentation : l'invité demande ses photos, le navigateur les lui donne du
+mieux qu'il peut.
 
-- le navigateur répond vrai à `navigator.canShare({ files })` appelé avec un
-  `File` image témoin ;
-- la sélection compte au plus `maxSharePictures` photos.
+Deux chemins derrière ce libellé :
 
-Sinon, le bouton reste le `submit` du formulaire ZIP actuel. L'invité mobile ne
-voit donc jamais de ZIP tant qu'il reste sous le plafond, et l'invité de bureau
-ne voit jamais de partage.
+- si le navigateur répond vrai à `navigator.canShare({ files })` appelé avec un
+  `File` image témoin, le bouton télécharge les photos sélectionnées puis ouvre
+  la feuille de partage native ;
+- sinon, le bouton reste le `submit` du formulaire ZIP actuel, inchangé.
+
+Aucun plafond propre au partage n'est introduit. Le seul plafond reste
+`maxDownloadPictures`, déjà connu du client et déjà signalé par le toast
+existant ; il s'applique désormais aux deux chemins.
 
 Le support est détecté à chaque ouverture du mode sélection plutôt qu'une fois
 pour toutes au montage de la page. Cela reste correct — le support d'un
 navigateur ne change pas en cours de session — et rend le chemin testable au
 navigateur, où le stub de `navigator.share` s'installe après le chargement.
-
-Le mode est une fonction pure de l'état : désélectionner une photo pour
-repasser sous le plafond ramène le bouton à « Partager », sans mémoire d'un
-basculement précédent.
 
 ## Route de fichier
 
@@ -103,7 +105,14 @@ fichiers téléchargés sur le total.
 `share()` télécharge les photos par la route de fichier, trois requêtes en
 parallèle au plus pour ne pas saturer un lien mobile, construit un `File` par
 photo — nommé `photo-1.jpg`, `photo-2.jpg`, de type `image/jpeg` — puis appelle
-`navigator.share({ files })`.
+`navigator.share({ files })`. Les fichiers sont relâchés dès que la feuille de
+partage s'est fermée, pour que l'onglet ne garde pas la sélection en mémoire
+pendant que l'invité continue de parcourir la galerie.
+
+Une grande sélection tient donc en mémoire le temps du partage : trois cents
+originaux représentent plus d'un gigaoctet, et un onglet mobile peut se
+recharger sans message dans ces conditions. C'est le compromis assumé du
+partage natif ; le plafond `maxDownloadPictures` reste la seule borne.
 
 L'appel ne porte ni `title` ni `url` : sur iOS, joindre une URL pousse
 plusieurs cibles de partage à envoyer le lien à la place des images.
@@ -118,7 +127,7 @@ trois cas d'échec :
 | Cas | Traitement |
 | --- | --- |
 | `AbortError` | L'invité a fermé la feuille de partage : retour à `idle`, aucun message |
-| Autre échec de `share`, fichiers en mémoire | Passage en `ready` ; le bouton devient « Partager maintenant » et rejoue `navigator.share` sur le geste suivant, qui porte une activation fraîche |
+| Autre échec de `share`, fichiers en mémoire | Passage en `ready` ; le bouton devient « Télécharger à nouveau » et rejoue `navigator.share` sur le geste suivant, qui porte une activation fraîche |
 | Échec d'un téléchargement | Toast d'erreur, retour à `idle`, la sélection reste intacte |
 
 Le cas nominal reste donc à un seul geste, et l'activation perdue se rattrape
@@ -136,39 +145,34 @@ l'état :
 
 | État | Libellé | Bouton |
 | --- | --- | --- |
-| `idle` | « Partager » | actif |
-| `preparing` | « Préparation… 3/12 » | désactivé |
-| `ready` | « Partager maintenant » | actif |
-| `sharing` | « Partager » | désactivé |
+| `idle` | « Télécharger » | actif |
+| `preparing` | « Téléchargement… 3/12 », barre de progression | désactivé |
+| `ready` | « Télécharger à nouveau » | actif |
+| `sharing` | « Télécharger » | désactivé |
 
-En mode téléchargement, rien ne change : « Télécharger le ZIP », ou
-« Télécharger » pour une photo seule.
+La barre de progression est un filet plein sous le libellé, à la largeur du
+rapport entre les fichiers reçus et le total.
+
+En mode ZIP, rien ne change : « Télécharger le ZIP », ou « Télécharger » pour
+une photo seule.
 
 `gallery.tsx` calcule le mode, branche le hook sur son toast existant et passe
 les props. Aucun autre composant de la galerie n'est touché.
 
 ## Configuration
 
-`config/party.php` gagne un bloc voisin de `download` :
-
-```php
-'share' => [
-    'max_pictures' => (int) env('PARTY_SHARE_MAX_PICTURES', 20),
-],
-```
-
-Le partage charge chaque photo entière en mémoire avant d'ouvrir la feuille :
-vingt originaux de quatre mégaoctets tiennent, une sélection de trois cents
-ferait tomber l'onglet. La page reçoit la valeur en prop `maxSharePictures`.
+Aucune nouvelle clé de configuration. Le partage réutilise
+`party.download.max_pictures`, déjà exposé à la page en prop
+`maxDownloadPictures`.
 
 ## États limites
 
 | État | Rendu |
 | --- | --- |
-| Navigateur sans Web Share de niveau 2 | Bouton ZIP, comportement actuel |
-| Sélection au-dessus du plafond | Bouton ZIP, et un toast explique que la sélection est trop grande pour un partage |
+| Navigateur sans Web Share de niveau 2 | Chemin ZIP, comportement actuel |
+| Sélection au-dessus de `maxDownloadPictures` | Toast existant, aucun téléchargement, sur les deux chemins |
 | Feuille de partage fermée par l'invité | Barre inchangée, sélection conservée |
-| Activation expirée | Bouton « Partager maintenant », sans nouveau téléchargement |
+| Activation expirée | Bouton « Télécharger à nouveau », sans nouveau téléchargement |
 | Photo indisponible sur S3 | Toast d'erreur, aucun partage partiel |
 | Galerie expirée | La route de fichier renvoie 403, comme le ZIP |
 
@@ -184,10 +188,10 @@ ferait tomber l'onglet. La page reçoit la valeur en prop `maxSharePictures`.
 
 `tests/Web/GalleryTest.php` — étendu :
 
-- sans support du partage, le bouton affiche toujours « Télécharger le ZIP » ;
+- sans support du partage, le bouton soumet toujours le formulaire ZIP ;
 - avec un `navigator.share` simulé qui enregistre son argument sur `window`,
-  « Partager » lui transmet autant de fichiers que de photos sélectionnées ;
-- au-dessus du plafond, le bouton retombe sur le ZIP ;
+  le bouton lui transmet autant de fichiers que de photos sélectionnées ;
+- la barre de progression apparaît pendant le téléchargement ;
 - un `AbortError` simulé laisse la barre utilisable et la sélection intacte.
 
 Les tests navigateur de `tests/Web/` sont connus pour flotter sur des délais de
@@ -196,8 +200,7 @@ Les tests navigateur de `tests/Web/` sont connus pour flotter sur des délais de
 ## Séquence de mise en œuvre
 
 1. Route de fichier, contrôleur, limiteur, tests de fonctionnalité.
-2. Configuration et prop `maxSharePictures`.
-3. Hook `use-photo-share`.
-4. Bascule du bouton dans la barre de sélection et branchement dans
+2. Hook `use-photo-share`.
+3. Bascule du bouton dans la barre de sélection et branchement dans
    `gallery.tsx`.
-5. Tests navigateur, `pint`, suite complète.
+4. Tests navigateur, `pint`, suite complète.
