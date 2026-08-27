@@ -82,7 +82,7 @@ it('creates several parties at once from the selected events', function () {
         ],
     ])->assertRedirect('/admin/parties');
 
-    expect(Party::query()->pluck('name')->all())
+    expect(Party::query()->orderBy('id')->pluck('name')->all())
         ->toBe(['domaine-des-tilleuls', 'chateau-de-la-motte']);
 });
 

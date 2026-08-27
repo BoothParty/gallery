@@ -54,10 +54,8 @@ class AppServiceProvider extends ServiceProvider
          * not run yet. That raw value is exactly the identifier the public
          * gallery is addressed by: `Party::getRouteKeyName()` returns
          * `name`. The throttling bucket is therefore just as discriminating
-         * as the public URL itself — no more, no less. The schema does not
-         * enforce uniqueness on `parties.name`, so two homonymous parties
-         * would share a bucket; they would already be indistinguishable at
-         * the URL, which is a pre-existing, separate concern.
+         * as the public URL itself — no more, no less. `parties.name` now
+         * carries a unique index, so no two parties can share a bucket.
          */
         RateLimiter::for('party-download', function (Request $request): Limit {
             $party = (string) $request->route('party');

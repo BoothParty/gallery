@@ -180,3 +180,25 @@ it('deletes a party from administration', function () {
 
     expect(Party::query()->whereKey($party->id)->exists())->toBeFalse();
 });
+
+it('rejects creating a party whose name is already taken', function () {
+    Party::factory()->create(['name' => 'Taken Name']);
+
+    $this->post('/admin/parties', [
+        'name' => 'Taken Name',
+    ])->assertSessionHasErrors('name');
+
+    expect(Party::query()->where('name', 'Taken Name')->count())->toBe(1);
+});
+
+it('accepts updating a party with its own unchanged name', function () {
+    $party = Party::factory()->create(['name' => 'Unchanged Name']);
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => 'Unchanged Name',
+        'user_id' => null,
+    ])->assertRedirect('/admin/parties')
+        ->assertSessionDoesntHaveErrors();
+
+    expect($party->refresh()->name)->toBe('Unchanged Name');
+});
