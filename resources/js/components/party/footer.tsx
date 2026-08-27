@@ -50,9 +50,14 @@ export default function Footer() {
         <footer className="border-t border-line">
             <div className="mx-auto flex max-w-[1440px] flex-col gap-7 px-5 pt-9 pb-8 sm:px-10 lg:px-16 lg:pt-14 lg:pb-12">
                 <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
-                    <a href="https://boothparty.fr/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">
-                        <img src="/icon.png" alt="BoothParty" className="h-10 w-10" />
-                        <span className="font-serif text-2xl text-ink">BoothParty</span>
+                    <a href="https://boothparty.fr/" target="_blank" rel="noreferrer" className="inline-flex items-center">
+                        <img
+                            src="/logo.svg"
+                            alt="BoothParty"
+                            width="233"
+                            height="87"
+                            className="h-10 w-auto opacity-90 transition-opacity hover:opacity-100"
+                        />
                     </a>
 
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
