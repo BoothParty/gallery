@@ -48,7 +48,7 @@
 - Consumes: `App\Models\Party::hidePictures()`, `App\Models\Picture::$path`, le disque `s3`.
 - Produces: la route nommée `party.pictures.show`, d'URL `/{party}/pictures/{picture}`, qui répond 200 avec les octets JPEG de la photo, 404 si la photo n'appartient pas à la party ou si le fichier manque, 403 si la galerie est expirée, 429 au-delà de 240 requêtes par minute et par couple IP + party.
 
-- [ ] **Step 1: Écrire les tests de la route**
+- [x] **Step 1: Écrire les tests de la route**
 
 Créer `tests/Feature/PictureFileTest.php` :
 
@@ -152,12 +152,12 @@ it('keeps picture throttling independent per party', function () {
 
 Note : `phpunit.xml` fixe `CACHE_STORE=array`, donc le compteur du limiteur repart de zéro à chaque test ; les deux tests de limitation ne se polluent pas.
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail artisan test --compact tests/Feature/PictureFileTest.php`
 Expected: FAIL — `Route [party.pictures.show] not defined.`
 
-- [ ] **Step 3: Déclarer le limiteur**
+- [x] **Step 3: Déclarer le limiteur**
 
 Dans `app/Providers/AppServiceProvider.php`, sous la déclaration existante de `party-download` :
 
@@ -174,7 +174,7 @@ Dans `app/Providers/AppServiceProvider.php`, sous la déclaration existante de `
         });
 ```
 
-- [ ] **Step 4: Écrire le contrôleur**
+- [x] **Step 4: Écrire le contrôleur**
 
 Créer `app/Http/Controllers/PictureFileController.php` :
 
@@ -225,7 +225,7 @@ class PictureFileController extends Controller
 }
 ```
 
-- [ ] **Step 5: Déclarer la route**
+- [x] **Step 5: Déclarer la route**
 
 Dans `routes/web.php`, ajouter l'import puis la route dans le groupe `{party}`, juste après `party.download` :
 
@@ -242,12 +242,12 @@ use App\Http\Controllers\PictureFileController;
 
 `scopeBindings()` résout la photo via `$party->pictures()`, de sorte qu'un identifiant appartenant à une autre soirée donne 404 sans vérification manuelle.
 
-- [ ] **Step 6: Lancer les tests pour les voir passer**
+- [x] **Step 6: Lancer les tests pour les voir passer**
 
 Run: `vendor/bin/sail artisan test --compact tests/Feature/PictureFileTest.php`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 7: Formater et commiter**
+- [x] **Step 7: Formater et commiter**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -280,7 +280,7 @@ export interface PhotoShare {
 export default function usePhotoShare(onError: (message: string) => void): PhotoShare
 ```
 
-- [ ] **Step 1: Écrire le hook**
+- [x] **Step 1: Écrire le hook**
 
 Créer `resources/js/hooks/use-photo-share.ts` :
 
@@ -441,14 +441,14 @@ export default function usePhotoShare(onError: (message: string) => void): Photo
 }
 ```
 
-- [ ] **Step 2: Vérifier que le projet compile**
+- [x] **Step 2: Vérifier que le projet compile**
 
 Run: `vendor/bin/sail npm run build`
 Expected: build réussi, aucune erreur TypeScript.
 
 Le hook n'a encore aucun appelant : rien d'autre n'est observable à ce stade, la couverture arrive avec la tâche 3, qui le branche et le teste au navigateur.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/js/hooks/use-photo-share.ts
@@ -468,7 +468,7 @@ git commit -m "feat(gallery): add the native share hook for a picture selection"
 - Consumes: `usePhotoShare` de la tâche 2, la route `party.pictures.show` de la tâche 1, `usePhotoSelection` existant.
 - Produces: le bouton `[data-download-button]` de la barre basse, qui partage ou soumet le ZIP selon le support du navigateur.
 
-- [ ] **Step 1: Écrire les tests navigateur**
+- [x] **Step 1: Écrire les tests navigateur**
 
 Ajouter à la fin de `tests/Web/GalleryTest.php`, avant la section d'authentification s'il y en a une :
 
@@ -569,12 +569,12 @@ it('falls back to the zip form when the browser cannot share files', function ()
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail artisan test --compact tests/Web/GalleryTest.php --filter="share|zip form"`
 Expected: FAIL — le sélecteur `[data-download-button]` n'existe pas encore.
 
-- [ ] **Step 3: Rendre la barre de sélection consciente du mode**
+- [x] **Step 3: Rendre la barre de sélection consciente du mode**
 
 Dans `resources/js/components/party/selection-bar.tsx`, étendre les props et le bouton.
 
@@ -656,7 +656,7 @@ Remplacer le `<button>` existant par :
                 </button>
 ```
 
-- [ ] **Step 4: Brancher le hook dans la page**
+- [x] **Step 4: Brancher le hook dans la page**
 
 Dans `resources/js/pages/party/gallery.tsx`, ajouter l'import :
 
@@ -711,17 +711,17 @@ Enfin, passer les nouvelles props à `SelectionBar` :
                 onShare={onShare}
 ```
 
-- [ ] **Step 5: Construire et lancer les tests navigateur**
+- [x] **Step 5: Construire et lancer les tests navigateur**
 
 Run: `vendor/bin/sail npm run build && vendor/bin/sail artisan test --compact tests/Web/GalleryTest.php`
 Expected: PASS, tous les tests du fichier, anciens comme nouveaux.
 
-- [ ] **Step 6: Lancer la suite complète**
+- [x] **Step 6: Lancer la suite complète**
 
 Run: `vendor/bin/sail artisan test --compact`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -730,6 +730,17 @@ git commit -m "feat(gallery): share the selection natively when the browser can"
 ```
 
 ---
+
+## Écarts constatés à l'exécution
+
+- **En-tête de cache.** Symfony réordonne les directives de `Cache-Control`, si
+  bien qu'une comparaison littérale avec la valeur de configuration échoue. Le
+  test compare l'ensemble des directives, trié.
+- **Sondes des tests navigateur.** `assertAttribute` ne résout pas les
+  sélecteurs par attribut ni `body` ; le stub écrit donc son résultat dans
+  `document.title` (`shared:3`), lu par `assertTitleContains`. Un script évalué
+  ne doit pas non plus rendre une fonction, que Playwright ne sait pas
+  sérialiser : le stub se termine par `true;`.
 
 ## Points de vigilance
 
