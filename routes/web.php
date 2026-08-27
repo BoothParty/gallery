@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
 use App\Http\Controllers\PictureDownloadController;
+use App\Http\Controllers\PictureFileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', [OAuthController::class, 'redirect'])->name('login');
@@ -20,6 +21,11 @@ Route::prefix('{party}')->name('party.')->group(function () {
     Route::post('download', PictureDownloadController::class)
         ->middleware('throttle:party-download')
         ->name('download');
+
+    Route::get('pictures/{picture}', PictureFileController::class)
+        ->scopeBindings()
+        ->middleware('throttle:party-picture')
+        ->name('pictures.show');
 
     Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
         Route::get('/', [PartyDashboardController::class, 'show'])->name('show');

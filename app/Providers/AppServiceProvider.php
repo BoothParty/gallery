@@ -62,5 +62,16 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(30)->by($request->ip().':'.$party);
         });
+
+        /**
+         * Sharing a selection fetches one picture per file, so the ceiling sits
+         * well above the download limiter. The key carries the party because
+         * guests of one venue usually share a single wifi address.
+         */
+        RateLimiter::for('party-picture', function (Request $request): Limit {
+            $party = (string) $request->route('party');
+
+            return Limit::perMinute(240)->by($request->ip().':'.$party);
+        });
     }
 }
