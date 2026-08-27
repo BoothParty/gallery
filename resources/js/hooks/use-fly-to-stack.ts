@@ -24,7 +24,8 @@ export default function useFlyToStack() {
 
         const from = image.getBoundingClientRect();
         const to = stack.getBoundingClientRect();
-        const targetX = to.left + Math.min(stackIndex, MAX_STACK_THUMBNAILS) * THUMBNAIL_OFFSET + THUMBNAIL_SIZE / 2;
+        const targetX =
+            to.left + Math.min(stackIndex, MAX_STACK_THUMBNAILS - 1) * THUMBNAIL_OFFSET + THUMBNAIL_SIZE / 2;
         const targetY = to.top + to.height / 2;
 
         const clone = document.createElement('div');
@@ -40,7 +41,7 @@ export default function useFlyToStack() {
             'border-radius:2px',
             'z-index:60',
             'pointer-events:none',
-            'box-shadow:0 18px 40px rgba(20,18,15,.35)',
+            'box-shadow:0 18px 40px color-mix(in srgb, var(--color-shade) 35%, transparent)',
             'will-change:transform,opacity',
         ].join(';');
         document.body.appendChild(clone);

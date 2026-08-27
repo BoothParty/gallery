@@ -29,6 +29,7 @@
     --color-subtle: #a8a29a;
     --color-line: rgba(23, 21, 18, 0.09);
     --color-placeholder: #e8e5df;
+    --color-shade: #14120f;
 }
 
 body {
@@ -42,7 +43,7 @@ body {
  * dark tone as the selection bar rather than its default pure black.
  */
 .pswp {
-    --pswp-bg: #14120f;
+    --pswp-bg: var(--color-shade);
     --pswp-placeholder-bg: #26231e;
 }
 

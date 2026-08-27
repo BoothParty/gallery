@@ -18,7 +18,7 @@ export default function GalleryHero({ title = DEFAULT_TITLE, subtitle = DEFAULT_
             className="relative flex h-[62vh] max-h-[560px] min-h-[340px] items-end overflow-hidden bg-placeholder"
             style={{
                 backgroundImage:
-                    'repeating-linear-gradient(135deg, rgba(23,21,18,.055) 0 2px, rgba(23,21,18,0) 2px 11px)',
+                    'repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-ink) 5.5%, transparent) 0 2px, transparent 2px 11px)',
             }}
         >
             <span className="absolute top-4 left-5 font-mono text-[11px] tracking-[0.14em] text-ink/40 uppercase sm:top-7 sm:left-16">
@@ -29,7 +29,7 @@ export default function GalleryHero({ title = DEFAULT_TITLE, subtitle = DEFAULT_
                 className="absolute inset-0"
                 style={{
                     background:
-                        'linear-gradient(to top, rgba(20,18,15,.62) 0%, rgba(20,18,15,.18) 45%, rgba(20,18,15,0) 75%)',
+                        'linear-gradient(to top, color-mix(in srgb, var(--color-shade) 62%, transparent) 0%, color-mix(in srgb, var(--color-shade) 18%, transparent) 45%, transparent 75%)',
                 }}
             />
 
