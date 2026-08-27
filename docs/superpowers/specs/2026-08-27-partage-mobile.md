@@ -41,7 +41,8 @@ Hors périmètre :
 La barre de sélection garde un seul bouton, dont le libellé reste
 « Télécharger » en toutes circonstances. Le partage natif est un détail
 d'implémentation : l'invité demande ses photos, le navigateur les lui donne du
-mieux qu'il peut.
+mieux qu'il peut. Le libellé ne varie jamais, y compris après une activation
+expirée : le bouton redevient simplement « Télécharger ».
 
 Deux chemins derrière ce libellé :
 
@@ -127,7 +128,7 @@ trois cas d'échec :
 | Cas | Traitement |
 | --- | --- |
 | `AbortError` | L'invité a fermé la feuille de partage : retour à `idle`, aucun message |
-| Autre échec de `share`, fichiers en mémoire | Passage en `ready` ; le bouton devient « Télécharger à nouveau » et rejoue `navigator.share` sur le geste suivant, qui porte une activation fraîche |
+| Autre échec de `share`, fichiers en mémoire | Passage en `ready` ; le bouton redevient « Télécharger » et rejoue `navigator.share` sur le geste suivant, qui porte une activation fraîche, sans rien re-télécharger |
 | Échec d'un téléchargement | Toast d'erreur, retour à `idle`, la sélection reste intacte |
 
 Le cas nominal reste donc à un seul geste, et l'activation perdue se rattrape
@@ -147,7 +148,7 @@ l'état :
 | --- | --- | --- |
 | `idle` | « Télécharger » | actif |
 | `preparing` | « Téléchargement… 3/12 », barre de progression | désactivé |
-| `ready` | « Télécharger à nouveau » | actif |
+| `ready` | « Télécharger » | actif |
 | `sharing` | « Télécharger » | désactivé |
 
 La barre de progression est un filet plein sous le libellé, à la largeur du
@@ -172,7 +173,7 @@ Aucune nouvelle clé de configuration. Le partage réutilise
 | Navigateur sans Web Share de niveau 2 | Chemin ZIP, comportement actuel |
 | Sélection au-dessus de `maxDownloadPictures` | Toast existant, aucun téléchargement, sur les deux chemins |
 | Feuille de partage fermée par l'invité | Barre inchangée, sélection conservée |
-| Activation expirée | Bouton « Télécharger à nouveau », sans nouveau téléchargement |
+| Activation expirée | Bouton « Télécharger » à nouveau actif, sans nouveau téléchargement |
 | Photo indisponible sur S3 | Toast d'erreur, aucun partage partiel |
 | Galerie expirée | La route de fichier renvoie 403, comme le ZIP |
 
