@@ -17,12 +17,14 @@ class PartyController extends Controller
     public function show(Party $party): Response
     {
         $hidePictures = $party->hidePictures();
+        $picturesPage = $this->pictures($party, $hidePictures);
 
         return Inertia::render('party/gallery', [
             'party' => PartyResource::make($party)->resolve(),
             'pictures' => Inertia::scroll(
-                fn () => PictureResource::collection($this->pictures($party, $hidePictures))
+                fn () => PictureResource::collection($picturesPage)
             ),
+            'picturesCount' => $picturesPage->total(),
             'hidePictures' => $hidePictures,
             'maxDownloadPictures' => (int) config('party.download.max_pictures'),
             'csrfToken' => csrf_token(),

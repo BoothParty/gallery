@@ -38,6 +38,7 @@ export interface PicturePage {
 interface Props {
     party: Party;
     pictures: PicturePage;
+    picturesCount: number;
     hidePictures: boolean;
     maxDownloadPictures: number;
     csrfToken: string;
@@ -51,7 +52,7 @@ const EMPTY_MESSAGE =
 
 const TOAST_DURATION = 2200;
 
-export default function Gallery({ party, pictures, hidePictures, maxDownloadPictures, csrfToken }: Props) {
+export default function Gallery({ party, pictures, picturesCount, hidePictures, maxDownloadPictures, csrfToken }: Props) {
     const photos = hidePictures ? [] : pictures.data;
     const isEmpty = photos.length === 0;
 
@@ -118,7 +119,7 @@ export default function Gallery({ party, pictures, hidePictures, maxDownloadPict
             <GalleryHero />
 
             <GalleryStickyBar
-                count={photos.length}
+                count={picturesCount}
                 selectable={!isEmpty}
                 selectMode={selection.selectMode}
                 allSelected={selection.allSelected}

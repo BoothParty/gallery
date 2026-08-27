@@ -69,6 +69,29 @@ it('passes a null thumbnail url when the thumbnail is not generated yet', functi
         );
 });
 
+it('passes the total picture count regardless of the loaded batch size', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(30)->for($party)->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('pictures.data', PartyController::PICTURES_PER_PAGE)
+            ->where('picturesCount', 30)
+        );
+});
+
+it('passes a zero picture count for an expired party', function () {
+    $party = Party::factory()->expired()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('picturesCount', 0)
+        );
+});
+
 it('passes an empty pictures collection when the party has no pictures', function () {
     $party = Party::factory()->create();
 
