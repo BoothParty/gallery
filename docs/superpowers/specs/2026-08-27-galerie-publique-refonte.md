@@ -110,6 +110,13 @@ liste. Les slots `loading` et `end` rendent respectivement les quatre skeletons
 shimmer et la mention « Fin de la galerie » de la maquette. `onlyNext` suffit :
 la galerie se lit toujours du haut.
 
+`<InfiniteScroll>` réécrit `?page=` dans l'URL par défaut au fil du
+défilement. Combiné à `onlyNext`, un rechargement à mi-galerie ne
+récupérerait que le lot atteint, rendant les lots précédents inatteignables
+puisque le chargement arrière est désactivé. Décision du propriétaire :
+`<InfiniteScroll>` porte `preserveUrl`, de sorte que l'URL publique reste
+`/{party}` en toutes circonstances.
+
 Conséquence de forme : la prop `pictures` devient un objet `{ data: [...] }`.
 Les assertions existantes de `tests/Feature/GalleryTest.php` qui visent
 `pictures.0.url` ou `has('pictures', 3)` sont réécrites en `pictures.data.*`.

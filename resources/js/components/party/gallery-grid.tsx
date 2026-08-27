@@ -19,7 +19,7 @@ interface GalleryGridProps {
 
 function Skeletons() {
     return (
-        <div className={`${GRID_CLASSES} mt-1.5 sm:mt-2 lg:mt-3`}>
+        <div data-gallery-skeletons className={`${GRID_CLASSES} mt-1.5 sm:mt-2 lg:mt-3`}>
             {[0, 150, 300, 450].map((delay) => (
                 <div
                     key={delay}
@@ -73,15 +73,23 @@ export default function GalleryGrid({ pictures, selectMode, isSelected, onSelect
         <InfiniteScroll
             data="pictures"
             onlyNext
+            preserveUrl
             itemsElement="#gallery"
-            loading={<Skeletons />}
-            next={({ hasNext, loading }) =>
-                hasNext || loading ? null : (
+            next={({ hasNext, loading }) => {
+                if (loading) {
+                    return <Skeletons />;
+                }
+
+                if (hasNext) {
+                    return null;
+                }
+
+                return (
                     <div className="pt-14 pb-2 text-center text-xs tracking-[0.16em] text-subtle uppercase">
                         Fin de la galerie
                     </div>
-                )
-            }
+                );
+            }}
         >
             <div id="gallery" ref={gridRef} className={`pswp-gallery ${GRID_CLASSES}`}>
                 {pictures.map((picture, index) => (
