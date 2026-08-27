@@ -106,9 +106,14 @@ change pas selon l'état.
 Côté client, `gallery-grid.tsx` enveloppe la grille dans
 `<InfiniteScroll data="pictures" onlyNext>` de `@inertiajs/react`. Inertia gère
 l'IntersectionObserver, le merge des pages, l'état de chargement et la fin de
-liste. Les slots `loading` et `end` rendent respectivement les quatre skeletons
-shimmer et la mention « Fin de la galerie » de la maquette. `onlyNext` suffit :
-la galerie se lit toujours du haut.
+liste. `onlyNext` suffit : la galerie se lit toujours du haut.
+
+Le rendu des états de chargement et de fin passe entièrement par le slot
+`next`, qui reçoit `{ loading, hasNext, … }` : les quatre skeletons shimmer
+pendant qu'un lot arrive, la mention « Fin de la galerie » une fois tout
+chargé, rien entre les deux. Le slot `loading` n'est pas utilisé : Inertia ne
+s'en sert que comme repli lorsque `next` est absent, de sorte qu'un contenu
+qui y serait placé ne s'afficherait jamais.
 
 `<InfiniteScroll>` réécrit `?page=` dans l'URL par défaut au fil du
 défilement. Combiné à `onlyNext`, un rechargement à mi-galerie ne
