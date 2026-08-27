@@ -8,11 +8,6 @@ const SOCIAL_LINKS = [
     { label: 'LinkedIn', href: 'https://www.linkedin.com/company/boothparty/' },
 ] as const;
 
-const LEGAL_LINE = 'BoothParty · SIRET 000 000 000 00000 · © 2026';
-
-const RETENTION_NOTICE =
-    "Galerie accessible 90 jours après l'événement, diffusée avec l'accord des organisateurs.";
-
 function InstagramIcon() {
     return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
@@ -60,49 +55,44 @@ export default function Footer() {
                         />
                     </a>
 
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-                        <span className="text-muted">Une borne photo pour votre événement&nbsp;?</span>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm md:order-1">
                         <a
                             href="https://boothparty.fr/"
                             target="_blank"
                             rel="noreferrer"
                             className="rounded-full border border-ink/20 px-5 py-2.5 whitespace-nowrap text-ink transition-colors hover:border-ink"
                         >
-                            Demander un devis
+                            Louer un photobooth
                         </a>
                     </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 text-[13px] text-muted">
-                    <span className="flex items-center gap-3.5">
-                        {SOCIAL_LINKS.map(({ label, href }) => {
-                            const Icon = SOCIAL_ICONS[label];
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5 text-[13px] text-muted">
+                        <span className="flex items-center gap-3.5">
+                            {SOCIAL_LINKS.map(({ label, href }) => {
+                                const Icon = SOCIAL_ICONS[label];
 
-                            return (
-                                <a
-                                    key={label}
-                                    href={href}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    aria-label={label}
-                                    className="flex text-muted transition-colors hover:text-ink"
-                                >
-                                    <Icon />
-                                </a>
-                            );
-                        })}
-                    </span>
-                    <span className="text-line">|</span>
-                    <a href="https://boothparty.fr/mentions-legales" target="_blank" rel="noreferrer" className="hover:text-ink">
-                        Mentions légales
-                    </a>
-                    <a href="https://boothparty.fr/confidentialite" target="_blank" rel="noreferrer" className="hover:text-ink">
-                        Confidentialité
-                    </a>
-                </div>
-
-                <div className="max-w-[70ch] text-xs leading-relaxed text-subtle">
-                    {RETENTION_NOTICE} {LEGAL_LINE}
+                                return (
+                                    <a
+                                        key={label}
+                                        href={href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        aria-label={label}
+                                        className="flex text-muted transition-colors hover:text-ink"
+                                    >
+                                        <Icon />
+                                    </a>
+                                );
+                            })}
+                        </span>
+                        <span className="text-line">|</span>
+                        <a href="https://boothparty.fr/mentions-legales" target="_blank" rel="noreferrer" className="hover:text-ink">
+                            Mentions légales
+                        </a>
+                        <a href="https://boothparty.fr/confidentialite" target="_blank" rel="noreferrer" className="hover:text-ink">
+                            Confidentialité
+                        </a>
+                    </div>
                 </div>
             </div>
         </footer>

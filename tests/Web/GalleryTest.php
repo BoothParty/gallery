@@ -225,8 +225,7 @@ it('displays the footer call to action', function () {
 
     $page = visit(route('party.gallery', $party));
 
-    $page->assertSee('Une borne photo pour votre événement')
-        ->assertSee('Demander un devis')
+    $page->assertSee('Louer un photobooth')
         ->assertNoJavaScriptErrors();
 });
 
@@ -237,7 +236,6 @@ it('displays the footer legal links', function () {
 
     $page->assertSee('Mentions légales')
         ->assertSee('Confidentialité')
-        ->assertSee('SIRET')
         ->assertNoJavaScriptErrors();
 });
 
