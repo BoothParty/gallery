@@ -155,7 +155,7 @@ Nouvelle route publique, dans le groupe `party.` :
 | --- | --- | --- |
 | `POST /{party}/download` | `party.download` | Renvoie un ZIP des photos sélectionnées |
 
-Protégée par `throttle:10,1`. `DownloadPicturesRequest` valide :
+Protégée par le limiteur nommé `party-download`, déclaré dans `AppServiceProvider`, qui autorise 30 requêtes par minute par clé IP + party visée — les invités d'un même événement partagent souvent le wifi de la salle, donc une clé sur l'IP seule les ferait se limiter les uns les autres. `DownloadPicturesRequest` valide :
 
 - `ids` : tableau requis, de 1 à `config('party.download.max_pictures')` entrées ;
 - `ids.*` : entier existant dans `pictures` **et rattaché à la party courante**,
@@ -261,7 +261,7 @@ connus pour flotter sur des délais de 5 s : les relancer avant d'enquêter.
 - un identifiant appartenant à une autre party échoue en validation ;
 - une sélection dépassant `max_pictures` échoue en validation ;
 - une party expirée renvoie 403 ;
-- au-delà de dix requêtes par minute, 429.
+- au-delà de 30 requêtes par minute pour une même party et IP, 429.
 
 `tests/Web/GalleryTest.php` — mis à jour :
 
