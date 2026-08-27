@@ -480,10 +480,13 @@ Ajouter à la fin de `tests/Web/GalleryTest.php`, avant la section d'authentific
  * wiring without depending on real bytes sitting in the bucket. The route that
  * serves those bytes has its own coverage in tests/Feature/PictureFileTest.php.
  */
-function stubWebShare(object $page, string $shareResult = 'resolve'): object
+function stubWebShare(object $page, string $shareResult = 'resolve', int $fetchDelay = 0): object
 {
     return $page->script(<<<JS
-        window.fetch = () => Promise.resolve(new Response(new Blob(['x'], { type: 'image/jpeg' })));
+        window.fetch = () => new Promise((resolve) => setTimeout(
+            () => resolve(new Response(new Blob(['x'], { type: 'image/jpeg' }))),
+            {$fetchDelay},
+        ));
         navigator.canShare = () => true;
         navigator.share = (data) => {
             document.body.dataset.sharedFiles = String(data.files.length);
@@ -519,6 +522,21 @@ it('keeps the download label while sharing', function () {
         ->click('Sélectionner')
         ->click('Tout sélectionner')
         ->assertSeeIn('[data-download-button]', 'Télécharger')
+        ->assertNoJavaScriptErrors();
+});
+
+it('shows the download progress while the files are fetched', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    stubWebShare($page, 'resolve', 1500)
+        ->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->click('[data-download-button]')
+        ->assertPresent('[data-download-progress]')
+        ->assertSeeIn('[data-download-button]', 'Téléchargement…')
         ->assertNoJavaScriptErrors();
 });
 
