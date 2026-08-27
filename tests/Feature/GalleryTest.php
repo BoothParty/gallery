@@ -214,3 +214,30 @@ it('passes the download cap to the gallery page', function () {
             ->has('csrfToken')
         );
 });
+
+// ── Event metadata ───────────────────────────────────────────────────────────
+
+it('exposes the event metadata to the gallery page', function () {
+    $party = Party::factory()->create([
+        'name' => 'metadata-party',
+        'display_name' => 'Camille & Antoine',
+        'description' => 'Samedi 12 septembre · Domaine des Ormes',
+    ]);
+    $party->forceFill(['banner_path' => 'banners/cover.jpg'])->save();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('party.display_name', 'Camille & Antoine')
+            ->where('party.description', 'Samedi 12 septembre · Domaine des Ormes')
+            ->where('party.banner_url', Storage::disk('s3')->url('banners/cover.jpg'))
+        );
+});
+
+it('exposes a null banner url when the party has no banner', function () {
+    $party = Party::factory()->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('party.banner_url', null));
+});

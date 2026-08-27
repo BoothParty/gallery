@@ -9,11 +9,13 @@ use App\Http\Requests\UpdateAdminPartyRequest;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
+use App\Services\PartyBannerStorage;
 use App\Services\PartyPosterGenerator;
 use App\Services\PartySources\PartySourceManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -99,13 +101,33 @@ class PartyController extends Controller
                 'name' => $party->name,
                 'user_id' => $party->user_id,
                 'expire_at' => $this->expiryForInput($party),
+                'display_name' => $party->display_name,
+                'description' => $party->description,
+                'banner_url' => $party->bannerUrl(),
             ],
         ]);
     }
 
-    public function update(UpdateAdminPartyRequest $request, Party $party): RedirectResponse
-    {
-        $party->update($request->validated());
+    /**
+     * Fields missing from the request keep their stored value: the inline
+     * editor of the parties index only submits the name, the owner and the
+     * expiry, and must not wipe the metadata set on the edit page.
+     */
+    public function update(
+        UpdateAdminPartyRequest $request,
+        Party $party,
+        PartyBannerStorage $partyBannerStorage,
+    ): RedirectResponse {
+        $party->update(Arr::only(
+            $request->validated(),
+            ['name', 'user_id', 'expire_at', 'display_name', 'description'],
+        ));
+
+        if ($request->boolean('remove_banner')) {
+            $partyBannerStorage->remove($party);
+        } elseif ($request->hasFile('banner')) {
+            $partyBannerStorage->store($party, $request->file('banner'));
+        }
 
         return to_route('admin.parties.index');
     }

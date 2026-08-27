@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Storage;
 
 #[CrudResource(
     label: 'Party',
@@ -34,6 +36,8 @@ class Party extends Model
     /** @var list<string> */
     protected $fillable = [
         'name',
+        'display_name',
+        'description',
         'user_id',
         'expire_at',
         'source_key',
@@ -47,6 +51,15 @@ class Party extends Model
         ];
     }
 
+    protected static function booting(): void
+    {
+        static::deleted(function (Party $party): void {
+            if ($party->banner_path) {
+                Storage::disk('s3')->delete($party->banner_path);
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -55,6 +68,31 @@ class Party extends Model
     public function pictures(): HasMany
     {
         return $this->hasMany(Picture::class);
+    }
+
+    /**
+     * Title the gallery is published under, the name serving as a fallback for
+     * a party whose host never set a display name.
+     */
+    public function displayTitle(): string
+    {
+        return $this->display_name ?: $this->name;
+    }
+
+    /**
+     * Get the full URL to the banner on S3/Minio, or null when the party has
+     * none, in which case the gallery hero renders its striped placeholder.
+     */
+    public function bannerUrl(): ?string
+    {
+        if (! $this->banner_path) {
+            return null;
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+        return $disk->url($this->banner_path);
     }
 
     /**

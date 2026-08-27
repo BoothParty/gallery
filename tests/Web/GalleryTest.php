@@ -13,8 +13,12 @@ beforeEach(function () {
 
 // ── Page rendering ────────────────────────────────────────────────────────────
 
-it('renders the gallery hero', function () {
-    $party = Party::factory()->create(['name' => 'Mariage de Paul']);
+it('renders the gallery hero with the event metadata', function () {
+    $party = Party::factory()->create([
+        'name' => 'mariage-de-paul',
+        'display_name' => 'Camille & Antoine',
+        'description' => 'Samedi 12 septembre · Domaine des Ormes',
+    ]);
 
     $page = visit(route('party.gallery', $party));
 
@@ -24,8 +28,40 @@ it('renders the gallery hero', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('displays the party name in the page title', function () {
-    $party = Party::factory()->create(['name' => 'Soirée Anniversaire']);
+it('falls back to the party name when no display name is set', function () {
+    $party = Party::factory()->create(['name' => 'Mariage de Paul']);
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertSeeIn('[data-gallery-hero]', 'Mariage de Paul')
+        ->assertNoJavaScriptErrors();
+});
+
+it('renders no banner image when the party has none', function () {
+    $party = Party::factory()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertPresent('[data-gallery-hero]')
+        ->assertMissing('[data-gallery-banner]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('renders the banner image when the party has one', function () {
+    $party = Party::factory()->withBanner()->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->assertPresent('[data-gallery-banner]')
+        ->assertAttribute('[data-gallery-banner]', 'src', $party->bannerUrl())
+        ->assertNoJavaScriptErrors();
+});
+
+it('displays the event title in the page title', function () {
+    $party = Party::factory()->create([
+        'name' => 'soiree-anniversaire',
+        'display_name' => 'Soirée Anniversaire',
+    ]);
 
     $page = visit(route('party.gallery', $party));
 

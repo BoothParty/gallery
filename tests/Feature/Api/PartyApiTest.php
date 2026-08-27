@@ -220,7 +220,7 @@ it('returns the correct JSON structure for a party resource', function () {
     $this->getJson(route('parties.show', $party))
         ->assertOk()
         ->assertExactJsonStructure([
-            'data' => ['id', 'name', 'user_id', 'expire_at', 'created_at', 'updated_at'],
+            'data' => ['id', 'name', 'display_name', 'description', 'banner_url', 'user_id', 'expire_at', 'created_at', 'updated_at'],
         ]);
 });
 

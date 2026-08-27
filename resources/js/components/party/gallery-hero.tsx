@@ -1,17 +1,10 @@
-/**
- * Hard-coded until the party gains its own title, date, location and cover
- * columns. Wiring real data later means passing these three props from the
- * controller instead of falling back to the defaults.
- */
-const DEFAULT_TITLE = 'Camille & Antoine';
-const DEFAULT_SUBTITLE = 'Samedi 12 septembre 2026 · Domaine des Ormes';
-
 interface GalleryHeroProps {
-    title?: string;
-    subtitle?: string;
+    title: string;
+    subtitle: string | null;
+    bannerUrl: string | null;
 }
 
-export default function GalleryHero({ title = DEFAULT_TITLE, subtitle = DEFAULT_SUBTITLE }: GalleryHeroProps) {
+export default function GalleryHero({ title, subtitle, bannerUrl }: GalleryHeroProps) {
     return (
         <div
             data-gallery-hero
@@ -21,9 +14,15 @@ export default function GalleryHero({ title = DEFAULT_TITLE, subtitle = DEFAULT_
                     'repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-ink) 5.5%, transparent) 0 2px, transparent 2px 11px)',
             }}
         >
-            <span className="absolute top-4 left-5 font-mono text-[11px] tracking-[0.14em] text-ink/40 uppercase sm:top-7 sm:left-16">
-                photo de couverture
-            </span>
+            {bannerUrl && (
+                <img
+                    data-gallery-banner
+                    src={bannerUrl}
+                    alt=""
+                    fetchPriority="high"
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+            )}
 
             <div
                 className="absolute inset-0"
@@ -37,7 +36,7 @@ export default function GalleryHero({ title = DEFAULT_TITLE, subtitle = DEFAULT_
                 <h1 className="font-serif text-[clamp(34px,7vw,68px)] leading-none tracking-tight text-cream text-pretty">
                     {title}
                 </h1>
-                <div className="text-xs tracking-[0.18em] text-cream/80 uppercase">{subtitle}</div>
+                {subtitle && <div className="text-xs tracking-[0.18em] text-cream/80 uppercase">{subtitle}</div>}
             </div>
         </div>
     );

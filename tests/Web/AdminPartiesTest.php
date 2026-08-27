@@ -190,6 +190,62 @@ it('saves an expiry date from the edit page', function () {
         ->assertValue('#expire_at', '2030-06-15T18:00');
 });
 
+// ── Event metadata ────────────────────────────────────────────────────────────
+
+it('saves the display name and description from the edit page', function () {
+    $party = Party::factory()->create();
+
+    $page = visit(route('admin.parties.edit', $party));
+
+    $page->fill('#display_name', 'Camille & Antoine')
+        ->fill('#description', 'Samedi 12 septembre · Domaine des Ormes')
+        ->click('Update party')
+        ->assertNoJavaScriptErrors();
+
+    expect($party->refresh())
+        ->display_name->toBe('Camille & Antoine')
+        ->description->toBe('Samedi 12 septembre · Domaine des Ormes');
+});
+
+it('offers a banner file field on the edit page', function () {
+    $party = Party::factory()->create();
+
+    visit(route('admin.parties.edit', $party))
+        ->assertVisible('#banner')
+        ->assertAttribute('#banner', 'type', 'file')
+        ->assertNoJavaScriptErrors();
+});
+
+it('previews the current banner and offers to remove it', function () {
+    $party = Party::factory()->withBanner()->create();
+
+    visit(route('admin.parties.edit', $party))
+        ->assertVisible('#banner-preview')
+        ->assertAttribute('#banner-preview', 'src', $party->bannerUrl())
+        ->assertVisible('#remove_banner')
+        ->assertNoJavaScriptErrors();
+});
+
+it('hides the banner preview and removal box when the party has no banner', function () {
+    $party = Party::factory()->create();
+
+    visit(route('admin.parties.edit', $party))
+        ->assertMissing('#banner-preview')
+        ->assertMissing('#remove_banner')
+        ->assertNoJavaScriptErrors();
+});
+
+it('removes the banner from the edit page', function () {
+    $party = Party::factory()->withBanner()->create();
+
+    visit(route('admin.parties.edit', $party))
+        ->click('#remove_banner')
+        ->click('Update party')
+        ->assertNoJavaScriptErrors();
+
+    expect($party->refresh()->banner_path)->toBeNull();
+});
+
 // ── Authentication ────────────────────────────────────────────────────────────
 
 it('signs the user out from the sidebar menu', function () {
