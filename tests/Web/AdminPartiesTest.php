@@ -149,6 +149,23 @@ it('clears the expiry date from the edit dialog', function () {
     expect($party->refresh()->expire_at)->toBeNull();
 });
 
+it('round-trips an expiry date entered in the edit dialog', function () {
+    $party = Party::factory()->create(['expire_at' => null]);
+
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->fill('#edit-party-expire-at', '2030-06-15T18:00')
+        ->click('Update party')
+        ->assertNoJavaScriptErrors();
+
+    expect($party->refresh()->expire_at)->not->toBeNull();
+
+    openFirstPartyDetails($page->navigate(route('admin.parties.index')))
+        ->assertValue('#edit-party-expire-at', '2030-06-15T18:00')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Poster ────────────────────────────────────────────────────────────────────
 
 it('links to the poster download from the details dialog', function () {
@@ -162,43 +179,16 @@ it('links to the poster download from the details dialog', function () {
         ->assertNoJavaScriptErrors();
 });
 
-// ── Edit page ─────────────────────────────────────────────────────────────────
-
-it('offers an expiry date field on the edit page', function () {
-    $party = Party::factory()->create(['expire_at' => null]);
-
-    $page = visit(route('admin.parties.edit', $party));
-
-    $page->assertVisible('#expire_at')
-        ->assertAttribute('#expire_at', 'type', 'datetime-local')
-        ->assertValue('#expire_at', '')
-        ->assertNoJavaScriptErrors();
-});
-
-it('saves an expiry date from the edit page', function () {
-    $party = Party::factory()->create(['expire_at' => null]);
-
-    $page = visit(route('admin.parties.edit', $party));
-
-    $page->fill('#expire_at', '2030-06-15T18:00')
-        ->click('Update party')
-        ->assertNoJavaScriptErrors();
-
-    expect($party->refresh()->expire_at)->not->toBeNull();
-
-    visit(route('admin.parties.edit', $party))
-        ->assertValue('#expire_at', '2030-06-15T18:00');
-});
-
 // ── Event metadata ────────────────────────────────────────────────────────────
 
-it('saves the display name and description from the edit page', function () {
+it('saves the display name and description from the edit dialog', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('admin.parties.edit', $party));
+    $page = visit(route('admin.parties.index'));
 
-    $page->fill('#display_name', 'Camille & Antoine')
-        ->fill('#description', 'Samedi 12 septembre · Domaine des Ormes')
+    openFirstPartyDetails($page)
+        ->fill('#edit-party-display-name', 'Camille & Antoine')
+        ->fill('#edit-party-description', 'Samedi 12 septembre · Domaine des Ormes')
         ->click('Update party')
         ->assertNoJavaScriptErrors();
 
@@ -207,39 +197,61 @@ it('saves the display name and description from the edit page', function () {
         ->description->toBe('Samedi 12 septembre · Domaine des Ormes');
 });
 
-it('offers a banner file field on the edit page', function () {
-    $party = Party::factory()->create();
+it('prefills the metadata in the edit dialog', function () {
+    Party::factory()->create([
+        'display_name' => 'Stored Title',
+        'description' => 'Stored description',
+    ]);
 
-    visit(route('admin.parties.edit', $party))
-        ->assertVisible('#banner')
-        ->assertAttribute('#banner', 'type', 'file')
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->assertValue('#edit-party-display-name', 'Stored Title')
+        ->assertValue('#edit-party-description', 'Stored description')
+        ->assertNoJavaScriptErrors();
+});
+
+it('offers a banner file field in the edit dialog', function () {
+    Party::factory()->create();
+
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->assertVisible('#edit-party-banner')
+        ->assertAttribute('#edit-party-banner', 'type', 'file')
         ->assertNoJavaScriptErrors();
 });
 
 it('previews the current banner and offers to remove it', function () {
     $party = Party::factory()->withBanner()->create();
 
-    visit(route('admin.parties.edit', $party))
-        ->assertVisible('#banner-preview')
-        ->assertAttribute('#banner-preview', 'src', $party->bannerUrl())
-        ->assertVisible('#remove_banner')
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->assertVisible('#edit-party-banner-preview')
+        ->assertAttribute('#edit-party-banner-preview', 'src', $party->bannerUrl())
+        ->assertVisible('#edit-party-remove-banner')
         ->assertNoJavaScriptErrors();
 });
 
 it('hides the banner preview and removal box when the party has no banner', function () {
-    $party = Party::factory()->create();
+    Party::factory()->create();
 
-    visit(route('admin.parties.edit', $party))
-        ->assertMissing('#banner-preview')
-        ->assertMissing('#remove_banner')
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->assertMissing('#edit-party-banner-preview')
+        ->assertMissing('#edit-party-remove-banner')
         ->assertNoJavaScriptErrors();
 });
 
-it('removes the banner from the edit page', function () {
+it('removes the banner from the edit dialog', function () {
     $party = Party::factory()->withBanner()->create();
 
-    visit(route('admin.parties.edit', $party))
-        ->click('#remove_banner')
+    $page = visit(route('admin.parties.index'));
+
+    openFirstPartyDetails($page)
+        ->click('#edit-party-remove-banner')
         ->click('Update party')
         ->assertNoJavaScriptErrors();
 

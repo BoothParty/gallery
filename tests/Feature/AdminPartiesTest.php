@@ -70,20 +70,21 @@ it('maps relation labels and exposes count-link metadata in parties datatable', 
         );
 });
 
-it('renders administration party edit page', function () {
+it('exposes the editable parties to the administration index', function () {
     $owner = User::factory()->create(['name' => 'Current Owner']);
     $party = Party::factory()->create([
         'name' => 'Editable Party',
         'user_id' => $owner->id,
     ]);
 
-    $this->get(route('admin.parties.edit', $party))
+    $this->get(route('admin.parties.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('admin/parties/edit')
-            ->where('party.id', $party->id)
-            ->where('party.name', 'Editable Party')
-            ->where('party.user_id', $owner->id)
+            ->component('admin/parties/index')
+            ->where('editableParties.0.id', $party->id)
+            ->where('editableParties.0.name', 'Editable Party')
+            ->where('editableParties.0.user_id', $owner->id)
+            ->where('editableParties.0.route_key', 'Editable Party')
             ->where('users', fn ($users) => collect($users)
                 ->contains(fn (array $user) => $user['id'] === $owner->id)
             )
@@ -146,11 +147,7 @@ it('clears the expiry date when the field is submitted empty', function () {
 });
 
 it('exposes the expiry date to the administration forms as an absolute instant', function () {
-    $party = Party::factory()->create(['expire_at' => '2030-06-15 18:00:00']);
-
-    $this->get(route('admin.parties.edit', $party))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('party.expire_at', '2030-06-15T18:00:00+00:00'));
+    Party::factory()->create(['expire_at' => '2030-06-15 18:00:00']);
 
     $this->get('/admin/parties')
         ->assertOk()
@@ -158,11 +155,11 @@ it('exposes the expiry date to the administration forms as an absolute instant',
 });
 
 it('exposes a null expiry date when the party never expires', function () {
-    $party = Party::factory()->create(['expire_at' => null]);
+    Party::factory()->create(['expire_at' => null]);
 
-    $this->get(route('admin.parties.edit', $party))
+    $this->get('/admin/parties')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('party.expire_at', null));
+        ->assertInertia(fn ($page) => $page->where('editableParties.0.expire_at', null));
 });
 
 it('rejects an invalid expiry date from administration', function () {
@@ -328,7 +325,7 @@ it('rejects a banner that is not an image', function () {
     expect($party->refresh()->banner_path)->toBeNull();
 });
 
-it('exposes the metadata to the party edit page', function () {
+it('exposes the metadata to the party edit dialog', function () {
     Storage::fake('s3');
 
     $party = Party::factory()->create([
@@ -337,19 +334,19 @@ it('exposes the metadata to the party edit page', function () {
     ]);
     $party->forceFill(['banner_path' => 'banners/cover.jpg'])->save();
 
-    $this->get(route('admin.parties.edit', $party))
+    $this->get('/admin/parties')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('party.display_name', 'Edited Title')
-            ->where('party.description', 'Edited description')
-            ->where('party.banner_url', Storage::disk('s3')->url('banners/cover.jpg'))
+            ->where('editableParties.0.display_name', 'Edited Title')
+            ->where('editableParties.0.description', 'Edited description')
+            ->where('editableParties.0.banner_url', Storage::disk('s3')->url('banners/cover.jpg'))
         );
 });
 
 it('exposes a null banner url when the party has no banner', function () {
-    $party = Party::factory()->create();
+    Party::factory()->create();
 
-    $this->get(route('admin.parties.edit', $party))
+    $this->get('/admin/parties')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('party.banner_url', null));
+        ->assertInertia(fn ($page) => $page->where('editableParties.0.banner_url', null));
 });

@@ -39,12 +39,15 @@ class PartyController extends Controller
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
             'editableParties' => Party::query()
-                ->get(['id', 'name', 'user_id', 'expire_at'])
+                ->get(['id', 'name', 'user_id', 'expire_at', 'display_name', 'description', 'banner_path'])
                 ->map(fn (Party $party): array => [
                     'id' => $party->id,
                     'name' => $party->name,
                     'user_id' => $party->user_id,
                     'expire_at' => $this->expiryForInput($party),
+                    'display_name' => $party->display_name,
+                    'description' => $party->description,
+                    'banner_url' => $party->bannerUrl(),
                     'route_key' => $party->name,
                 ])
                 ->values(),
@@ -91,27 +94,9 @@ class PartyController extends Controller
         ]);
     }
 
-    public function edit(Party $party, AdminDashboardDataService $adminDashboardDataService): Response
-    {
-        return Inertia::render('admin/parties/edit', [
-            ...$adminDashboardDataService->sidebarData($party->id),
-            'users' => $this->userOptions(),
-            'party' => [
-                'id' => $party->id,
-                'name' => $party->name,
-                'user_id' => $party->user_id,
-                'expire_at' => $this->expiryForInput($party),
-                'display_name' => $party->display_name,
-                'description' => $party->description,
-                'banner_url' => $party->bannerUrl(),
-            ],
-        ]);
-    }
-
     /**
-     * Fields missing from the request keep their stored value: the inline
-     * editor of the parties index only submits the name, the owner and the
-     * expiry, and must not wipe the metadata set on the edit page.
+     * Fields missing from the request keep their stored value, so a partial
+     * submission never wipes the metadata of a party.
      */
     public function update(
         UpdateAdminPartyRequest $request,
