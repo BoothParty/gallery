@@ -58,8 +58,8 @@ export default function usePhotoSelection(loadedIds: number[]): PhotoSelection {
             return;
         }
 
-        setOrder(loadedIds);
-        setLanded(loadedIds);
+        setOrder((current) => [...current, ...loadedIds.filter((id) => !current.includes(id))]);
+        setLanded((current) => [...current, ...loadedIds.filter((id) => !current.includes(id))]);
     }, [allSelected, loadedIds, reset]);
 
     const isSelected = useCallback((id: number) => order.includes(id), [order]);
