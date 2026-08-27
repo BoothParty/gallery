@@ -446,3 +446,105 @@ it('has no smoke on the gallery page', function () {
 
     $page->assertNoSmoke();
 });
+
+// ── Partage natif ─────────────────────────────────────────────────────────────
+
+/**
+ * Stubs the Web Share API and the picture fetch, so the browser test covers the
+ * wiring without depending on real bytes sitting in the bucket. The route that
+ * serves those bytes has its own coverage in tests/Feature/PictureFileTest.php.
+ */
+function stubWebShare(object $page, string $shareResult = 'resolve', int $fetchDelay = 0): void
+{
+    $page->script(<<<JS
+        window.fetch = () => new Promise((resolve) => setTimeout(
+            () => resolve(new Response(new Blob(['x'], { type: 'image/jpeg' }))),
+            {$fetchDelay},
+        ));
+        navigator.canShare = () => true;
+        navigator.share = (data) => {
+            document.title = 'shared:' + data.files.length;
+
+            return '{$shareResult}' === 'resolve'
+                ? Promise.resolve()
+                : Promise.reject(new DOMException('cancelled', 'AbortError'));
+        };
+
+        // The evaluated script must not return a function: Playwright cannot
+        // serialise one back to the test process.
+        true;
+    JS);
+}
+
+it('shares the selection natively when the browser supports it', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    stubWebShare($page);
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->click('[data-download-button]')
+        ->assertTitleContains('shared:3')
+        ->assertNoJavaScriptErrors();
+});
+
+it('keeps the download label while sharing', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(2)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    stubWebShare($page);
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->assertSeeIn('[data-download-button]', 'Télécharger')
+        ->assertNoJavaScriptErrors();
+});
+
+it('shows the download progress while the files are fetched', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(3)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    stubWebShare($page, 'resolve', 1500);
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->click('[data-download-button]')
+        ->assertPresent('[data-download-progress]')
+        ->assertSeeIn('[data-download-button]', 'Téléchargement…')
+        ->assertNoJavaScriptErrors();
+});
+
+it('keeps the selection usable when the share sheet is dismissed', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(2)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    stubWebShare($page, 'reject');
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->click('[data-download-button]')
+        ->assertSeeIn('[data-selection-count]', '2')
+        ->assertSeeIn('[data-download-button]', 'Télécharger')
+        ->assertNoJavaScriptErrors();
+});
+
+it('falls back to the zip form when the browser cannot share files', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(2)->for($party)->create();
+
+    $page = visit(route('party.gallery', $party));
+
+    $page->click('Sélectionner')
+        ->click('Tout sélectionner')
+        ->assertSeeIn('[data-download-button]', 'Télécharger le ZIP')
+        ->assertNoJavaScriptErrors();
+});
