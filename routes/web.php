@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
+use App\Http\Controllers\PartyMetadataController;
 use App\Http\Controllers\PictureDownloadController;
 use App\Http\Controllers\PictureFileController;
 use App\Http\Middleware\ResolvePartyHost;
@@ -24,6 +25,10 @@ Route::prefix('{party}')->name('party.')->group(function () {
     Route::post('download', PictureDownloadController::class)
         ->middleware('throttle:party-download')
         ->name('download');
+
+    Route::put('metadata', PartyMetadataController::class)
+        ->middleware(['party.host', 'throttle:party-metadata'])
+        ->name('metadata.update');
 
     Route::get('pictures/{picture}', PictureFileController::class)
         ->scopeBindings()
