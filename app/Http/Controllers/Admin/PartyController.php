@@ -39,7 +39,7 @@ class PartyController extends Controller
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
             'editableParties' => Party::query()
-                ->get(['id', 'name', 'user_id', 'expire_at', 'display_name', 'description', 'banner_path'])
+                ->get(['id', 'name', 'host_token', 'user_id', 'expire_at', 'display_name', 'description', 'banner_path'])
                 ->map(fn (Party $party): array => [
                     'id' => $party->id,
                     'name' => $party->name,
@@ -48,6 +48,7 @@ class PartyController extends Controller
                     'display_name' => $party->display_name,
                     'description' => $party->description,
                     'banner_url' => $party->bannerUrl(),
+                    'host_edit_url' => $party->hostEditUrl(),
                     'route_key' => $party->name,
                 ])
                 ->values(),
@@ -113,6 +114,20 @@ class PartyController extends Controller
         } elseif ($request->hasFile('banner')) {
             $partyBannerStorage->store($party, $request->file('banner'));
         }
+
+        return to_route('admin.parties.index');
+    }
+
+    /**
+     * Cut the party's current edit link and mint a new one.
+     *
+     * Host sessions already open survive, since they only carry a boolean.
+     * That is acceptable: regeneration exists to kill a link that leaked to a
+     * third party, not to evict a host from their own browser.
+     */
+    public function regenerateHostToken(Party $party): RedirectResponse
+    {
+        $party->forceFill(['host_token' => Str::random(48)])->save();
 
         return to_route('admin.parties.index');
     }

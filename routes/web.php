@@ -47,6 +47,8 @@ Route::prefix('{party}')->name('party.')->group(function () {
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('parties/bulk', [AdminPartyController::class, 'bulkStore'])->name('parties.bulk-store');
     Route::get('parties/{party}/poster', [AdminPartyController::class, 'poster'])->name('parties.poster');
+    Route::post('parties/{party}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
+        ->name('parties.host-token');
     Route::resource('parties', AdminPartyController::class)->except(['show', 'create', 'edit']);
     Route::resource('users', AdminUserController::class)->except(['show']);
 });
