@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
+import GalleryEditor from '@/components/party/gallery-editor';
 import GalleryGrid from '@/components/party/gallery-grid';
 import GalleryHero from '@/components/party/gallery-hero';
 import GalleryStickyBar from '@/components/party/gallery-sticky-bar';
@@ -210,6 +211,23 @@ export default function Gallery({
                 onShare={onShare}
                 onSubmit={onSubmitDownload}
             />
+
+            {canEdit && (
+                <GalleryEditor
+                    open={editorOpen}
+                    onClose={() => setEditorOpen(false)}
+                    partyName={party.name}
+                    title={party.display_name ?? ''}
+                    subtitle={party.description}
+                    bannerUrl={party.banner_url}
+                    crop={{
+                        x: party.banner_position_x,
+                        y: party.banner_position_y,
+                        zoom: party.banner_zoom,
+                    }}
+                    onSaved={() => flash('Galerie mise à jour')}
+                />
+            )}
 
             <GalleryToast message={toast} raised={selection.selectMode} />
         </PartyLayout>
