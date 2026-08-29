@@ -197,3 +197,31 @@ it('factory withBanner state stores a banner path', function () {
 
     expect($party->banner_path)->not->toBeNull();
 });
+
+// ── Host edit link ──────────────────────────────────────────────────────────
+
+it('generates a host token when a party is created', function () {
+    $party = Party::factory()->create();
+
+    expect($party->host_token)->toBeString()->toHaveLength(48);
+});
+
+it('gives each party its own host token', function () {
+    $first = Party::factory()->create();
+    $second = Party::factory()->create();
+
+    expect($first->host_token)->not->toBe($second->host_token);
+});
+
+it('keeps a host token that was set explicitly', function () {
+    $party = Party::factory()->create(['host_token' => 'a-token-we-chose']);
+
+    expect($party->host_token)->toBe('a-token-we-chose');
+});
+
+it('composes the host edit url from the public url and the token', function () {
+    $party = Party::factory()->create(['name' => 'noces']);
+
+    expect($party->hostEditUrl())
+        ->toBe('https://noces.'.config('party.domain').'/?token='.$party->host_token);
+});
