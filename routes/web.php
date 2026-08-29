@@ -8,6 +8,7 @@ use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
 use App\Http\Controllers\PictureDownloadController;
 use App\Http\Controllers\PictureFileController;
+use App\Http\Middleware\ResolvePartyHost;
 use Illuminate\Support\Facades\Route;
 
 Route::get('login', [OAuthController::class, 'redirect'])->name('login');
@@ -16,7 +17,9 @@ Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->na
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
 
 Route::prefix('{party}')->name('party.')->group(function () {
-    Route::get('/', [PartyController::class, 'show'])->name('gallery');
+    Route::get('/', [PartyController::class, 'show'])
+        ->middleware(ResolvePartyHost::class)
+        ->name('gallery');
 
     Route::post('download', PictureDownloadController::class)
         ->middleware('throttle:party-download')
