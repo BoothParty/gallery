@@ -23,3 +23,8 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .claude
+# Pest browser test screenshots
+/tests/Browser
+
+# Kamal deploy secrets
+/.kamal/secrets*

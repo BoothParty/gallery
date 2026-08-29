@@ -26,7 +26,7 @@ Route::prefix('{party}')->name('party.')->group(function () {
         ->middleware('throttle:party-download')
         ->name('download');
 
-    Route::put('metadata', PartyMetadataController::class)
+    Route::post('metadata', PartyMetadataController::class)
         ->middleware(['party.host', 'throttle:party-metadata'])
         ->name('metadata.update');
 

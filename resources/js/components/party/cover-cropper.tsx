@@ -100,7 +100,7 @@ export default function CoverCropper({
                     <input
                         type="file"
                         accept="image/*"
-                        className="hidden"
+                        className="sr-only"
                         onChange={(event) => {
                             const file = event.target.files?.[0];
 

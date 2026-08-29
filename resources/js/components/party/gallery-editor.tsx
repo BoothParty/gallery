@@ -32,6 +32,9 @@ export default function GalleryEditor({
         display_name: title,
         description: subtitle ?? '',
         banner: null as File | null,
+        banner_position_x: String(crop.x),
+        banner_position_y: String(crop.y),
+        banner_zoom: String(crop.zoom),
     });
 
     const cropper = useCoverCrop(crop);
@@ -51,12 +54,26 @@ export default function GalleryEditor({
             display_name: title,
             description: subtitle ?? '',
             banner: null,
+            banner_position_x: String(crop.x),
+            banner_position_y: String(crop.y),
+            banner_zoom: String(crop.zoom),
         });
         form.clearErrors();
         cropper.setCrop(crop);
         setPreview(null);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
+
+    /** Mirror the cropper, which owns the framing while the modal is open. */
+    useEffect(() => {
+        form.setData((current) => ({
+            ...current,
+            banner_position_x: String(cropper.crop.x),
+            banner_position_y: String(cropper.crop.y),
+            banner_zoom: String(cropper.crop.zoom),
+        }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cropper.crop]);
 
     useEffect(
         () => () => {
@@ -82,18 +99,7 @@ export default function GalleryEditor({
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        form.transform((data) => ({
-            ...data,
-            _method: 'put',
-            banner_position_x: cropper.crop.x,
-            banner_position_y: cropper.crop.y,
-            banner_zoom: cropper.crop.zoom,
-        }));
-
-        // Inertia switches to FormData as soon as a file is present, and
-        // multipart cannot carry a PUT, hence the spoofed method above.
         form.post(`/${encodeURIComponent(partyName)}/metadata`, {
-            forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
                 onSaved();

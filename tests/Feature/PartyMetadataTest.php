@@ -20,7 +20,6 @@ function hostUpdate(Party $party, array $payload = []): TestResponse
     return test()
         ->withSession(['party_host' => [$party->id => true]])
         ->post(route('party.metadata.update', $party), [
-            '_method' => 'put',
             'display_name' => 'Camille & Antoine',
             'description' => 'Samedi 12 septembre · Domaine des Ormes',
             'banner_position_x' => 50,
@@ -35,7 +34,7 @@ function hostUpdate(Party $party, array $payload = []): TestResponse
 it('rejects a write without a host session', function () {
     $party = Party::factory()->create();
 
-    $this->put(route('party.metadata.update', $party), [
+    $this->post(route('party.metadata.update', $party), [
         'display_name' => 'Pirate',
         'banner_position_x' => 50,
         'banner_position_y' => 50,
@@ -50,7 +49,7 @@ it('rejects a write carrying the host session of another party', function () {
     $other = Party::factory()->create();
 
     $this->withSession(['party_host' => [$mine->id => true]])
-        ->put(route('party.metadata.update', $other), [
+        ->post(route('party.metadata.update', $other), [
             'display_name' => 'Pirate',
             'banner_position_x' => 50,
             'banner_position_y' => 50,
