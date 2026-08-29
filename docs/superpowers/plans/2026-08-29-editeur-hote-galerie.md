@@ -75,7 +75,7 @@
 - Consumes: nothing.
 - Produces: `Party::$host_token` (`?string`), `Party::hostEditUrl(): string`, and the guarantee that every created party has a token.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/Feature/PartyTest.php`:
 
@@ -109,7 +109,7 @@ it('composes the host edit url from the public url and the token', function () {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyTest
@@ -117,7 +117,7 @@ vendor/bin/sail artisan test --compact --filter=PartyTest
 
 Expected: FAIL — `host_token` is not a column, `hostEditUrl` does not exist.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 `database/migrations/2026_08_29_100000_add_host_token_to_parties_table.php`:
 
@@ -160,7 +160,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 4: Extend the model**
+- [x] **Step 4: Extend the model**
 
 In `app/Models/Party.php`, add `Str` to the imports (`use Illuminate\Support\Str;`) and put the `creating` hook alongside the existing `deleted` one:
 
@@ -197,7 +197,7 @@ Then add, next to `publicUrl()`:
     }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyTest
@@ -205,7 +205,7 @@ vendor/bin/sail artisan test --compact --filter=PartyTest
 
 Expected: PASS.
 
-- [ ] **Step 6: Format and commit**
+- [x] **Step 6: Format and commit**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -226,7 +226,7 @@ git commit -m "feat(gallery): give every party a host edit token"
 - Consumes: Task 1's migration ordering.
 - Produces: `Party::$banner_position_x`, `$banner_position_y`, `$banner_zoom`, all `float`, all fillable, defaulting to `50`, `50`, `1`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/Feature/PartyTest.php`:
 
@@ -254,7 +254,7 @@ it('casts the banner framing to floats', function () {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyTest
@@ -262,7 +262,7 @@ vendor/bin/sail artisan test --compact --filter=PartyTest
 
 Expected: FAIL — unknown columns.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 `database/migrations/2026_08_29_100001_add_banner_framing_to_parties_table.php`:
 
@@ -302,7 +302,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 4: Extend the model**
+- [x] **Step 4: Extend the model**
 
 In `app/Models/Party.php`, add the three columns to `$fillable` after `'description'` — unlike `banner_path` they are numbers the validation bounds, with no capacity to point at an arbitrary file:
 
@@ -336,7 +336,7 @@ and extend `casts()`:
     }
 ```
 
-- [ ] **Step 5: Extend the factory**
+- [x] **Step 5: Extend the factory**
 
 In `database/factories/PartyFactory.php`, add to `definition()` after `'banner_path' => null,`:
 
@@ -346,7 +346,7 @@ In `database/factories/PartyFactory.php`, add to `definition()` after `'banner_p
             'banner_zoom' => 1,
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyTest
@@ -354,7 +354,7 @@ vendor/bin/sail artisan test --compact --filter=PartyTest
 
 Expected: PASS.
 
-- [ ] **Step 7: Format and commit**
+- [x] **Step 7: Format and commit**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -375,7 +375,7 @@ git commit -m "feat(gallery): store how the banner is framed behind the hero"
 - Consumes: `Party::$host_token` from Task 1.
 - Produces: `ResolvePartyHost::sessionKey(Party $party): string` (returns `"party_host.{id}"`), the `party.host` middleware alias, and a `canEdit` boolean prop on the `party/gallery` page.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/Feature/PartyHostAccessTest.php`:
 
@@ -456,7 +456,7 @@ it('does not let the session of one party edit another', function () {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyHostAccessTest
@@ -464,7 +464,7 @@ vendor/bin/sail artisan test --compact --filter=PartyHostAccessTest
 
 Expected: FAIL — no redirect, no `canEdit` prop.
 
-- [ ] **Step 3: Write `ResolvePartyHost`**
+- [x] **Step 3: Write `ResolvePartyHost`**
 
 `app/Http/Middleware/ResolvePartyHost.php`:
 
@@ -520,7 +520,7 @@ class ResolvePartyHost
 }
 ```
 
-- [ ] **Step 4: Write `EnsurePartyHost`**
+- [x] **Step 4: Write `EnsurePartyHost`**
 
 `app/Http/Middleware/EnsurePartyHost.php`:
 
@@ -555,7 +555,7 @@ class EnsurePartyHost
 }
 ```
 
-- [ ] **Step 5: Register the alias**
+- [x] **Step 5: Register the alias**
 
 In `bootstrap/app.php`, inside `withMiddleware`:
 
@@ -573,7 +573,7 @@ In `bootstrap/app.php`, inside `withMiddleware`:
 
 with `use App\Http\Middleware\EnsurePartyHost;` added to the imports.
 
-- [ ] **Step 6: Attach the middleware to the gallery route**
+- [x] **Step 6: Attach the middleware to the gallery route**
 
 In `routes/web.php`, add `use App\Http\Middleware\ResolvePartyHost;` and change the gallery line to:
 
@@ -586,7 +586,7 @@ In `routes/web.php`, add `use App\Http\Middleware\ResolvePartyHost;` and change 
 Route middleware runs after the `web` group, so route model binding has already
 turned `{party}` into a `Party` by the time `ResolvePartyHost` reads it.
 
-- [ ] **Step 7: Expose the prop**
+- [x] **Step 7: Expose the prop**
 
 In `app/Http/Controllers/PartyController.php`, add `use App\Http\Middleware\ResolvePartyHost;` and `use Illuminate\Http\Request;`, then take the request and pass the flag:
 
@@ -614,7 +614,7 @@ An expired gallery hides its pictures but stays editable by its host — it is
 their gallery, and fixing a title after the fact is legitimate. `canEdit`
 therefore never consults `hidePictures()`.
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyHostAccessTest
@@ -626,7 +626,7 @@ Expected: PASS. Then confirm nothing regressed:
 vendor/bin/sail artisan test --compact --filter=GalleryTest
 ```
 
-- [ ] **Step 9: Format and commit**
+- [x] **Step 9: Format and commit**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -647,7 +647,7 @@ git commit -m "feat(gallery): open a host session from a tokenised link"
 - Consumes: `party.host` alias and `ResolvePartyHost::sessionKey()` from Task 3; `PartyBannerStorage::store()` / `remove()`, already in the codebase.
 - Produces: route `party.metadata.update` at `POST /{party}/metadata`, accepting `display_name`, `description`, `banner`, `remove_banner`, `banner_position_x`, `banner_position_y`, `banner_zoom`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/Feature/PartyMetadataTest.php`:
 
@@ -815,7 +815,7 @@ it('rejects a banner that is not an image', function () {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyMetadataTest
@@ -823,7 +823,7 @@ vendor/bin/sail artisan test --compact --filter=PartyMetadataTest
 
 Expected: FAIL — the route `party.metadata.update` is not defined.
 
-- [ ] **Step 3: Write the Form Request**
+- [x] **Step 3: Write the Form Request**
 
 `app/Http/Requests/UpdatePartyMetadataRequest.php`:
 
@@ -888,7 +888,7 @@ class UpdatePartyMetadataRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 4: Write the controller**
+- [x] **Step 4: Write the controller**
 
 `app/Http/Controllers/PartyMetadataController.php`:
 
@@ -943,7 +943,7 @@ class PartyMetadataController extends Controller
 }
 ```
 
-- [ ] **Step 5: Add the route**
+- [x] **Step 5: Add the route**
 
 In `routes/web.php`, add `use App\Http\Controllers\PartyMetadataController;` and place the route inside the `{party}` group, after `download`:
 
@@ -956,7 +956,7 @@ In `routes/web.php`, add `use App\Http\Controllers\PartyMetadataController;` and
 `POST` rather than `PUT` because the banner travels as multipart, which a `PUT`
 cannot carry; the front adds `_method: 'put'`.
 
-- [ ] **Step 6: Add the limiter**
+- [x] **Step 6: Add the limiter**
 
 In `app/Providers/AppServiceProvider.php`, after the `party-picture` limiter:
 
@@ -972,7 +972,7 @@ In `app/Providers/AppServiceProvider.php`, after the `party-picture` limiter:
         });
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=PartyMetadataTest
@@ -980,7 +980,7 @@ vendor/bin/sail artisan test --compact --filter=PartyMetadataTest
 
 Expected: PASS.
 
-- [ ] **Step 8: Format and commit**
+- [x] **Step 8: Format and commit**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -1000,7 +1000,7 @@ git commit -m "feat(gallery): let the host write their gallery metadata"
 - Consumes: the framing columns from Task 2, the `canEdit` prop from Task 3.
 - Produces: `GalleryHeroProps` = `{ title: string; subtitle: string | null; bannerUrl: string | null; position: { x: number; y: number }; zoom: number; canEdit: boolean; onEdit: () => void }`, and the `party.banner_position_x` / `_y` / `banner_zoom` props on the page.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/Feature/GalleryTest.php`:
 
@@ -1022,7 +1022,7 @@ it('passes the banner framing to the gallery page', function () {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter="banner framing to the gallery page"
@@ -1030,7 +1030,7 @@ vendor/bin/sail artisan test --compact --filter="banner framing to the gallery p
 
 Expected: FAIL — the props are absent.
 
-- [ ] **Step 3: Expose the framing**
+- [x] **Step 3: Expose the framing**
 
 In `app/Http/Resources/PartyResource.php`, after `'banner_url'`:
 
@@ -1040,7 +1040,7 @@ In `app/Http/Resources/PartyResource.php`, after `'banner_url'`:
             'banner_zoom' => (float) $this->banner_zoom,
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=GalleryTest
@@ -1048,7 +1048,7 @@ vendor/bin/sail artisan test --compact --filter=GalleryTest
 
 Expected: PASS.
 
-- [ ] **Step 5: Rewrite the hero**
+- [x] **Step 5: Rewrite the hero**
 
 Replace `resources/js/components/party/gallery-hero.tsx` in full:
 
@@ -1149,7 +1149,7 @@ If `bg-shade` / `text-cream` opacity modifiers do not resolve, check the token
 names in `resources/css/app.css` and use `color-mix(in srgb, var(--color-shade) 40%, transparent)`
 inline, as the surrounding gradients already do.
 
-- [ ] **Step 6: Wire the page temporarily**
+- [x] **Step 6: Wire the page temporarily**
 
 In `resources/js/pages/party/gallery.tsx`, extend the `Party` interface with
 
@@ -1181,7 +1181,7 @@ with, next to the other state:
     const [editorOpen, setEditorOpen] = useState(false);
 ```
 
-- [ ] **Step 7: Build and eyeball**
+- [x] **Step 7: Build and eyeball**
 
 ```bash
 vendor/bin/sail npm run build
@@ -1189,7 +1189,7 @@ vendor/bin/sail npm run build
 
 Expected: no TypeScript or Vite error.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -1223,7 +1223,7 @@ export default function useCoverCrop(initial: CoverCrop): {
 }
 ```
 
-- [ ] **Step 1: Write the hook**
+- [x] **Step 1: Write the hook**
 
 There is no unit-test harness for hooks in this project — the behaviour is
 covered by the browser test in Task 10. Create
@@ -1346,7 +1346,7 @@ export default function useCoverCrop(initial: CoverCrop) {
 }
 ```
 
-- [ ] **Step 2: Type-check**
+- [x] **Step 2: Type-check**
 
 ```bash
 vendor/bin/sail npm run build
@@ -1354,7 +1354,7 @@ vendor/bin/sail npm run build
 
 Expected: no TypeScript error.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/js/hooks/use-cover-crop.ts
@@ -1372,7 +1372,7 @@ git commit -m "feat(gallery): add the cover framing hook"
 - Consumes: `useCoverCrop`, `CoverCrop` from Task 6.
 - Produces: `CoverCropper` with props `{ src: string | null; crop: CoverCrop; frameRef; onImageLoad; onPointerDown; onZoomChange: (zoom: number) => void; onReset: () => void; onPick: (file: File) => void }`.
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 `resources/js/components/party/cover-cropper.tsx`:
 
@@ -1500,7 +1500,7 @@ export default function CoverCropper({
 Clearing `event.target.value` after a pick lets the host re-select the same file
 after a reset, which the browser would otherwise swallow as "no change".
 
-- [ ] **Step 2: Type-check**
+- [x] **Step 2: Type-check**
 
 ```bash
 vendor/bin/sail npm run build
@@ -1508,7 +1508,7 @@ vendor/bin/sail npm run build
 
 Expected: no TypeScript error.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/js/components/party/cover-cropper.tsx
@@ -1527,7 +1527,7 @@ git commit -m "feat(gallery): add the cover cropper"
 - Consumes: `CoverCropper` (Task 7), `useCoverCrop` / `DEFAULT_CROP` (Task 6), the `party.metadata.update` route (Task 4), `GalleryToast` (already present).
 - Produces: `GalleryEditor` with props `{ open: boolean; onClose: () => void; partyName: string; title: string; subtitle: string | null; bannerUrl: string | null; crop: CoverCrop; onSaved: () => void }`.
 
-- [ ] **Step 1: Write the modal**
+- [x] **Step 1: Write the modal**
 
 `resources/js/components/party/gallery-editor.tsx`:
 
@@ -1750,7 +1750,7 @@ export default function GalleryEditor({
 }
 ```
 
-- [ ] **Step 2: Wire it into the page**
+- [x] **Step 2: Wire it into the page**
 
 In `resources/js/pages/party/gallery.tsx`, import the editor and render it just
 before `<GalleryToast …/>`:
@@ -1782,7 +1782,7 @@ import GalleryEditor from '@/components/party/gallery-editor';
 empty field means "fall back to the party name" rather than pinning the fallback
 into the column.
 
-- [ ] **Step 3: Build**
+- [x] **Step 3: Build**
 
 ```bash
 vendor/bin/sail npm run build
@@ -1790,7 +1790,7 @@ vendor/bin/sail npm run build
 
 Expected: no TypeScript or Vite error.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js
@@ -1809,7 +1809,7 @@ git commit -m "feat(gallery): let the host edit the gallery from a modal"
 - Consumes: `Party::hostEditUrl()` from Task 1.
 - Produces: route `admin.parties.host-token` at `POST admin/parties/{party}/host-token`, and a `host_edit_url: string` field on each entry of the `editableParties` prop.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/Feature/AdminPartiesTest.php`, following the file's existing
 way of authenticating an admin:
@@ -1862,7 +1862,7 @@ it('refuses to regenerate a host token for a guest', function () {
 Check the top of the file for how the other tests build their admin user; reuse
 that exactly rather than the `User::factory()->create()` above if it differs.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=AdminPartiesTest
@@ -1870,7 +1870,7 @@ vendor/bin/sail artisan test --compact --filter=AdminPartiesTest
 
 Expected: FAIL — no `admin.parties.host-token` route, no `host_edit_url`.
 
-- [ ] **Step 3: Expose the link and the action**
+- [x] **Step 3: Expose the link and the action**
 
 In `app/Http/Controllers/Admin/PartyController.php`, add `host_token` to the
 column list of `editableParties` and the URL to the mapped array:
@@ -1912,7 +1912,7 @@ and add the action next to `update()`:
 
 `Str` is already imported in this file.
 
-- [ ] **Step 4: Add the route**
+- [x] **Step 4: Add the route**
 
 In `routes/web.php`, inside the `admin` group, **above** the
 `Route::resource('parties', …)` line so the resource's `{party}` wildcard does
@@ -1923,7 +1923,7 @@ not swallow it:
         ->name('parties.host-token');
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 ```bash
 vendor/bin/sail artisan test --compact --filter=AdminPartiesTest
@@ -1931,7 +1931,7 @@ vendor/bin/sail artisan test --compact --filter=AdminPartiesTest
 
 Expected: PASS.
 
-- [ ] **Step 6: Add the block to the details dialog**
+- [x] **Step 6: Add the block to the details dialog**
 
 In `resources/js/pages/admin/parties/index.tsx` — **double quotes, no
 semicolons**, this file's own style:
@@ -2013,7 +2013,7 @@ Then, inside the edit `<form>` after the expiry field, add:
                         </div>
 ```
 
-- [ ] **Step 7: Build and commit**
+- [x] **Step 7: Build and commit**
 
 ```bash
 vendor/bin/sail npm run build
@@ -2033,7 +2033,7 @@ git commit -m "feat(admin): surface and regenerate the host edit link"
 - Consumes: everything from Tasks 1–8.
 - Produces: nothing further.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 `tests/Web/GalleryEditorTest.php`:
 
@@ -2099,7 +2099,7 @@ it('saves a new title from the editor', function () {
 });
 ```
 
-- [ ] **Step 2: Build the assets, then run**
+- [x] **Step 2: Build the assets, then run**
 
 ```bash
 vendor/bin/sail npm run build
@@ -2109,7 +2109,7 @@ vendor/bin/sail artisan test --compact --filter=GalleryEditorTest
 Expected: PASS. These tests are known to flake on 5 s timeouts — **re-run once**
 before investigating any failure.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/Web/GalleryEditorTest.php
@@ -2123,13 +2123,13 @@ git commit -m "test(gallery): cover the host editor in a browser"
 **Files:**
 - Modify: `docs/superpowers/plans/2026-08-29-editeur-hote-galerie.md`
 
-- [ ] **Step 1: Format every touched PHP file**
+- [x] **Step 1: Format every touched PHP file**
 
 ```bash
 vendor/bin/sail bin pint --format agent
 ```
 
-- [ ] **Step 2: Run the whole suite**
+- [x] **Step 2: Run the whole suite**
 
 ```bash
 vendor/bin/sail artisan test --compact
@@ -2137,12 +2137,12 @@ vendor/bin/sail artisan test --compact
 
 Expected: PASS. Re-run once on a `tests/Web/` timeout before investigating.
 
-- [ ] **Step 3: Tick every checkbox in this plan and note any deviation**
+- [x] **Step 3: Tick every checkbox in this plan and note any deviation**
 
 Add a `## Deviations` section at the bottom recording anything implemented
 differently from the plan and why.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A
@@ -2153,4 +2153,54 @@ git commit -m "docs(gallery): tick the host editor plan and record its deviation
 
 ## Deviations
 
-_(filled in at Task 11)_
+**`Session\Store::boolean()` does not exist** (Task 3). The plan called it in two
+places. Replaced by `ResolvePartyHost::isHost(Request, Party): bool`, which both
+`EnsurePartyHost` and `PartyController::show` now ask through — a helper the plan
+should have had anyway, since it keeps the session key in one file.
+
+**The endpoint is `POST`, not `PUT`** (Task 4). The plan had a `PUT` route reached
+by `_method` spoofing, as the administration does. That never worked from the
+browser: Inertia sends this form as a JSON body when no file is attached, and
+Laravel only reads `_method` out of a parsed form body. The route is a plain
+`POST` and no spoofing happens anywhere — which is what the spec said in the
+first place.
+
+**`forceFormData: true` had to go** (Task 8). With it, Inertia turned every
+submission into multipart, and the three framing fields never reached the
+server. Without it, Inertia sends JSON when there is no file and switches to
+multipart on its own when there is one. The framing values are also mirrored
+into `form.data` from the cropper by an effect rather than injected through
+`form.transform()`, which never applied.
+
+**`remove_banner` is not exposed to the host** (Task 8). The endpoint still
+accepts it and `PartyMetadataTest` still covers it — the administration uses that
+path — but the mockup offers no way to drop a cover, only to replace one, so
+carrying unreachable state in the host form would have been dead weight.
+
+**`useCoverCrop().reset()` does not clear the natural size** (Task 6). The plan
+cleared it. "Recadrer" does not change the image, so `onLoad` would never fire
+again and the drag would be dead until the modal was reopened. On a fresh import
+`onLoad` overwrites it anyway.
+
+**The file input is `sr-only`, not `hidden`** (Task 7). `display: none` makes the
+input unattachable from the browser driver, and `sr-only` is better for
+assistive technology besides.
+
+**The browser test does not submit an upload** (Task 10). The Pest browser driver
+does not forward multipart bodies to Laravel — the server sees an empty `$_POST`
+and `$_FILES` for a 16 KB body — which `tests/Web/AdminGalleryTest.php` already
+documents. The browser test asserts the picker and the preview up to the submit;
+the upload round-trip stays in `tests/Feature/PartyMetadataTest.php`.
+
+**Two extras the plan did not list.** `tests/Feature/Api/PartyApiTest.php`
+asserts an exact JSON structure, so it had to learn the three new fields.
+`/tests/Browser` — the driver's screenshot output — is now gitignored.
+
+**A float that JSON rounds to an int** (Task 5). `->where('party.banner_position_x', 30.0)`
+fails because `30.0` round-trips through JSON as `30`; the assertion uses `30`,
+the float cast itself being proven in `PartyTest`.
+
+**Stale assets look like broken tests.** Five `tests/Web/GalleryTest.php` share
+tests failed consistently before any change of ours, purely because
+`public/build` predated the mobile-share work. Run `vendor/bin/sail npm run build`
+before any browser test.
