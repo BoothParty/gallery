@@ -39,6 +39,9 @@ class Party extends Model
         'name',
         'display_name',
         'description',
+        'banner_position_x',
+        'banner_position_y',
+        'banner_zoom',
         'user_id',
         'expire_at',
         'source_key',
@@ -49,6 +52,9 @@ class Party extends Model
     {
         return [
             'expire_at' => 'datetime',
+            'banner_position_x' => 'float',
+            'banner_position_y' => 'float',
+            'banner_zoom' => 'float',
         ];
     }
 
