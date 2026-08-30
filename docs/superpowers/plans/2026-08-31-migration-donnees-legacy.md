@@ -49,7 +49,7 @@ La commande tient dans un seul fichier : elle est linéaire (parties → photos 
 - Consumes: rien.
 - Produces: la connexion nommée `legacy` ; la commande `party:import-legacy` avec les options `--files=`, `--party=`, `--dry-run` ; la constante `ImportLegacyData::SOURCE_KEY = 'legacy'`.
 
-- [ ] **Step 1 : Écrire le test qui échoue**
+- [x] **Step 1 : Écrire le test qui échoue**
 
 Créer `tests/Feature/Console/ImportLegacyDataTest.php` :
 
@@ -138,12 +138,12 @@ it('succeeds on an empty legacy database', function () {
 });
 ```
 
-- [ ] **Step 2 : Lancer le test, vérifier qu'il échoue**
+- [x] **Step 2 : Lancer le test, vérifier qu'il échoue**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: FAIL — `The command "party:import-legacy" does not exist.`
 
-- [ ] **Step 3 : Déclarer la connexion `legacy`**
+- [x] **Step 3 : Déclarer la connexion `legacy`**
 
 Dans `config/database.php`, insérer après le bloc `'mariadb' => [...]` :
 
@@ -176,7 +176,7 @@ LEGACY_DB_USERNAME=root
 LEGACY_DB_PASSWORD=
 ```
 
-- [ ] **Step 4 : Écrire le squelette de la commande**
+- [x] **Step 4 : Écrire le squelette de la commande**
 
 Créer `app/Console/Commands/Party/ImportLegacyData.php` :
 
@@ -245,12 +245,12 @@ class ImportLegacyData extends Command
 }
 ```
 
-- [ ] **Step 5 : Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 5 : Lancer les tests, vérifier qu'ils passent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: PASS (2 tests)
 
-- [ ] **Step 6 : Formater et committer**
+- [x] **Step 6 : Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -270,7 +270,7 @@ git commit -m "feat(migration): add the legacy connection and the import command
 - Consumes: `ImportLegacyData::SOURCE_KEY`, la connexion `legacy`, `$this->filesRoot`.
 - Produces: `private function importParty(object $legacyParty): Party` — renvoie la party cible, créée ou déjà présente ; `private array $counters` avec les clés `parties`, `pictures`, `missing`, `errors`.
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 Ajouter à `tests/Feature/Console/ImportLegacyDataTest.php` :
 
@@ -357,12 +357,12 @@ it('restricts the import to a single party with --party', function () {
 
 Ajouter en tête du fichier de test l'import `use App\Models\Party;`.
 
-- [ ] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: FAIL — aucune party n'est créée (`sole()` lève `NoRecordsFoundException`).
 
-- [ ] **Step 3 : Implémenter l'import des parties**
+- [x] **Step 3 : Implémenter l'import des parties**
 
 Dans `ImportLegacyData.php`, ajouter `use App\Models\Party;` puis la propriété de compteurs sous `$filesRoot` :
 
@@ -440,12 +440,12 @@ Et ajouter la méthode :
     }
 ```
 
-- [ ] **Step 4 : Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 4 : Lancer les tests, vérifier qu'ils passent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: PASS (6 tests)
 
-- [ ] **Step 5 : Formater et committer**
+- [x] **Step 5 : Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -465,7 +465,7 @@ git commit -m "feat(migration): import the legacy parties"
 - Consumes: `importParty()`, `$this->filesRoot`, `$this->counters`.
 - Produces: `private function importPictures(object $legacyParty, Party $party): void` et `private function importPicture(object $row, Party $party): void`.
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 Ajouter au fichier de test :
 
@@ -593,12 +593,12 @@ it('imports a party that has no picture at all', function () {
 
 Ajouter en tête du fichier les imports `use App\Jobs\CreatePictureThumbnail;`, `use App\Models\Picture;`, `use Illuminate\Support\Facades\Queue;` et `use Illuminate\Support\Facades\Storage;`.
 
-- [ ] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: FAIL — aucune `Picture` n'est créée.
 
-- [ ] **Step 3 : Implémenter l'import des photos**
+- [x] **Step 3 : Implémenter l'import des photos**
 
 Ajouter à `ImportLegacyData.php` les imports `use App\Jobs\CreatePictureThumbnail;`, `use App\Models\Picture;`, `use Illuminate\Http\File;`, `use Illuminate\Support\Facades\Storage;`.
 
@@ -677,12 +677,12 @@ Puis ajouter les deux méthodes :
     }
 ```
 
-- [ ] **Step 4 : Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 4 : Lancer les tests, vérifier qu'ils passent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: PASS (11 tests)
 
-- [ ] **Step 5 : Formater et committer**
+- [x] **Step 5 : Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -704,7 +704,7 @@ git commit -m "feat(migration): import the legacy pictures onto S3"
 
 Sur 62 000 fichiers d'origine hétérogène, un JPEG tronqué ou un chemin exotique est une certitude : une photo qui échoue ne doit jamais faire tomber les 61 999 autres.
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 Ajouter au fichier de test :
 
@@ -742,12 +742,12 @@ it('reports what the run did', function () {
 });
 ```
 
-- [ ] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: FAIL — le premier test lève une exception sur le fichier absent, le second ne trouve pas le rapport.
 
-- [ ] **Step 3 : Implémenter la robustesse, la progression et le rapport**
+- [x] **Step 3 : Implémenter la robustesse, la progression et le rapport**
 
 Ajouter les imports `use Illuminate\Support\Collection;`, `use Illuminate\Support\Facades\Log;`, `use Symfony\Component\Console\Helper\ProgressBar;`, `use Throwable;`.
 
@@ -872,12 +872,12 @@ Ajouter les deux méthodes :
     }
 ```
 
-- [ ] **Step 4 : Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 4 : Lancer les tests, vérifier qu'ils passent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: PASS (13 tests)
 
-- [ ] **Step 5 : Formater et committer**
+- [x] **Step 5 : Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -899,7 +899,7 @@ git commit -m "feat(migration): survive broken files and report the tally"
 
 C'est la première commande que l'on lancera en production : elle donne le décompte réel et le nombre d'orphelins avant d'engager des heures de transfert.
 
-- [ ] **Step 1 : Écrire les tests qui échouent**
+- [x] **Step 1 : Écrire les tests qui échouent**
 
 Ajouter au fichier de test :
 
@@ -944,12 +944,12 @@ it('still counts pictures and missing files in dry-run mode', function () {
 });
 ```
 
-- [ ] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
+- [x] **Step 2 : Lancer les tests, vérifier qu'ils échouent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: FAIL — `--dry-run` écrit malgré tout : `Party::count()` vaut 1.
 
-- [ ] **Step 3 : Implémenter le mode simulation**
+- [x] **Step 3 : Implémenter le mode simulation**
 
 Ajouter la propriété :
 
@@ -1011,17 +1011,17 @@ Dans `importPicture()`, insérer juste après le garde `if (! is_file($source))`
 
 En mode simulation, la party n'est pas persistée et n'a donc pas d'identifiant : c'est précisément pourquoi la garde se place avant le calcul du chemin S3. La simulation compte et détecte les fichiers absents, elle ne prédit pas les chemins.
 
-- [ ] **Step 4 : Lancer les tests, vérifier qu'ils passent**
+- [x] **Step 4 : Lancer les tests, vérifier qu'ils passent**
 
 Run: `vendor/bin/sail artisan test --compact --filter=ImportLegacyData`
 Expected: PASS (15 tests)
 
-- [ ] **Step 5 : Lancer la suite complète pour vérifier l'absence de régression**
+- [x] **Step 5 : Lancer la suite complète pour vérifier l'absence de régression**
 
 Run: `vendor/bin/sail artisan test --compact`
 Expected: PASS — les tests `tests/Web/` peuvent flaker sur un timeout de 5 s sans régression réelle ; les relancer avant d'enquêter.
 
-- [ ] **Step 6 : Formater et committer**
+- [x] **Step 6 : Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -1041,3 +1041,16 @@ Ce n'est pas une tâche de développement, mais la raison d'être du plan. Volum
 4. `… --party=<une-galerie>` puis contrôle visuel de la galerie publique.
 5. Import complet sous `tmux`, workers de queue lancés en parallèle pour les miniatures.
 6. Contrôle final : nombre de parties, nombre de photos, et `Picture::whereNull('thumbnail_path')->count()` une fois la queue vidée.
+
+---
+
+## Écarts constatés à l'exécution
+
+Le plan a été suivi sans modification : les cinq tâches ont été implémentées telles qu'écrites, et les 15 tests passent.
+
+Deux points relevés en cours de route :
+
+- **`tests/Web/GalleryEditorTest.php` échoue**, de façon reproductible et non par flake. Vérification faite au point de branchement (`7275516`) : l'échec y est déjà présent. C'est une régression préexistante de `feature/gallery-host-editor`, sans rapport avec l'import, et elle reste à traiter sur cette branche-là.
+- La connexion `legacy` a été insérée dans `config/database.php` juste avant le bloc `pgsql`, c'est-à-dire immédiatement après `mariadb` comme prévu.
+
+Le reste de la suite passe : 385 tests, 2 178 assertions.
