@@ -149,8 +149,10 @@ déduplication sont déterministes :
 - une photo se crée par `firstOrCreate` sur son `path`, dérivé du md5 legacy ;
 - `putFileAs` sur un objet S3 déjà présent l'écrase à l'identique.
 
-Relancer la commande reprend donc là où elle s'était arrêtée, au prix de
-quelques `HEAD` S3 sur ce qui est déjà passé. Il n'y a pas de `--resume` à
+Le chemin S3 étant calculable avant le téléversement, une reprise saute d'un
+coup la ligne **et** le transfert : elle ne repousse pas les gigaoctets déjà
+passés. Relancer la commande reprend donc là où elle s'était arrêtée, au prix
+d'une requête en base par photo déjà traitée. Il n'y a pas de `--resume` à
 gérer, et pas de table de suivi à maintenir.
 
 Le couple `source_*` sert accessoirement de bouton d'annulation : une seule

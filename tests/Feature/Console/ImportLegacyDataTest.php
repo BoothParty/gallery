@@ -355,3 +355,20 @@ it('still counts pictures and missing files in dry-run mode', function () {
         ->expectsOutputToContain('Fichiers manquants')
         ->assertSuccessful();
 });
+
+it('does not re-upload a picture a previous run already pushed', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    legacyPicture(legacyParty());
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])->assertSuccessful();
+
+    /** Une sentinelle qu'un second téléversement écraserait. */
+    $path = Picture::sole()->path;
+    Storage::disk('s3')->put($path, 'sentinel');
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])->assertSuccessful();
+
+    expect(Storage::disk('s3')->get($path))->toBe('sentinel');
+});

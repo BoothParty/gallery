@@ -180,8 +180,9 @@ class ImportLegacyData extends Command
      * Push one legacy original onto S3 and record it.
      *
      * The object keeps its legacy file name, which the old project already
-     * derived from the content hash. That makes the S3 path deterministic, so
-     * a re-run overwrites the very same object instead of creating a twin.
+     * derived from the content hash. That makes the S3 path knowable before
+     * the upload, which is what lets a resumed run skip both the row and the
+     * transfer instead of pushing 40 GB a second time.
      */
     private function importPicture(object $row, Party $party): void
     {
@@ -204,17 +205,20 @@ class ImportLegacyData extends Command
                 return;
             }
 
-            $path = Storage::disk('s3')->putFileAs(
-                "pictures/{$party->id}",
-                new File($source),
-                pathinfo($row->path, PATHINFO_BASENAME),
-            );
+            $fileName = pathinfo($row->path, PATHINFO_BASENAME);
+            $path = "pictures/{$party->id}/{$fileName}";
 
+            /**
+             * The path is known before the upload, so a resumed run can skip
+             * the transfer outright rather than push the same bytes twice.
+             */
             $picture = Picture::firstOrNew(['path' => $path]);
 
             if ($picture->exists) {
                 return;
             }
+
+            Storage::disk('s3')->putFileAs("pictures/{$party->id}", new File($source), $fileName);
 
             $picture->fill([
                 'party_id' => $party->id,
