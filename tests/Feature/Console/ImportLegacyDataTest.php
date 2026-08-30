@@ -1,9 +1,13 @@
 <?php
 
+use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
+use App\Models\Picture;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -159,4 +163,124 @@ it('restricts the import to a single party with --party', function () {
     ])->assertSuccessful();
 
     expect(Party::pluck('name')->all())->toBe(['wanted']);
+});
+
+// ── Import des photos ────────────────────────────────────────────────────────
+
+/**
+ * Insère une photo legacy et écrit ses trois fichiers sur le disque factice.
+ * Renvoie le chemin relatif de l'original.
+ */
+function legacyPicture(int $partyId, string $partyName = 'retro-night'): string
+{
+    $filesRoot = legacyFilesRoot();
+
+    $pictureId = DB::connection('legacy')->table('pictures')->insertGetId([
+        'party_id' => $partyId,
+        'created_at' => '2024-06-01 21:30:00',
+        'updated_at' => '2024-06-01 21:30:00',
+    ]);
+
+    $directory = "pictures/{$partyName}/{$pictureId}";
+    mkdir("{$filesRoot}/{$directory}", 0755, true);
+
+    $sizes = [
+        ['size' => 'original', 'width' => 3000, 'height' => 2000, 'hash' => md5("original-{$pictureId}")],
+        ['size' => 'thumbnail', 'width' => 250, 'height' => 167, 'hash' => md5("thumbnail-{$pictureId}")],
+        ['size' => 'cover', 'width' => 500, 'height' => 500, 'hash' => md5("cover-{$pictureId}")],
+    ];
+
+    foreach ($sizes as $size) {
+        $path = "{$directory}/{$size['hash']}.jpg";
+        file_put_contents("{$filesRoot}/{$path}", 'fake-jpeg-bytes');
+
+        DB::connection('legacy')->table('picture_sizes')->insert([
+            'picture_id' => $pictureId,
+            'size' => $size['size'],
+            'width' => $size['width'],
+            'height' => $size['height'],
+            'path' => $path,
+            'created_at' => '2024-06-01 21:30:00',
+            'updated_at' => '2024-06-01 21:30:00',
+        ]);
+    }
+
+    return "{$directory}/{$sizes[0]['hash']}.jpg";
+}
+
+it('uploads the original and maps its dimensions', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    $legacyId = legacyParty();
+    $originalPath = legacyPicture($legacyId);
+    $md5 = pathinfo($originalPath, PATHINFO_FILENAME);
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->assertSuccessful();
+
+    $party = Party::sole();
+    $picture = Picture::sole();
+
+    expect($picture->party_id)->toBe($party->id)
+        ->and($picture->path)->toBe("pictures/{$party->id}/{$md5}.jpg")
+        ->and($picture->width)->toEqual(3000)
+        ->and($picture->height)->toEqual(2000)
+        ->and($picture->created_at->toDateTimeString())->toBe('2024-06-01 21:30:00');
+
+    Storage::disk('s3')->assertExists($picture->path);
+});
+
+it('ignores the legacy thumbnail and cover sizes', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    legacyPicture(legacyParty());
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->assertSuccessful();
+
+    expect(Picture::count())->toBe(1)
+        ->and(Storage::disk('s3')->allFiles())->toHaveCount(1);
+});
+
+it('dispatches a thumbnail job for each imported picture', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    $legacyId = legacyParty();
+    legacyPicture($legacyId);
+    legacyPicture($legacyId);
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->assertSuccessful();
+
+    Queue::assertPushed(CreatePictureThumbnail::class, 2);
+});
+
+it('does not duplicate pictures nor redispatch jobs on a second run', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    legacyPicture(legacyParty());
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])->assertSuccessful();
+    Queue::fake();
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])->assertSuccessful();
+
+    expect(Picture::count())->toBe(1);
+    Queue::assertNothingPushed();
+});
+
+it('imports a party that has no picture at all', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    legacyParty();
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->assertSuccessful();
+
+    expect(Party::count())->toBe(1)
+        ->and(Picture::count())->toBe(0);
 });

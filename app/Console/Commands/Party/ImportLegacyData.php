@@ -2,9 +2,13 @@
 
 namespace App\Console\Commands\Party;
 
+use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
+use App\Models\Picture;
 use Illuminate\Console\Command;
+use Illuminate\Http\File;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ImportLegacyData extends Command
 {
@@ -71,7 +75,7 @@ class ImportLegacyData extends Command
             ->get();
 
         foreach ($legacyParties as $legacyParty) {
-            $this->importParty($legacyParty);
+            $this->importPictures($legacyParty, $this->importParty($legacyParty));
         }
 
         return self::SUCCESS;
@@ -113,5 +117,68 @@ class ImportLegacyData extends Command
         $this->counters['parties']++;
 
         return $party;
+    }
+
+    /**
+     * Walk the legacy pictures of one party. The join filters on the
+     * `original` size, so the legacy thumbnail and cover rows never surface,
+     * and `chunkById` keeps memory flat on a gallery of any size.
+     */
+    private function importPictures(object $legacyParty, Party $party): void
+    {
+        DB::connection('legacy')->table('pictures')
+            ->join('picture_sizes', 'picture_sizes.picture_id', '=', 'pictures.id')
+            ->where('pictures.party_id', $legacyParty->id)
+            ->where('picture_sizes.size', 'original')
+            ->select([
+                'pictures.id',
+                'pictures.created_at',
+                'pictures.updated_at',
+                'picture_sizes.path',
+                'picture_sizes.width',
+                'picture_sizes.height',
+            ])
+            ->chunkById(500, function ($rows) use ($party): void {
+                foreach ($rows as $row) {
+                    $this->importPicture($row, $party);
+                }
+            }, 'pictures.id', 'id');
+    }
+
+    /**
+     * Push one legacy original onto S3 and record it.
+     *
+     * The object keeps its legacy file name, which the old project already
+     * derived from the content hash. That makes the S3 path deterministic, so
+     * a re-run overwrites the very same object instead of creating a twin.
+     */
+    private function importPicture(object $row, Party $party): void
+    {
+        $source = $this->filesRoot.'/'.$row->path;
+
+        $path = Storage::disk('s3')->putFileAs(
+            "pictures/{$party->id}",
+            new File($source),
+            pathinfo($row->path, PATHINFO_BASENAME),
+        );
+
+        $picture = Picture::firstOrNew(['path' => $path]);
+
+        if ($picture->exists) {
+            return;
+        }
+
+        $picture->fill([
+            'party_id' => $party->id,
+            'width' => $row->width,
+            'height' => $row->height,
+        ])->forceFill([
+            'created_at' => $row->created_at,
+            'updated_at' => $row->updated_at,
+        ])->save();
+
+        $this->counters['pictures']++;
+
+        CreatePictureThumbnail::dispatch($picture);
     }
 }
