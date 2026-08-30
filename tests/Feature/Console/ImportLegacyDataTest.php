@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Party;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -79,4 +80,83 @@ it('fails when --files does not point to an existing directory', function () {
 it('succeeds on an empty legacy database', function () {
     $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
         ->assertSuccessful();
+});
+
+// ── Import des parties ───────────────────────────────────────────────────────
+
+/**
+ * Insère une party dans la base legacy et renvoie son identifiant.
+ */
+function legacyParty(array $attributes = []): int
+{
+    return DB::connection('legacy')->table('parties')->insertGetId(array_merge([
+        'name' => 'retro-night',
+        'title' => 'Retro Night',
+        'description' => 'Une soirée à paillettes',
+        'location' => 'Nantes',
+        'date' => '2024-06-01 20:00:00',
+        'is_from_time' => false,
+        'hide_pictures_date' => '2024-07-01 00:00:00',
+        'created_at' => '2024-05-01 10:00:00',
+        'updated_at' => '2024-05-02 11:00:00',
+    ], $attributes));
+}
+
+it('maps every legacy party column onto the new schema', function () {
+    $legacyId = legacyParty();
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->assertSuccessful();
+
+    $party = Party::where('source_key', 'legacy')->sole();
+
+    expect($party->name)->toBe('retro-night')
+        ->and($party->display_name)->toBe('Retro Night')
+        ->and($party->description)->toBe('Une soirée à paillettes')
+        ->and($party->source_event_id)->toBe((string) $legacyId)
+        ->and($party->user_id)->toBeNull()
+        ->and($party->host_token)->not->toBeNull()
+        ->and($party->expire_at->toDateTimeString())->toBe('2024-07-01 00:00:00')
+        ->and($party->created_at->toDateTimeString())->toBe('2024-05-01 10:00:00')
+        ->and($party->updated_at->toDateTimeString())->toBe('2024-05-02 11:00:00');
+});
+
+it('imports a party whose optional columns are null', function () {
+    legacyParty([
+        'name' => 'bare',
+        'title' => null,
+        'description' => null,
+        'hide_pictures_date' => null,
+    ]);
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->assertSuccessful();
+
+    $party = Party::where('name', 'bare')->sole();
+
+    expect($party->display_name)->toBeNull()
+        ->and($party->description)->toBeNull()
+        ->and($party->expire_at)->toBeNull()
+        ->and($party->displayTitle())->toBe('bare');
+});
+
+it('does not duplicate a party on a second run', function () {
+    legacyParty();
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])->assertSuccessful();
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])->assertSuccessful();
+
+    expect(Party::count())->toBe(1);
+});
+
+it('restricts the import to a single party with --party', function () {
+    legacyParty(['name' => 'wanted']);
+    legacyParty(['name' => 'ignored']);
+
+    $this->artisan('party:import-legacy', [
+        '--files' => legacyFilesRoot(),
+        '--party' => 'wanted',
+    ])->assertSuccessful();
+
+    expect(Party::pluck('name')->all())->toBe(['wanted']);
 });
