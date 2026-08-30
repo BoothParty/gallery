@@ -56,6 +56,11 @@ class ImportLegacyData extends Command
     ];
 
     /**
+     * Whether the run only walks the source and reports, writing nothing.
+     */
+    private bool $dryRun = false;
+
+    /**
      * Progress over the pictures, which is what actually takes hours.
      */
     private ?ProgressBar $progress = null;
@@ -74,6 +79,11 @@ class ImportLegacyData extends Command
         }
 
         $this->filesRoot = rtrim($filesRoot, '/');
+        $this->dryRun = (bool) $this->option('dry-run');
+
+        if ($this->dryRun) {
+            $this->components->warn('Dry run: nothing will be written to the database nor to S3.');
+        }
 
         $legacyParties = DB::connection('legacy')->table('parties')
             ->when(
@@ -121,6 +131,12 @@ class ImportLegacyData extends Command
             'user_id' => null,
         ]);
 
+        $this->counters['parties']++;
+
+        if ($this->dryRun) {
+            return $party;
+        }
+
         /**
          * Timestamps are guarded, and letting Eloquent stamp them would date
          * every imported gallery from the night of the migration.
@@ -129,8 +145,6 @@ class ImportLegacyData extends Command
             'created_at' => $legacyParty->created_at,
             'updated_at' => $legacyParty->updated_at,
         ])->save();
-
-        $this->counters['parties']++;
 
         return $party;
     }
@@ -180,6 +194,12 @@ class ImportLegacyData extends Command
                     'legacy_picture_id' => $row->id,
                     'path' => $row->path,
                 ]);
+
+                return;
+            }
+
+            if ($this->dryRun) {
+                $this->counters['pictures']++;
 
                 return;
             }

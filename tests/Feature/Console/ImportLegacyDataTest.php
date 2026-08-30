@@ -316,3 +316,42 @@ it('reports what the run did', function () {
         ->expectsOutputToContain('Erreurs')
         ->assertSuccessful();
 });
+
+// ── Mode simulation ──────────────────────────────────────────────────────────
+
+it('writes nothing at all in dry-run mode', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    legacyPicture(legacyParty());
+
+    $this->artisan('party:import-legacy', [
+        '--files' => legacyFilesRoot(),
+        '--dry-run' => true,
+    ])->assertSuccessful();
+
+    expect(Party::count())->toBe(0)
+        ->and(Picture::count())->toBe(0)
+        ->and(Storage::disk('s3')->allFiles())->toBe([]);
+
+    Queue::assertNothingPushed();
+});
+
+it('still counts pictures and missing files in dry-run mode', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    $legacyId = legacyParty();
+    legacyPicture($legacyId);
+    $orphanPath = legacyPicture($legacyId);
+
+    unlink(legacyFilesRoot()."/{$orphanPath}");
+
+    $this->artisan('party:import-legacy', [
+        '--files' => legacyFilesRoot(),
+        '--dry-run' => true,
+    ])
+        ->expectsOutputToContain('Parties importées')
+        ->expectsOutputToContain('Fichiers manquants')
+        ->assertSuccessful();
+});
