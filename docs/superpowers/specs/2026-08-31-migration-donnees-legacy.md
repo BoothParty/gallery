@@ -21,9 +21,10 @@ migration :
   (`original`, `thumbnail` 250 px, `cover` 500×500), quand le nouveau tient
   `path`, `thumbnail_path`, `width` et `height` sur la ligne `pictures`.
 
-La production compte **185 481 fichiers JPEG**, soit de l'ordre de **62 000
-photos**, dont une part d'orphelins : des fichiers sur le disque qui ne
-correspondent à aucune ligne en base.
+La production compte **185 481 fichiers JPEG** pour **47 Go**, soit de l'ordre
+de **62 000 photos** — environ 650 Ko par original — dont une part
+d'orphelins : des fichiers sur le disque qui ne correspondent à aucune ligne en
+base.
 
 ## Objectif
 
@@ -186,10 +187,10 @@ donc rejouable sans dégât.
 **Compromis assumé :** le job relit l'original depuis S3 (`$disk->get`), alors
 que l'import vient tout juste de le lire sur le disque local. Chaque photo
 traverse donc le réseau deux fois. Sur un Minio auto-hébergé sur le même
-réseau, le coût est du temps, pas de l'argent, et cela évite de dupliquer la
-logique de vignette dans la commande. Si le débit devient le facteur limitant,
-le levier est d'ajouter au job un chemin de lecture local optionnel — pas de
-réécrire l'import.
+réseau, cela représente deux fois ~40 Go, du temps et non de l'argent, et cela
+évite de dupliquer la logique de vignette dans la commande. Si le débit devient
+le facteur limitant, le levier est d'ajouter au job un chemin de lecture local
+optionnel — pas de réécrire l'import.
 
 ## Erreurs
 
@@ -228,7 +229,7 @@ Cas couverts :
 
 ## Déroulé opérationnel
 
-1. `du -sh public/pictures` sur la production, pour dimensionner le transfert.
+1. Transfert dimensionné : 47 Go, ~62 000 photos (mesuré le 2026-08-31).
 2. `rsync` incrémental du dossier `public/` et dump de la base.
 3. Restauration du dump dans la base locale, `LEGACY_DB_*` renseignées.
 4. `party:import-legacy --files=… --dry-run` : décompte et orphelins.
