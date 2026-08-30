@@ -7,8 +7,12 @@ use App\Models\Party;
 use App\Models\Picture;
 use Illuminate\Console\Command;
 use Illuminate\Http\File;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Throwable;
 
 class ImportLegacyData extends Command
 {
@@ -52,6 +56,11 @@ class ImportLegacyData extends Command
     ];
 
     /**
+     * Progress over the pictures, which is what actually takes hours.
+     */
+    private ?ProgressBar $progress = null;
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -74,9 +83,16 @@ class ImportLegacyData extends Command
             ->orderBy('id')
             ->get();
 
+        $this->progress = $this->output->createProgressBar($this->totalPictures($legacyParties));
+        $this->progress->start();
+
         foreach ($legacyParties as $legacyParty) {
             $this->importPictures($legacyParty, $this->importParty($legacyParty));
         }
+
+        $this->progress->finish();
+        $this->newLine(2);
+        $this->report();
 
         return self::SUCCESS;
     }
@@ -141,6 +157,7 @@ class ImportLegacyData extends Command
             ->chunkById(500, function ($rows) use ($party): void {
                 foreach ($rows as $row) {
                     $this->importPicture($row, $party);
+                    $this->progress?->advance();
                 }
             }, 'pictures.id', 'id');
     }
@@ -154,31 +171,79 @@ class ImportLegacyData extends Command
      */
     private function importPicture(object $row, Party $party): void
     {
-        $source = $this->filesRoot.'/'.$row->path;
+        try {
+            $source = $this->filesRoot.'/'.$row->path;
 
-        $path = Storage::disk('s3')->putFileAs(
-            "pictures/{$party->id}",
-            new File($source),
-            pathinfo($row->path, PATHINFO_BASENAME),
-        );
+            if (! is_file($source)) {
+                $this->counters['missing']++;
+                Log::warning('Legacy import: file is gone', [
+                    'legacy_picture_id' => $row->id,
+                    'path' => $row->path,
+                ]);
 
-        $picture = Picture::firstOrNew(['path' => $path]);
+                return;
+            }
 
-        if ($picture->exists) {
-            return;
+            $path = Storage::disk('s3')->putFileAs(
+                "pictures/{$party->id}",
+                new File($source),
+                pathinfo($row->path, PATHINFO_BASENAME),
+            );
+
+            $picture = Picture::firstOrNew(['path' => $path]);
+
+            if ($picture->exists) {
+                return;
+            }
+
+            $picture->fill([
+                'party_id' => $party->id,
+                'width' => $row->width,
+                'height' => $row->height,
+            ])->forceFill([
+                'created_at' => $row->created_at,
+                'updated_at' => $row->updated_at,
+            ])->save();
+
+            $this->counters['pictures']++;
+
+            CreatePictureThumbnail::dispatch($picture);
+        } catch (Throwable $exception) {
+            $this->counters['errors']++;
+            Log::error('Legacy import: picture failed', [
+                'legacy_picture_id' => $row->id,
+                'path' => $row->path,
+                'message' => $exception->getMessage(),
+            ]);
         }
+    }
 
-        $picture->fill([
-            'party_id' => $party->id,
-            'width' => $row->width,
-            'height' => $row->height,
-        ])->forceFill([
-            'created_at' => $row->created_at,
-            'updated_at' => $row->updated_at,
-        ])->save();
+    /**
+     * Total number of legacy originals in scope, used to size the progress bar.
+     *
+     * @param  Collection<int, object>  $legacyParties
+     */
+    private function totalPictures(Collection $legacyParties): int
+    {
+        return DB::connection('legacy')->table('pictures')
+            ->join('picture_sizes', 'picture_sizes.picture_id', '=', 'pictures.id')
+            ->whereIn('pictures.party_id', $legacyParties->pluck('id'))
+            ->where('picture_sizes.size', 'original')
+            ->count();
+    }
 
-        $this->counters['pictures']++;
-
-        CreatePictureThumbnail::dispatch($picture);
+    /**
+     * Render the tally. Missing files are the legacy rows whose file is gone
+     * from disk; orphan files never surface, the import being driven by the
+     * database rather than by a filesystem walk.
+     */
+    private function report(): void
+    {
+        $this->table(['Résultat', 'Nombre'], [
+            ['Parties importées', $this->counters['parties']],
+            ['Photos importées', $this->counters['pictures']],
+            ['Fichiers manquants', $this->counters['missing']],
+            ['Erreurs', $this->counters['errors']],
+        ]);
     }
 }

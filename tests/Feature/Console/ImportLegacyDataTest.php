@@ -284,3 +284,35 @@ it('imports a party that has no picture at all', function () {
     expect(Party::count())->toBe(1)
         ->and(Picture::count())->toBe(0);
 });
+
+// ── Robustesse et rapport ────────────────────────────────────────────────────
+
+it('counts a missing file without failing the run', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    $legacyId = legacyParty();
+    $originalPath = legacyPicture($legacyId);
+    legacyPicture($legacyId);
+
+    unlink(legacyFilesRoot()."/{$originalPath}");
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->expectsOutputToContain('Fichiers manquants')
+        ->assertSuccessful();
+
+    expect(Picture::count())->toBe(1);
+});
+
+it('reports what the run did', function () {
+    Storage::fake('s3');
+    Queue::fake();
+
+    legacyPicture(legacyParty());
+
+    $this->artisan('party:import-legacy', ['--files' => legacyFilesRoot()])
+        ->expectsOutputToContain('Parties importées')
+        ->expectsOutputToContain('Photos importées')
+        ->expectsOutputToContain('Erreurs')
+        ->assertSuccessful();
+});
