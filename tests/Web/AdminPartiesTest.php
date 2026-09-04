@@ -16,15 +16,21 @@ beforeEach(function () {
  * round-trips rather than literal instants, so they hold in any timezone.
  */
 
+/*
+ * The row is asserted before it is clicked because navigate() hands the page
+ * back while the navigation is still in flight, and a click sent during it is
+ * interrupted.
+ */
 function openFirstPartyDetails(object $page): object
 {
-    return $page->click('table tbody tr:first-child td:nth-child(2)');
+    return $page->assertVisible('table tbody tr:first-child td:nth-child(2)')
+        ->click('table tbody tr:first-child td:nth-child(2)');
 }
 
 // ── Create dialog ─────────────────────────────────────────────────────────────
 
 it('offers an expiry date field in the create dialog', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create party')
         ->assertVisible('#create-party-expire-at')
@@ -34,7 +40,7 @@ it('offers an expiry date field in the create dialog', function () {
 });
 
 it('round-trips an expiry date entered in the create dialog', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create party')
         ->fill('#create-party-name', 'Browser Party')
@@ -52,7 +58,7 @@ it('round-trips an expiry date entered in the create dialog', function () {
 // ── Bulk create dialog ────────────────────────────────────────────────────────
 
 it('prefills party names from the upcoming events in the bulk create dialog', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create from events')
         ->assertSee('Create parties from upcoming events')
@@ -64,7 +70,7 @@ it('prefills party names from the upcoming events in the bulk create dialog', fu
 });
 
 it('creates the selected parties from the bulk create dialog', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create from events')
         ->assertVisible('#bulk-create-party-name-0')
@@ -77,7 +83,7 @@ it('creates the selected parties from the bulk create dialog', function () {
 });
 
 it('reloads the upcoming events from the bulk create dialog', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create from events')
         ->assertVisible('#bulk-create-party-name-0')
@@ -91,7 +97,7 @@ it('marks the events already turned into a party', function () {
         ->fromSourceEvent('stub:stub-domaine-des-tilleuls')
         ->create(['name' => 'mariage-domaine-des-tilleuls']);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create from events')
         ->assertSee('Already created')
@@ -108,7 +114,7 @@ it('prefills the expiry date in the edit dialog', function () {
         'expire_at' => '2030-06-15 18:00:00',
     ]);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->assertVisible('#edit-party-expire-at')
@@ -124,7 +130,7 @@ it('leaves the expiry date untouched when the dialog is saved unchanged', functi
         'expire_at' => '2030-06-15 18:00:00',
     ]);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->click('Update party')
@@ -139,7 +145,7 @@ it('clears the expiry date from the edit dialog', function () {
         'expire_at' => '2030-06-15 18:00:00',
     ]);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->clear('#edit-party-expire-at')
@@ -152,7 +158,7 @@ it('clears the expiry date from the edit dialog', function () {
 it('round-trips an expiry date entered in the edit dialog', function () {
     $party = Party::factory()->create(['expire_at' => null]);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->fill('#edit-party-expire-at', '2030-06-15T18:00')
@@ -171,7 +177,7 @@ it('round-trips an expiry date entered in the edit dialog', function () {
 it('links to the poster download from the details dialog', function () {
     $party = Party::factory()->create(['name' => 'poster-party']);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->assertVisible('#download-party-poster')
@@ -184,7 +190,7 @@ it('links to the poster download from the details dialog', function () {
 it('saves the display name and description from the edit dialog', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->fill('#edit-party-display-name', 'Camille & Antoine')
@@ -203,7 +209,7 @@ it('prefills the metadata in the edit dialog', function () {
         'description' => 'Stored description',
     ]);
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->assertValue('#edit-party-display-name', 'Stored Title')
@@ -214,7 +220,7 @@ it('prefills the metadata in the edit dialog', function () {
 it('offers a banner file field in the edit dialog', function () {
     Party::factory()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->assertVisible('#edit-party-banner')
@@ -225,7 +231,7 @@ it('offers a banner file field in the edit dialog', function () {
 it('previews the current banner and offers to remove it', function () {
     $party = Party::factory()->withBanner()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->assertVisible('#edit-party-banner-preview')
@@ -237,7 +243,7 @@ it('previews the current banner and offers to remove it', function () {
 it('hides the banner preview and removal box when the party has no banner', function () {
     Party::factory()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->assertMissing('#edit-party-banner-preview')
@@ -248,7 +254,7 @@ it('hides the banner preview and removal box when the party has no banner', func
 it('removes the banner from the edit dialog', function () {
     $party = Party::factory()->withBanner()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     openFirstPartyDetails($page)
         ->click('#edit-party-remove-banner')
@@ -261,7 +267,7 @@ it('removes the banner from the edit dialog', function () {
 // ── Authentication ────────────────────────────────────────────────────────────
 
 it('signs the user out from the sidebar menu', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click(auth()->user()->name)
         ->click('Log out')

@@ -15,7 +15,7 @@ beforeEach(function () {
 it('hides the edit button from a plain visitor', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.gallery', $party));
+    $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
     $page->assertPresent('[data-gallery-hero]')
         ->assertMissing('[data-gallery-edit]')
@@ -25,7 +25,7 @@ it('hides the edit button from a plain visitor', function () {
 it('shows the edit button to whoever opens the tokenised link', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.gallery', $party).'?token='.$party->host_token);
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
 
     $page->assertPresent('[data-gallery-edit]')
         ->assertSee('Modifier la galerie')
@@ -35,7 +35,7 @@ it('shows the edit button to whoever opens the tokenised link', function () {
 it('shows no edit button for a wrong token', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.gallery', $party).'?token=wrong');
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token=wrong'));
 
     $page->assertMissing('[data-gallery-edit]')
         ->assertNoJavaScriptErrors();
@@ -46,7 +46,7 @@ it('shows no edit button for a wrong token', function () {
 it('saves a new title from the editor', function () {
     $party = Party::factory()->create(['name' => 'noces-de-juin']);
 
-    $page = visit(route('party.gallery', $party).'?token='.$party->host_token);
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
 
     $page->click('[data-gallery-edit]')
         ->type('[data-gallery-editor] input[placeholder="Camille & Antoine"]', 'Camille & Antoine')
@@ -66,7 +66,7 @@ it('saves a new title from the editor', function () {
 it('previews an imported cover inside the crop frame', function () {
     $party = Party::factory()->create(['name' => 'noces-de-juin']);
 
-    $page = visit(route('party.gallery', $party).'?token='.$party->host_token);
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
 
     $page->click('[data-gallery-edit]')
         ->assertMissing('[data-cover-frame] img')

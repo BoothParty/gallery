@@ -1,5 +1,6 @@
 <?php
 
+use Tests\BrowserPage;
 use Tests\TestCase;
 
 /*
@@ -16,6 +17,31 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
  // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature', 'Web');
+
+/*
+|--------------------------------------------------------------------------
+| Browser Tests
+|--------------------------------------------------------------------------
+|
+| The browser plugin waits 5 seconds for an element by default, which is not
+| enough on the shared CI runners, where three browsers render the same pages
+| at once. The generous budget only costs time when a test is about to fail
+| anyway.
+|
+*/
+
+pest()->browser()->timeout(30_000);
+
+/**
+ * Wraps a visited page so that its clicks are sent once, see Tests\BrowserPage.
+ *
+ * The visit is passed as a closure because the browser plugin decides which
+ * tests need a browser by looking for a "visit(" call in the test's own source.
+ */
+function browserPage(Closure $visit): BrowserPage
+{
+    return new BrowserPage($visit());
+}
 
 /*
 |--------------------------------------------------------------------------

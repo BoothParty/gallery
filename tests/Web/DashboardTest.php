@@ -15,7 +15,7 @@ it('can search parties in the switcher including expired ones', function () {
     Party::factory()->create(['name' => 'Beta Party']);
     $expiredParty = Party::factory()->expired()->create(['name' => 'Zeta Expired']);
 
-    $page = visit(route('party.dashboard.show', $currentParty));
+    $page = browserPage(fn () => visit(route('party.dashboard.show', $currentParty)));
 
     $page->click($currentParty->name)
         ->assertSee('Parties')
