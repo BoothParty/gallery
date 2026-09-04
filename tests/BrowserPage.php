@@ -32,6 +32,13 @@ final class BrowserPage
      */
     public function click(string $selector): self
     {
+        /*
+         * The retried assertion rides out the page load, which visit() and
+         * navigate() do not wait for: a click sent mid-navigation dies with its
+         * execution context.
+         */
+        $this->page->assertPresent($selector);
+
         $timeout = Playwright::timeout();
 
         /*
