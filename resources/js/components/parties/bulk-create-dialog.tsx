@@ -34,6 +34,7 @@ export type PartySourceEvent = {
     name: string
     starts_at: string | null
     gallery_name: string | null
+    party_name: string | null
     source_key: string
     source_label: string
     already_imported: boolean
@@ -64,11 +65,12 @@ const toPartyName = (eventName: string): string =>
         .replace(/^-+|-+$/g, "")
 
 /**
- * The provider carries the gallery name filled by the team; the slugified event
- * name is only the fallback when that column is empty.
+ * An event already turned into a party shows that party's own name; otherwise
+ * the gallery name filled by the team, the slugified event name being the last
+ * resort when that column is empty.
  */
 const initialPartyName = (event: PartySourceEvent): string =>
-    event.gallery_name ?? toPartyName(event.name)
+    event.party_name ?? event.gallery_name ?? toPartyName(event.name)
 
 const formatEventDate = (startsAt: string | null): string | null => {
     if (!startsAt) {

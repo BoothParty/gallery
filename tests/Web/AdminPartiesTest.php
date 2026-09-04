@@ -108,6 +108,7 @@ it('marks the events already turned into a party', function () {
         ->assertNoJavaScriptErrors();
 
     expect($page->attribute('#bulk-create-party-name-0', 'disabled'))->not->toBeNull();
+    expect($page->value('#bulk-create-party-name-0'))->toBe('mariage-domaine-des-tilleuls');
 });
 
 // ── Edit dialog ───────────────────────────────────────────────────────────────
