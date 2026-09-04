@@ -456,6 +456,12 @@ it('has no smoke on the gallery page', function () {
  */
 function stubWebShare(object $page, string $shareResult = 'resolve', int $fetchDelay = 0): void
 {
+    // visit() hands back the page while the navigation is still in flight, and
+    // script() runs at once instead of retrying like the assertions do. Without
+    // this barrier the stubs land on the transient about:blank document, which
+    // the real page then replaces: silently, and only in Firefox.
+    $page->assertPresent('[data-gallery-hero]');
+
     $page->script(<<<JS
         window.fetch = () => new Promise((resolve) => setTimeout(
             () => resolve(new Response(new Blob(['x'], { type: 'image/jpeg' }))),
