@@ -33,6 +33,7 @@ export type PartySourceEvent = {
     id: string
     name: string
     starts_at: string | null
+    gallery_name: string | null
     source_key: string
     source_label: string
     already_imported: boolean
@@ -61,6 +62,13 @@ const toPartyName = (eventName: string): string =>
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "")
+
+/**
+ * The provider carries the gallery name filled by the team; the slugified event
+ * name is only the fallback when that column is empty.
+ */
+const initialPartyName = (event: PartySourceEvent): string =>
+    event.gallery_name ?? toPartyName(event.name)
 
 const formatEventDate = (startsAt: string | null): string | null => {
     if (!startsAt) {
@@ -99,7 +107,7 @@ export function PartyBulkCreateDialog({
             Object.fromEntries(
                 events.map((event) => [
                     event.id,
-                    current[event.id] ?? { selected: false, name: toPartyName(event.name) },
+                    current[event.id] ?? { selected: false, name: initialPartyName(event) },
                 ]),
             ),
         )
@@ -119,7 +127,7 @@ export function PartyBulkCreateDialog({
                     event.id,
                     {
                         selected: !allSelected && !event.already_imported,
-                        name: current[event.id]?.name ?? toPartyName(event.name),
+                        name: current[event.id]?.name ?? initialPartyName(event),
                     },
                 ]),
             ),

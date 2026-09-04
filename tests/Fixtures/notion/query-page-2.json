@@ -31,7 +31,8 @@
                         }
                     ]
                 },
-                "Date": { "id": "date~", "type": "date", "date": null }
+                "Date": { "id": "date~", "type": "date", "date": null },
+                "Nom de la galerie": { "id": "gal%3A", "type": "rich_text", "rich_text": [] }
             },
             "parent": {
                 "type": "database_id",
