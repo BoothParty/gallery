@@ -197,3 +197,53 @@ it('factory withBanner state stores a banner path', function () {
 
     expect($party->banner_path)->not->toBeNull();
 });
+
+// ── Host edit link ──────────────────────────────────────────────────────────
+
+it('generates a host token when a party is created', function () {
+    $party = Party::factory()->create();
+
+    expect($party->host_token)->toBeString()->toHaveLength(48);
+});
+
+it('gives each party its own host token', function () {
+    $first = Party::factory()->create();
+    $second = Party::factory()->create();
+
+    expect($first->host_token)->not->toBe($second->host_token);
+});
+
+it('keeps a host token that was set explicitly', function () {
+    $party = Party::factory()->create(['host_token' => 'a-token-we-chose']);
+
+    expect($party->host_token)->toBe('a-token-we-chose');
+});
+
+it('composes the host edit url from the public url and the token', function () {
+    $party = Party::factory()->create(['name' => 'noces']);
+
+    expect($party->hostEditUrl())
+        ->toBe('https://noces.'.config('party.domain').'/?token='.$party->host_token);
+});
+
+// ── Banner framing ──────────────────────────────────────────────────────────
+
+it('centres the banner framing by default', function () {
+    $party = Party::factory()->create();
+
+    expect($party->banner_position_x)->toBe(50.0)
+        ->and($party->banner_position_y)->toBe(50.0)
+        ->and($party->banner_zoom)->toBe(1.0);
+});
+
+it('casts the banner framing to floats', function () {
+    $party = Party::factory()->create([
+        'banner_position_x' => 12.5,
+        'banner_position_y' => 80,
+        'banner_zoom' => 2.25,
+    ]);
+
+    expect($party->fresh()->banner_position_x)->toBe(12.5)
+        ->and($party->fresh()->banner_position_y)->toBe(80.0)
+        ->and($party->fresh()->banner_zoom)->toBe(2.25);
+});

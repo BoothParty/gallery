@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 #[CrudResource(
     label: 'Party',
@@ -38,6 +39,9 @@ class Party extends Model
         'name',
         'display_name',
         'description',
+        'banner_position_x',
+        'banner_position_y',
+        'banner_zoom',
         'user_id',
         'expire_at',
         'source_key',
@@ -48,11 +52,18 @@ class Party extends Model
     {
         return [
             'expire_at' => 'datetime',
+            'banner_position_x' => 'float',
+            'banner_position_y' => 'float',
+            'banner_zoom' => 'float',
         ];
     }
 
     protected static function booting(): void
     {
+        static::creating(function (Party $party): void {
+            $party->host_token ??= Str::random(48);
+        });
+
         static::deleted(function (Party $party): void {
             if ($party->banner_path) {
                 Storage::disk('s3')->delete($party->banner_path);
@@ -93,6 +104,15 @@ class Party extends Model
         $disk = Storage::disk('s3');
 
         return $disk->url($this->banner_path);
+    }
+
+    /**
+     * Link the host uses to edit their own gallery. The only place that knows
+     * the shape of that link.
+     */
+    public function hostEditUrl(): string
+    {
+        return $this->publicUrl().'/?token='.$this->host_token;
     }
 
     /**

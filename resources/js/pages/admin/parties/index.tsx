@@ -54,6 +54,7 @@ type PageProps = {
         display_name: string | null
         description: string | null
         banner_url: string | null
+        host_edit_url: string
         route_key: string
     }[]
     tableData: CrudTableData
@@ -78,6 +79,8 @@ export default function PartiesIndex({
     const [selectedPartyRouteKey, setSelectedPartyRouteKey] = useState<string | null>(null)
     const [selectedPartyBannerUrl, setSelectedPartyBannerUrl] = useState<string | null>(null)
     const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+    const [selectedPartyHostEditUrl, setSelectedPartyHostEditUrl] = useState<string | null>(null)
+    const [hostLinkCopied, setHostLinkCopied] = useState(false)
     const form = useForm({
         name: "",
         user_id: null as number | null,
@@ -93,6 +96,7 @@ export default function PartiesIndex({
         remove_banner: false,
     })
     const quickDeleteForm = useForm({})
+    const hostTokenForm = useForm({})
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -136,6 +140,8 @@ export default function PartiesIndex({
         setSelectedPartyId(parsedId)
         setSelectedPartyRouteKey(editableParty.route_key)
         setSelectedPartyBannerUrl(editableParty.banner_url)
+        setSelectedPartyHostEditUrl(editableParty.host_edit_url)
+        setHostLinkCopied(false)
         setBannerPreview(null)
         editForm.setData({
             name: editableParty.name,
@@ -334,6 +340,8 @@ export default function PartiesIndex({
                         setSelectedPartyId(null)
                         setSelectedPartyRouteKey(null)
                         setSelectedPartyBannerUrl(null)
+                        setSelectedPartyHostEditUrl(null)
+                        setHostLinkCopied(false)
                         setBannerPreview(null)
                     }
                 }}
@@ -469,6 +477,56 @@ export default function PartiesIndex({
                                 Leave empty to keep the gallery available indefinitely.
                             </p>
                             {editForm.errors.expire_at && <p className="text-xs text-red-500">{editForm.errors.expire_at}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-party-host-link">Host edit link</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="edit-party-host-link"
+                                    readOnly
+                                    value={selectedPartyHostEditUrl ?? ""}
+                                    onFocus={(event) => event.target.select()}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (selectedPartyHostEditUrl) {
+                                            void navigator.clipboard.writeText(selectedPartyHostEditUrl)
+                                            setHostLinkCopied(true)
+                                        }
+                                    }}
+                                >
+                                    {hostLinkCopied ? "Copied" : "Copy"}
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Send this to the host so they can edit the gallery title, description and
+                                cover without an account.
+                            </p>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-auto px-0 text-xs text-destructive hover:bg-transparent"
+                                disabled={hostTokenForm.processing}
+                                onClick={() => {
+                                    if (!selectedPartyRouteKey) {
+                                        return
+                                    }
+
+                                    if (!window.confirm("Regenerate the link? The one already sent will stop working.")) {
+                                        return
+                                    }
+
+                                    hostTokenForm.post(
+                                        `/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}/host-token`,
+                                        { onSuccess: () => setDetailsModalOpen(false) },
+                                    )
+                                }}
+                            >
+                                Regenerate the link
+                            </Button>
                         </div>
 
                         <DialogFooter>

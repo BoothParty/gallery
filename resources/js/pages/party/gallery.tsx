@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
+import GalleryEditor from '@/components/party/gallery-editor';
 import GalleryGrid from '@/components/party/gallery-grid';
 import GalleryHero from '@/components/party/gallery-hero';
 import GalleryStickyBar from '@/components/party/gallery-sticky-bar';
@@ -18,6 +19,9 @@ interface Party {
     display_name: string | null;
     description: string | null;
     banner_url: string | null;
+    banner_position_x: number;
+    banner_position_y: number;
+    banner_zoom: number;
     user_id: number | null;
     expire_at: string | null;
     created_at: string;
@@ -44,6 +48,7 @@ interface Props {
     pictures: PicturePage;
     picturesCount: number;
     hidePictures: boolean;
+    canEdit: boolean;
     maxDownloadPictures: number;
     csrfToken: string;
 }
@@ -56,7 +61,15 @@ const EMPTY_MESSAGE =
 
 const TOAST_DURATION = 2200;
 
-export default function Gallery({ party, pictures, picturesCount, hidePictures, maxDownloadPictures, csrfToken }: Props) {
+export default function Gallery({
+    party,
+    pictures,
+    picturesCount,
+    hidePictures,
+    canEdit,
+    maxDownloadPictures,
+    csrfToken,
+}: Props) {
     const title = party.display_name || party.name;
     const photos = hidePictures ? [] : pictures.data;
     const isEmpty = photos.length === 0;
@@ -67,6 +80,7 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
 
     usePhotoSwipe('#gallery', !selection.selectMode);
 
+    const [editorOpen, setEditorOpen] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
     const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -145,7 +159,15 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
         <PartyLayout>
             <Head title={title} />
 
-            <GalleryHero title={title} subtitle={party.description} bannerUrl={party.banner_url} />
+            <GalleryHero
+                title={title}
+                subtitle={party.description}
+                bannerUrl={party.banner_url}
+                position={{ x: party.banner_position_x, y: party.banner_position_y }}
+                zoom={party.banner_zoom}
+                canEdit={canEdit}
+                onEdit={() => setEditorOpen(true)}
+            />
 
             <GalleryStickyBar
                 count={picturesCount}
@@ -189,6 +211,23 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
                 onShare={onShare}
                 onSubmit={onSubmitDownload}
             />
+
+            {canEdit && (
+                <GalleryEditor
+                    open={editorOpen}
+                    onClose={() => setEditorOpen(false)}
+                    partyName={party.name}
+                    title={party.display_name ?? ''}
+                    subtitle={party.description}
+                    bannerUrl={party.banner_url}
+                    crop={{
+                        x: party.banner_position_x,
+                        y: party.banner_position_y,
+                        zoom: party.banner_zoom,
+                    }}
+                    onSaved={() => flash('Galerie mise à jour')}
+                />
+            )}
 
             <GalleryToast message={toast} raised={selection.selectMode} />
         </PartyLayout>

@@ -350,3 +350,46 @@ it('exposes a null banner url when the party has no banner', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('editableParties.0.banner_url', null));
 });
+
+// ── Host edit link ──────────────────────────────────────────────────────────
+
+it('exposes the host edit link to the parties index', function () {
+    $party = Party::factory()->create();
+
+    $this->get(route('admin.parties.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('editableParties.0.host_edit_url', $party->hostEditUrl())
+        );
+});
+
+it('regenerates the host token', function () {
+    $party = Party::factory()->create();
+    $before = $party->host_token;
+
+    $this->post(route('admin.parties.host-token', $party))
+        ->assertRedirect(route('admin.parties.index'));
+
+    expect($party->fresh()->host_token)->not->toBe($before)->toHaveLength(48);
+});
+
+it('stops the old link from opening a host session once regenerated', function () {
+    $party = Party::factory()->create();
+    $stale = $party->host_token;
+
+    $this->post(route('admin.parties.host-token', $party));
+
+    auth()->logout();
+
+    $this->get(route('party.gallery', $party).'?token='.$stale)
+        ->assertRedirect(route('party.gallery', $party))
+        ->assertSessionMissing('party_host.'.$party->id);
+});
+
+it('refuses to regenerate a host token for a guest', function () {
+    $party = Party::factory()->create();
+
+    auth()->logout();
+
+    $this->post(route('admin.parties.host-token', $party))->assertRedirect(route('login'));
+});

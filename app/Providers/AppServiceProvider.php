@@ -73,5 +73,15 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(240)->by($request->ip().':'.$party);
         });
+
+        /**
+         * Editing a gallery is a rare gesture; the ceiling exists only to bound
+         * abuse. Keyed like its neighbours, by address and party.
+         */
+        RateLimiter::for('party-metadata', function (Request $request): Limit {
+            $party = (string) $request->route('party');
+
+            return Limit::perMinute(20)->by($request->ip().':'.$party);
+        });
     }
 }

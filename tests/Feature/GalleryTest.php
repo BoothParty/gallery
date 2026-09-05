@@ -241,3 +241,19 @@ it('exposes a null banner url when the party has no banner', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('party.banner_url', null));
 });
+
+it('passes the banner framing to the gallery page', function () {
+    $party = Party::factory()->create([
+        'banner_position_x' => 30,
+        'banner_position_y' => 70,
+        'banner_zoom' => 1.5,
+    ]);
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('party.banner_position_x', 30)
+            ->where('party.banner_position_y', 70)
+            ->where('party.banner_zoom', 1.5)
+        );
+});
