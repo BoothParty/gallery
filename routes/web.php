@@ -18,6 +18,10 @@ Route::get('auth/{provider}/redirect', [OAuthController::class, 'redirect'])->na
 Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->name('auth.callback');
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
 
+Route::get('affiches', [PosterController::class, 'index'])
+    ->middleware('signed')
+    ->name('posters.index');
+
 Route::get('affiches/{party:id}/png', [PosterController::class, 'file'])
     ->middleware(['signed', 'throttle:poster-file'])
     ->name('posters.file');
