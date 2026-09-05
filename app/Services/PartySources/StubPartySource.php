@@ -31,6 +31,7 @@ class StubPartySource implements PartySource
                 id: 'stub-domaine-des-tilleuls',
                 name: 'Mariage Domaine des Tilleuls',
                 startsAt: $today->addDays(12)->setTime(18, 0),
+                galleryName: 'domaine-des-tilleuls-2026',
             ),
             new PartySourceEvent(
                 id: 'stub-chateau-de-la-motte',

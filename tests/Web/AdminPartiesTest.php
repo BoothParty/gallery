@@ -63,6 +63,16 @@ it('prefills party names from the upcoming events in the bulk create dialog', fu
     expect($page->value('#bulk-create-party-name-0'))->toMatch('/^[a-z0-9-]+$/');
 });
 
+it('prefills the party name from the gallery name of the source event', function () {
+    $page = visit(route('admin.parties.index'));
+
+    $page->click('Create from events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->value('#bulk-create-party-name-0'))->toBe('domaine-des-tilleuls-2026');
+});
+
 it('creates the selected parties from the bulk create dialog', function () {
     $page = visit(route('admin.parties.index'));
 
@@ -98,6 +108,7 @@ it('marks the events already turned into a party', function () {
         ->assertNoJavaScriptErrors();
 
     expect($page->attribute('#bulk-create-party-name-0', 'disabled'))->not->toBeNull();
+    expect($page->value('#bulk-create-party-name-0'))->toBe('mariage-domaine-des-tilleuls');
 });
 
 // ── Edit dialog ───────────────────────────────────────────────────────────────

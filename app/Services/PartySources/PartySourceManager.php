@@ -60,20 +60,24 @@ class PartySourceManager
     }
 
     /**
+     * Events already turned into a party carry that party's own name, so the
+     * admin reads the address the gallery really lives at rather than the name
+     * the dialog would have suggested.
+     *
      * @param  list<array<string, string|null>>  $events
      * @return list<array<string, string|bool|null>>
      */
     private function markImportedEvents(array $events): array
     {
-        $importedIds = Party::query()
+        $importedNames = Party::query()
             ->whereIn('source_event_id', collect($events)->pluck('id'))
-            ->pluck('source_event_id')
-            ->all();
+            ->pluck('name', 'source_event_id');
 
         return collect($events)
             ->map(fn (array $event): array => [
                 ...$event,
-                'already_imported' => in_array($event['id'], $importedIds, true),
+                'party_name' => $importedNames->get($event['id']),
+                'already_imported' => $importedNames->has($event['id']),
             ])
             ->all();
     }

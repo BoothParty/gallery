@@ -109,6 +109,7 @@ class NotionPartySource implements PartySource
             id: $page->id,
             name: trim($name),
             startsAt: $this->startsAt($page),
+            galleryName: $this->galleryName($page),
         );
     }
 
@@ -121,6 +122,23 @@ class NotionPartySource implements PartySource
         }
 
         return $page->title()?->toString();
+    }
+
+    /**
+     * Name the gallery is published under, filled in Notion by the team. The
+     * column is optional; the admin falls back to the event name without it.
+     */
+    private function galleryName(Page $page): ?string
+    {
+        $property = $this->property($page, $this->galleryNameProperty());
+
+        if (! $property instanceof Title && ! $property instanceof RichTextProperty) {
+            return null;
+        }
+
+        $galleryName = trim($property->toString());
+
+        return $galleryName === '' ? null : $galleryName;
     }
 
     private function startsAt(Page $page): ?CarbonImmutable
@@ -170,5 +188,10 @@ class NotionPartySource implements PartySource
     private function optionsProperty(): string
     {
         return (string) config('services.notion.properties.options');
+    }
+
+    private function galleryNameProperty(): string
+    {
+        return (string) config('services.notion.properties.gallery_name');
     }
 }

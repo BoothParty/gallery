@@ -39,10 +39,29 @@ it('exposes the party domain and defers the upcoming source events', function ()
                     ->has('id')
                     ->has('name')
                     ->has('starts_at')
+                    ->has('gallery_name')
+                    ->has('party_name')
                     ->has('already_imported')
                     ->where('source_key', 'stub')
                     ->where('source_label', 'Local stub')
                 )
+            )
+            ->etc()
+        );
+});
+
+it('carries the real party name of the events already imported', function () {
+    Party::factory()
+        ->fromSourceEvent('stub:stub-domaine-des-tilleuls')
+        ->create(['name' => 'mariage-domaine-des-tilleuls']);
+
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->loadDeferredProps(fn ($reload) => $reload
+                ->where('upcomingSourceEvents.0.id', 'stub:stub-domaine-des-tilleuls')
+                ->where('upcomingSourceEvents.0.party_name', 'mariage-domaine-des-tilleuls')
+                ->where('upcomingSourceEvents.1.party_name', null)
             )
             ->etc()
         );

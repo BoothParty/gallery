@@ -10,6 +10,7 @@ class PartySourceEvent
         public readonly string $id,
         public readonly string $name,
         public readonly ?CarbonImmutable $startsAt = null,
+        public readonly ?string $galleryName = null,
     ) {}
 
     /**
@@ -17,6 +18,7 @@ class PartySourceEvent
      *     id: string,
      *     name: string,
      *     starts_at: string|null,
+     *     gallery_name: string|null,
      *     source_key: string,
      *     source_label: string,
      * }
@@ -27,6 +29,7 @@ class PartySourceEvent
             'id' => $source->key().':'.$this->id,
             'name' => $this->name,
             'starts_at' => $this->startsAt?->toIso8601String(),
+            'gallery_name' => $this->galleryName,
             'source_key' => $source->key(),
             'source_label' => $source->label(),
         ];

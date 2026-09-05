@@ -36,6 +36,7 @@ return [
             'date' => env('NOTION_PROPERTY_DATE', 'Date'),
             'status' => env('NOTION_PROPERTY_STATUS', 'Status'),
             'options' => env('NOTION_PROPERTY_OPTIONS', 'Options'),
+            'gallery_name' => env('NOTION_PROPERTY_GALLERY_NAME', 'Nom de la galerie'),
         ],
         'timeout' => (int) env('NOTION_TIMEOUT', 5),
     ],
