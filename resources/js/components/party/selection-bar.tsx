@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
 
 import { MAX_STACK_THUMBNAILS, STACK_ELEMENT_ID, THUMBNAIL_OFFSET, THUMBNAIL_SIZE } from '@/components/party/selection-stack';
+import type { ShareProgress, ShareStatus } from '@/hooks/use-photo-share';
 
 export interface StackPhoto {
     id: number;
@@ -14,12 +15,38 @@ interface SelectionBarProps {
     selectedIds: number[];
     action: string;
     csrfToken: string;
+    mode: 'share' | 'zip';
+    shareStatus: ShareStatus;
+    shareProgress: ShareProgress;
+    onShare: () => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
 
-export default function SelectionBar({ open, count, stack, selectedIds, action, csrfToken, onSubmit }: SelectionBarProps) {
+export default function SelectionBar({
+    open,
+    count,
+    stack,
+    selectedIds,
+    action,
+    csrfToken,
+    mode,
+    shareStatus,
+    shareProgress,
+    onShare,
+    onSubmit,
+}: SelectionBarProps) {
     const shown = stack.slice(-MAX_STACK_THUMBNAILS);
     const stackWidth = shown.length === 0 ? 0 : (shown.length - 1) * THUMBNAIL_OFFSET + THUMBNAIL_SIZE;
+
+    const sharing = mode === 'share';
+    const busy = sharing && (shareStatus === 'preparing' || shareStatus === 'sharing');
+    const downloading = sharing && shareStatus === 'preparing';
+    const label = downloading
+        ? `Téléchargement… ${shareProgress.done}/${shareProgress.total}`
+        : sharing || count <= 1
+          ? 'Télécharger'
+          : 'Télécharger le ZIP';
+    const ratio = shareProgress.total === 0 ? 0 : shareProgress.done / shareProgress.total;
 
     return (
         <div
@@ -67,11 +94,20 @@ export default function SelectionBar({ open, count, stack, selectedIds, action, 
                 </div>
 
                 <button
-                    type="submit"
-                    disabled={count === 0}
-                    className="rounded-full px-5 py-3 text-sm whitespace-nowrap transition-opacity disabled:cursor-default enabled:cursor-pointer enabled:bg-cream enabled:text-ink disabled:bg-cream/20 disabled:text-cream/50"
+                    data-download-button
+                    type={sharing ? 'button' : 'submit'}
+                    onClick={sharing ? onShare : undefined}
+                    disabled={count === 0 || busy}
+                    className="relative overflow-hidden rounded-full px-5 py-3 text-sm whitespace-nowrap transition-opacity disabled:cursor-default enabled:cursor-pointer enabled:bg-cream enabled:text-ink disabled:bg-cream/20 disabled:text-cream/50"
                 >
-                    {count > 1 ? 'Télécharger le ZIP' : 'Télécharger'}
+                    {label}
+                    {downloading && (
+                        <span
+                            data-download-progress
+                            className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-ink/40 transition-transform duration-200"
+                            style={{ transform: `scaleX(${ratio})` }}
+                        />
+                    )}
                 </button>
             </form>
         </div>

@@ -8,6 +8,7 @@ import GalleryToast from '@/components/party/gallery-toast';
 import SelectionBar, { type StackPhoto } from '@/components/party/selection-bar';
 import useFlyToStack from '@/hooks/use-fly-to-stack';
 import usePhotoSelection from '@/hooks/use-photo-selection';
+import usePhotoShare from '@/hooks/use-photo-share';
 import usePhotoSwipe from '@/hooks/use-photoswipe';
 import PartyLayout from '@/layouts/party-layout';
 
@@ -77,6 +78,30 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
 
     useEffect(() => () => clearTimeout(toastTimer.current), []);
 
+    const photoShare = usePhotoShare(flash);
+
+    const shareMode = photoShare.supported && !hidePictures;
+
+    const onShare = useCallback(() => {
+        if (selection.count > maxDownloadPictures) {
+            flash(`Sélection trop grande : ${maxDownloadPictures} photos maximum par téléchargement`);
+
+            return;
+        }
+
+        photoShare.share(
+            selection.selectedIds.map((id) => ({
+                id,
+                url: `/${encodeURIComponent(party.name)}/pictures/${id}`,
+            })),
+        );
+    }, [flash, maxDownloadPictures, party.name, photoShare, selection.count, selection.selectedIds]);
+
+    const onEnterSelect = useCallback(() => {
+        photoShare.refreshSupport();
+        selection.enter();
+    }, [photoShare, selection]);
+
     const onSelect = useCallback(
         (id: number, anchor: HTMLElement) => {
             const wasSelected = selection.isSelected(id);
@@ -127,7 +152,7 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
                 selectable={!isEmpty}
                 selectMode={selection.selectMode}
                 allSelected={selection.allSelected}
-                onEnterSelect={selection.enter}
+                onEnterSelect={onEnterSelect}
                 onExitSelect={selection.exit}
                 onSelectAll={selection.selectAll}
             />
@@ -158,6 +183,10 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
                 selectedIds={selection.selectedIds}
                 action={`/${encodeURIComponent(party.name)}/download`}
                 csrfToken={csrfToken}
+                mode={shareMode ? 'share' : 'zip'}
+                shareStatus={photoShare.status}
+                shareProgress={photoShare.progress}
+                onShare={onShare}
                 onSubmit={onSubmitDownload}
             />
 
