@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\PartyController as AdminPartyController;
+use App\Http\Controllers\Admin\PosterLinkController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
@@ -55,6 +56,7 @@ Route::prefix('{party}')->name('party.')->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('parties/bulk', [AdminPartyController::class, 'bulkStore'])->name('parties.bulk-store');
+    Route::get('parties/posters-link', [PosterLinkController::class, 'show'])->name('parties.posters-link');
     Route::get('parties/{party}/poster', [AdminPartyController::class, 'poster'])->name('parties.poster');
     Route::post('parties/{party}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
         ->name('parties.host-token');

@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Models\Party;
 use DateTimeInterface;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -18,6 +21,32 @@ class PosterBatchLink
      * How long a batch link stays valid, in hours.
      */
     public const LIFETIME_IN_HOURS = 6;
+
+    /**
+     * The signed page URL of a batch, with the QR code that opens it.
+     *
+     * @param  array<int, int>  $partyIds
+     * @return array{url: string, qr: string}
+     */
+    public function forParties(array $partyIds): array
+    {
+        $url = URL::temporarySignedRoute(
+            'posters.index',
+            now()->addHours(self::LIFETIME_IN_HOURS),
+            ['parties' => implode(',', $partyIds)],
+        );
+
+        return [
+            'url' => $url,
+            'qr' => (new Builder(
+                writer: new PngWriter,
+                data: $url,
+                errorCorrectionLevel: ErrorCorrectionLevel::Medium,
+                size: 512,
+                margin: 16,
+            ))->build()->getDataUri(),
+        ];
+    }
 
     /**
      * The posters of a batch, in the order of the requested identifiers.
