@@ -9,6 +9,7 @@ import {
     type PartySourceEvent,
 } from "@/components/parties/bulk-create-dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Dialog,
     DialogContent,
@@ -50,6 +51,9 @@ type PageProps = {
         name: string
         user_id: number | null
         expire_at: string | null
+        display_name: string | null
+        description: string | null
+        banner_url: string | null
         route_key: string
     }[]
     tableData: CrudTableData
@@ -72,6 +76,8 @@ export default function PartiesIndex({
     const [isDetailsModalOpen, setDetailsModalOpen] = useState(false)
     const [selectedPartyId, setSelectedPartyId] = useState<number | null>(null)
     const [selectedPartyRouteKey, setSelectedPartyRouteKey] = useState<string | null>(null)
+    const [selectedPartyBannerUrl, setSelectedPartyBannerUrl] = useState<string | null>(null)
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null)
     const form = useForm({
         name: "",
         user_id: null as number | null,
@@ -81,6 +87,10 @@ export default function PartiesIndex({
         name: "",
         user_id: null as number | null,
         expire_at: "",
+        display_name: "",
+        description: "",
+        banner: null as File | null,
+        remove_banner: false,
     })
     const quickDeleteForm = useForm({})
 
@@ -125,10 +135,16 @@ export default function PartiesIndex({
 
         setSelectedPartyId(parsedId)
         setSelectedPartyRouteKey(editableParty.route_key)
+        setSelectedPartyBannerUrl(editableParty.banner_url)
+        setBannerPreview(null)
         editForm.setData({
             name: editableParty.name,
             user_id: editableParty.user_id,
             expire_at: toDateTimeLocalValue(editableParty.expire_at),
+            display_name: editableParty.display_name ?? "",
+            description: editableParty.description ?? "",
+            banner: null,
+            remove_banner: false,
         })
         setDetailsModalOpen(true)
     }
@@ -140,8 +156,14 @@ export default function PartiesIndex({
             return
         }
 
-        editForm.transform((data) => ({ ...data, expire_at: fromDateTimeLocalValue(data.expire_at) }))
-        editForm.put(`/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}`, {
+        editForm.transform((data) => ({
+            ...data,
+            _method: "put",
+            expire_at: fromDateTimeLocalValue(data.expire_at),
+        }))
+        // Inertia switches to FormData as soon as a file is present, and
+        // multipart cannot carry a PUT, hence the spoofed method above.
+        editForm.post(`/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}`, {
             onSuccess: () => {
                 setDetailsModalOpen(false)
             },
@@ -311,10 +333,12 @@ export default function PartiesIndex({
                     if (!open) {
                         setSelectedPartyId(null)
                         setSelectedPartyRouteKey(null)
+                        setSelectedPartyBannerUrl(null)
+                        setBannerPreview(null)
                     }
                 }}
             >
-                <DialogContent className="max-w-xl">
+                <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Party details</DialogTitle>
                         <DialogDescription>
@@ -332,6 +356,82 @@ export default function PartiesIndex({
                                 required
                             />
                             {editForm.errors.name && <p className="text-xs text-red-500">{editForm.errors.name}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-party-display-name">Display name (optional)</Label>
+                            <Input
+                                id="edit-party-display-name"
+                                value={editForm.data.display_name}
+                                onChange={(event) => editForm.setData("display_name", event.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Title shown on the public gallery. Defaults to the party name.
+                            </p>
+                            {editForm.errors.display_name && (
+                                <p className="text-xs text-red-500">{editForm.errors.display_name}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-party-description">Description (optional)</Label>
+                            <Input
+                                id="edit-party-description"
+                                value={editForm.data.description}
+                                onChange={(event) => editForm.setData("description", event.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                One line below the title, such as the date and the venue.
+                            </p>
+                            {editForm.errors.description && (
+                                <p className="text-xs text-red-500">{editForm.errors.description}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-party-banner">Banner (optional)</Label>
+
+                            {(bannerPreview ?? selectedPartyBannerUrl) && (
+                                <img
+                                    id="edit-party-banner-preview"
+                                    src={bannerPreview ?? selectedPartyBannerUrl ?? undefined}
+                                    alt="Current banner"
+                                    className="h-32 w-full rounded-lg border object-cover"
+                                />
+                            )}
+
+                            <Input
+                                id="edit-party-banner"
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => {
+                                    const file = event.target.files?.[0] ?? null
+                                    editForm.setData("banner", file)
+                                    setBannerPreview(file === null ? null : URL.createObjectURL(file))
+                                }}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Leave empty to keep the current banner. Without one, the gallery shows
+                                its striped placeholder.
+                            </p>
+                            {editForm.errors.banner && (
+                                <p className="text-xs text-red-500">{editForm.errors.banner}</p>
+                            )}
+
+                            {selectedPartyBannerUrl && (
+                                <div className="flex items-center gap-2 pt-1">
+                                    <Checkbox
+                                        id="edit-party-remove-banner"
+                                        checked={editForm.data.remove_banner}
+                                        onCheckedChange={(checked) =>
+                                            editForm.setData("remove_banner", checked === true)
+                                        }
+                                    />
+                                    <Label htmlFor="edit-party-remove-banner" className="text-sm font-normal">
+                                        Remove the current banner
+                                    </Label>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">

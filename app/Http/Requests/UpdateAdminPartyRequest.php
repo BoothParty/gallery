@@ -31,6 +31,10 @@ class UpdateAdminPartyRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', Rule::unique('parties', 'name')->ignore($party->id)],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'expire_at' => ['nullable', 'date'],
+            'display_name' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'banner' => ['nullable', 'image', 'max:10240'],
+            'remove_banner' => ['nullable', 'boolean'],
         ];
     }
 
@@ -47,6 +51,10 @@ class UpdateAdminPartyRequest extends FormRequest
             'name.unique' => 'A party already uses this name.',
             'user_id.exists' => 'The selected owner does not exist.',
             'expire_at.date' => 'The expiry date must be a valid date.',
+            'display_name.max' => 'The display name must not exceed 255 characters.',
+            'description.max' => 'The description must not exceed 255 characters.',
+            'banner.image' => 'The banner must be an image.',
+            'banner.max' => 'The banner must not exceed 10 MB.',
         ];
     }
 }

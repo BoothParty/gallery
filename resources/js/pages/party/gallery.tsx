@@ -14,6 +14,9 @@ import PartyLayout from '@/layouts/party-layout';
 interface Party {
     id: number;
     name: string;
+    display_name: string | null;
+    description: string | null;
+    banner_url: string | null;
     user_id: number | null;
     expire_at: string | null;
     created_at: string;
@@ -53,6 +56,7 @@ const EMPTY_MESSAGE =
 const TOAST_DURATION = 2200;
 
 export default function Gallery({ party, pictures, picturesCount, hidePictures, maxDownloadPictures, csrfToken }: Props) {
+    const title = party.display_name || party.name;
     const photos = hidePictures ? [] : pictures.data;
     const isEmpty = photos.length === 0;
 
@@ -114,9 +118,9 @@ export default function Gallery({ party, pictures, picturesCount, hidePictures, 
 
     return (
         <PartyLayout>
-            <Head title={party.name} />
+            <Head title={title} />
 
-            <GalleryHero />
+            <GalleryHero title={title} subtitle={party.description} bannerUrl={party.banner_url} />
 
             <GalleryStickyBar
                 count={picturesCount}

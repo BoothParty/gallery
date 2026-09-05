@@ -21,6 +21,9 @@ class PartyFactory extends Factory
     {
         return [
             'name' => fake()->words(3, true),
+            'display_name' => null,
+            'description' => null,
+            'banner_path' => null,
             'user_id' => null,
             'expire_at' => null,
             'source_key' => null,
@@ -40,6 +43,13 @@ class PartyFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'user_id' => User::factory(),
+        ]);
+    }
+
+    public function withBanner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'banner_path' => 'banners/'.fake()->uuid().'.jpg',
         ]);
     }
 

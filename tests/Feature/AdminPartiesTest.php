@@ -3,6 +3,8 @@
 use App\Models\Party;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -68,20 +70,21 @@ it('maps relation labels and exposes count-link metadata in parties datatable', 
         );
 });
 
-it('renders administration party edit page', function () {
+it('exposes the editable parties to the administration index', function () {
     $owner = User::factory()->create(['name' => 'Current Owner']);
     $party = Party::factory()->create([
         'name' => 'Editable Party',
         'user_id' => $owner->id,
     ]);
 
-    $this->get(route('admin.parties.edit', $party))
+    $this->get(route('admin.parties.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('admin/parties/edit')
-            ->where('party.id', $party->id)
-            ->where('party.name', 'Editable Party')
-            ->where('party.user_id', $owner->id)
+            ->component('admin/parties/index')
+            ->where('editableParties.0.id', $party->id)
+            ->where('editableParties.0.name', 'Editable Party')
+            ->where('editableParties.0.user_id', $owner->id)
+            ->where('editableParties.0.route_key', 'Editable Party')
             ->where('users', fn ($users) => collect($users)
                 ->contains(fn (array $user) => $user['id'] === $owner->id)
             )
@@ -144,11 +147,7 @@ it('clears the expiry date when the field is submitted empty', function () {
 });
 
 it('exposes the expiry date to the administration forms as an absolute instant', function () {
-    $party = Party::factory()->create(['expire_at' => '2030-06-15 18:00:00']);
-
-    $this->get(route('admin.parties.edit', $party))
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('party.expire_at', '2030-06-15T18:00:00+00:00'));
+    Party::factory()->create(['expire_at' => '2030-06-15 18:00:00']);
 
     $this->get('/admin/parties')
         ->assertOk()
@@ -156,11 +155,11 @@ it('exposes the expiry date to the administration forms as an absolute instant',
 });
 
 it('exposes a null expiry date when the party never expires', function () {
-    $party = Party::factory()->create(['expire_at' => null]);
+    Party::factory()->create(['expire_at' => null]);
 
-    $this->get(route('admin.parties.edit', $party))
+    $this->get('/admin/parties')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('party.expire_at', null));
+        ->assertInertia(fn ($page) => $page->where('editableParties.0.expire_at', null));
 });
 
 it('rejects an invalid expiry date from administration', function () {
@@ -201,4 +200,153 @@ it('accepts updating a party with its own unchanged name', function () {
         ->assertSessionDoesntHaveErrors();
 
     expect($party->refresh()->name)->toBe('Unchanged Name');
+});
+
+// ── Event metadata ───────────────────────────────────────────────────────────
+
+it('updates the display name and description of a party', function () {
+    $party = Party::factory()->create();
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'display_name' => 'Camille & Antoine',
+        'description' => 'Samedi 12 septembre · Domaine des Ormes',
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh())
+        ->display_name->toBe('Camille & Antoine')
+        ->description->toBe('Samedi 12 septembre · Domaine des Ormes');
+});
+
+it('leaves the metadata untouched when the fields are not submitted', function () {
+    $party = Party::factory()->create([
+        'display_name' => 'Kept Title',
+        'description' => 'Kept description',
+    ]);
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'user_id' => null,
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh())
+        ->display_name->toBe('Kept Title')
+        ->description->toBe('Kept description');
+});
+
+it('stores an uploaded banner for a party', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create();
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'banner' => UploadedFile::fake()->image('cover.jpg', 1200, 600),
+    ])->assertRedirect('/admin/parties');
+
+    $party->refresh();
+
+    expect($party->banner_path)->not->toBeNull();
+
+    Storage::disk('s3')->assertExists($party->banner_path);
+});
+
+it('deletes the previous file when the banner is replaced from administration', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create();
+    Storage::disk('s3')->put('banners/old.jpg', 'binary');
+    $party->forceFill(['banner_path' => 'banners/old.jpg'])->save();
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'banner' => UploadedFile::fake()->image('cover.jpg'),
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh()->banner_path)->not->toBe('banners/old.jpg');
+
+    Storage::disk('s3')->assertMissing('banners/old.jpg');
+});
+
+it('removes the banner when the removal flag is submitted', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create();
+    Storage::disk('s3')->put('banners/current.jpg', 'binary');
+    $party->forceFill(['banner_path' => 'banners/current.jpg'])->save();
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'remove_banner' => true,
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh()->banner_path)->toBeNull();
+
+    Storage::disk('s3')->assertMissing('banners/current.jpg');
+});
+
+it('removes the banner rather than storing one when both are submitted', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create();
+    Storage::disk('s3')->put('banners/current.jpg', 'binary');
+    $party->forceFill(['banner_path' => 'banners/current.jpg'])->save();
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'remove_banner' => true,
+        'banner' => UploadedFile::fake()->image('cover.jpg'),
+    ])->assertRedirect('/admin/parties');
+
+    expect($party->refresh()->banner_path)->toBeNull();
+});
+
+it('rejects a description longer than 255 characters', function () {
+    $party = Party::factory()->create(['description' => 'Short one']);
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'description' => str_repeat('a', 256),
+    ])->assertSessionHasErrors('description');
+
+    expect($party->refresh()->description)->toBe('Short one');
+});
+
+it('rejects a banner that is not an image', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create();
+
+    $this->put(route('admin.parties.update', $party), [
+        'name' => $party->name,
+        'banner' => UploadedFile::fake()->create('contract.pdf', 100, 'application/pdf'),
+    ])->assertSessionHasErrors('banner');
+
+    expect($party->refresh()->banner_path)->toBeNull();
+});
+
+it('exposes the metadata to the party edit dialog', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create([
+        'display_name' => 'Edited Title',
+        'description' => 'Edited description',
+    ]);
+    $party->forceFill(['banner_path' => 'banners/cover.jpg'])->save();
+
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('editableParties.0.display_name', 'Edited Title')
+            ->where('editableParties.0.description', 'Edited description')
+            ->where('editableParties.0.banner_url', Storage::disk('s3')->url('banners/cover.jpg'))
+        );
+});
+
+it('exposes a null banner url when the party has no banner', function () {
+    Party::factory()->create();
+
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('editableParties.0.banner_url', null));
 });

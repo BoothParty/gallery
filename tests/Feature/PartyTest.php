@@ -4,6 +4,7 @@ use App\Models\Party;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -114,4 +115,85 @@ it('does not hide pictures when expire_at is null', function () {
     $party = Party::factory()->create(['expire_at' => null]);
 
     expect($party->hidePictures())->toBeFalse();
+});
+
+// ── Event metadata ───────────────────────────────────────────────────────────
+
+it('persists the display name and description', function () {
+    $party = Party::factory()->create([
+        'display_name' => 'Camille & Antoine',
+        'description' => 'Samedi 12 septembre · Domaine des Ormes',
+    ]);
+
+    expect($party->fresh())
+        ->display_name->toBe('Camille & Antoine')
+        ->description->toBe('Samedi 12 septembre · Domaine des Ormes');
+});
+
+it('displays the display name as its title', function () {
+    $party = Party::factory()->create([
+        'name' => 'booth-night',
+        'display_name' => 'Booth Night',
+    ]);
+
+    expect($party->displayTitle())->toBe('Booth Night');
+});
+
+it('falls back to the name when no display name is set', function () {
+    $party = Party::factory()->create([
+        'name' => 'booth-night',
+        'display_name' => null,
+    ]);
+
+    expect($party->displayTitle())->toBe('booth-night');
+});
+
+it('falls back to the name when the display name is an empty string', function () {
+    $party = Party::factory()->create([
+        'name' => 'booth-night',
+        'display_name' => '',
+    ]);
+
+    expect($party->displayTitle())->toBe('booth-night');
+});
+
+it('has no banner url without a banner', function () {
+    $party = Party::factory()->create();
+
+    expect($party->bannerUrl())->toBeNull();
+});
+
+it('exposes the banner url when a banner is stored', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->create();
+    $party->forceFill(['banner_path' => 'banners/1/cover.jpg'])->save();
+
+    expect($party->bannerUrl())->toBe(Storage::disk('s3')->url('banners/1/cover.jpg'));
+});
+
+it('ignores a banner path passed through mass assignment', function () {
+    $party = Party::factory()->create();
+
+    $party->update(['banner_path' => 'banners/forged.jpg']);
+
+    expect($party->fresh()->banner_path)->toBeNull();
+});
+
+it('deletes the banner file when the party is deleted', function () {
+    Storage::fake('s3');
+    Storage::disk('s3')->put('banners/1/cover.jpg', 'binary');
+
+    $party = Party::factory()->create();
+    $party->forceFill(['banner_path' => 'banners/1/cover.jpg'])->save();
+
+    $party->delete();
+
+    Storage::disk('s3')->assertMissing('banners/1/cover.jpg');
+});
+
+it('factory withBanner state stores a banner path', function () {
+    $party = Party::factory()->withBanner()->create();
+
+    expect($party->banner_path)->not->toBeNull();
 });

@@ -9,11 +9,13 @@ use App\Http\Requests\UpdateAdminPartyRequest;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
+use App\Services\PartyBannerStorage;
 use App\Services\PartyPosterGenerator;
 use App\Services\PartySources\PartySourceManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -37,12 +39,15 @@ class PartyController extends Controller
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
             'editableParties' => Party::query()
-                ->get(['id', 'name', 'user_id', 'expire_at'])
+                ->get(['id', 'name', 'user_id', 'expire_at', 'display_name', 'description', 'banner_path'])
                 ->map(fn (Party $party): array => [
                     'id' => $party->id,
                     'name' => $party->name,
                     'user_id' => $party->user_id,
                     'expire_at' => $this->expiryForInput($party),
+                    'display_name' => $party->display_name,
+                    'description' => $party->description,
+                    'banner_url' => $party->bannerUrl(),
                     'route_key' => $party->name,
                 ])
                 ->values(),
@@ -89,23 +94,25 @@ class PartyController extends Controller
         ]);
     }
 
-    public function edit(Party $party, AdminDashboardDataService $adminDashboardDataService): Response
-    {
-        return Inertia::render('admin/parties/edit', [
-            ...$adminDashboardDataService->sidebarData($party->id),
-            'users' => $this->userOptions(),
-            'party' => [
-                'id' => $party->id,
-                'name' => $party->name,
-                'user_id' => $party->user_id,
-                'expire_at' => $this->expiryForInput($party),
-            ],
-        ]);
-    }
+    /**
+     * Fields missing from the request keep their stored value, so a partial
+     * submission never wipes the metadata of a party.
+     */
+    public function update(
+        UpdateAdminPartyRequest $request,
+        Party $party,
+        PartyBannerStorage $partyBannerStorage,
+    ): RedirectResponse {
+        $party->update(Arr::only(
+            $request->validated(),
+            ['name', 'user_id', 'expire_at', 'display_name', 'description'],
+        ));
 
-    public function update(UpdateAdminPartyRequest $request, Party $party): RedirectResponse
-    {
-        $party->update($request->validated());
+        if ($request->boolean('remove_banner')) {
+            $partyBannerStorage->remove($party);
+        } elseif ($request->hasFile('banner')) {
+            $partyBannerStorage->store($party, $request->file('banner'));
+        }
 
         return to_route('admin.parties.index');
     }

@@ -17,6 +17,9 @@ class PartyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'display_name' => $this->display_name,
+            'description' => $this->description,
+            'banner_url' => $this->bannerUrl(),
             'user_id' => $this->user_id,
             'expire_at' => $this->expire_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
