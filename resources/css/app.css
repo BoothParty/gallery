@@ -3,8 +3,7 @@
  * shadcn lives in admin.css and must not leak into the visitor-facing gallery.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap');
 
 @import 'tailwindcss' source(none);
 
@@ -14,28 +13,51 @@
 @source '../js/pages/party';
 @source '../js/components/party';
 @source '../js/layouts/party-layout.tsx';
-@source '../js/hooks/use-photoswipe.ts';
+@source '../js/hooks';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../views';
 
 @theme {
-    --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-syne: 'Syne', sans-serif;
+    --font-sans: 'Instrument Sans', Helvetica, Arial, sans-serif;
+    --font-serif: 'Instrument Serif', Georgia, serif;
 
-    --color-primary: #ab76f6;
-    --color-secondary: #000122;
+    --color-surface: #f6f5f2;
+    --color-ink: #171512;
+    --color-cream: #fdfcfa;
+    --color-muted: #8a847c;
+    --color-subtle: #a8a29a;
+    --color-line: rgba(23, 21, 18, 0.09);
+    --color-placeholder: #e8e5df;
+    --color-shade: #14120f;
 }
 
 body {
-    background: url('https://assets.getpartiful.com/backgrounds/midnight/web.jpg'),
-        linear-gradient(to right,
-            rgb(26, 26, 90) 0%,
-            8%,
-            rgb(1, 1, 35) 20%,
-            rgb(1, 1, 35) 80%,
-            92%,
-            rgb(26, 25, 91) 100%);
-    background-size: cover;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+/**
+ * PhotoSwipe runs on top of the gallery; its chrome follows the same warm
+ * dark tone as the selection bar rather than its default pure black.
+ */
+.pswp {
+    --pswp-bg: var(--color-shade);
+    --pswp-placeholder-bg: #26231e;
+}
+
+@keyframes shimmer {
+    0%,
+    100% {
+        opacity: 0.45;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.animate-shimmer {
+    animation: shimmer 1.4s ease-in-out infinite;
 }

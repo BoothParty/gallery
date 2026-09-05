@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Party;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePartyRequest extends FormRequest
 {
@@ -22,9 +24,24 @@ class UpdatePartyRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var Party $party */
+        $party = $this->route('party');
+
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('parties', 'name')->ignore($party->id)],
             'expire_at' => ['sometimes', 'nullable', 'date'],
+        ];
+    }
+
+    /**
+     * Get custom error messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.unique' => 'A party already uses this name.',
         ];
     }
 }

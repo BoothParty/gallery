@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePartyRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class StorePartyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('parties', 'name')],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'expire_at' => ['nullable', 'date'],
         ];
@@ -39,6 +40,7 @@ class StorePartyRequest extends FormRequest
         return [
             'name.required' => 'Please provide a party name.',
             'name.max' => 'The party name must not exceed 255 characters.',
+            'name.unique' => 'A party already uses this name.',
             'user_id.exists' => 'The selected owner does not exist.',
             'expire_at.date' => 'The expiry date must be a valid date.',
         ];

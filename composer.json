@@ -19,6 +19,7 @@
         "laravel/socialite": "^5.29",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.0",
+        "maennchen/zipstream-php": "^3.2",
         "mariosimao/notion-sdk-php": "^1.17",
         "socialiteproviders/zoho": "^4.1"
     },
