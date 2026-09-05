@@ -37,9 +37,10 @@ interface DataTableMainProps {
     toolbarAction?: React.ReactNode
     onRowClick?: (row: CrudRow) => void
     rowActions?: CrudRowAction[]
+    onSelectionChange?: (rows: CrudRow[]) => void
 }
 
-export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRowClick, rowActions = [] }: DataTableMainProps) {
+export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRowClick, rowActions = [], onSelectionChange }: DataTableMainProps) {
     const defaultColumnVisibility = React.useMemo<VisibilityState>(() => {
         return tableData.columns.reduce<VisibilityState>((visibility, column) => {
             visibility[column.name] = column.visible
@@ -109,6 +110,18 @@ export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRow
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
     })
+
+    /*
+     * The callback is held in a ref and left out of the dependencies: it is
+     * usually an inline function, and depending on it would fire the effect on
+     * every render, which the parent's state update would then feed back into.
+     */
+    const selectionListener = React.useRef(onSelectionChange)
+    selectionListener.current = onSelectionChange
+
+    React.useEffect(() => {
+        selectionListener.current?.(table.getSelectedRowModel().rows.map((row) => row.original))
+    }, [rowSelection, table])
 
     return (
         <div className="flex flex-col gap-4 p-4">

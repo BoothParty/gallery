@@ -1,6 +1,6 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { useForm } from "@inertiajs/react"
-import { DownloadIcon, WandSparklesIcon } from "lucide-react"
+import { DownloadIcon, QrCodeIcon, WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout } from "@/components/admin-layout"
 import { DataTable } from "@/components/data-table"
@@ -8,6 +8,7 @@ import {
     PartyBulkCreateDialog,
     type PartySourceEvent,
 } from "@/components/parties/bulk-create-dialog"
+import { PartyPostersDialog } from "@/components/parties/posters-dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -59,6 +60,7 @@ type PageProps = {
     }[]
     tableData: CrudTableData
     partyDomain: string
+    createdPartyIds: number[]
     upcomingSourceEvents?: PartySourceEvent[]
 }
 
@@ -70,10 +72,14 @@ export default function PartiesIndex({
     editableParties,
     tableData,
     partyDomain,
+    createdPartyIds,
     upcomingSourceEvents,
 }: PageProps) {
     const [isCreateModalOpen, setCreateModalOpen] = useState(false)
     const [isBulkCreateModalOpen, setBulkCreateModalOpen] = useState(false)
+    const [isPostersModalOpen, setPostersModalOpen] = useState(false)
+    const [postersPartyIds, setPostersPartyIds] = useState<number[]>([])
+    const [selectedPartyIds, setSelectedPartyIds] = useState<number[]>([])
     const [isDetailsModalOpen, setDetailsModalOpen] = useState(false)
     const [selectedPartyId, setSelectedPartyId] = useState<number | null>(null)
     const [selectedPartyRouteKey, setSelectedPartyRouteKey] = useState<string | null>(null)
@@ -81,6 +87,18 @@ export default function PartiesIndex({
     const [bannerPreview, setBannerPreview] = useState<string | null>(null)
     const [selectedPartyHostEditUrl, setSelectedPartyHostEditUrl] = useState<string | null>(null)
     const [hostLinkCopied, setHostLinkCopied] = useState(false)
+    // The list is only non-empty on the redirect that follows a bulk creation.
+    const createdSelection = createdPartyIds.join(",")
+
+    useEffect(() => {
+        if (createdSelection === "") {
+            return
+        }
+
+        setPostersPartyIds(createdSelection.split(",").map(Number))
+        setPostersModalOpen(true)
+    }, [createdSelection])
+
     const form = useForm({
         name: "",
         user_id: null as number | null,
@@ -232,8 +250,24 @@ export default function PartiesIndex({
                 tableData={tableData}
                 onRowClick={openPartyDetails}
                 rowActions={rowActions}
+                onSelectionChange={(rows) =>
+                    setSelectedPartyIds(rows.map((row) => Number(row.id)))
+                }
                 toolbarAction={
                     <>
+                        <Button
+                            id="open-posters-dialog"
+                            size="sm"
+                            variant="outline"
+                            disabled={selectedPartyIds.length === 0}
+                            onClick={() => {
+                                setPostersPartyIds(selectedPartyIds)
+                                setPostersModalOpen(true)
+                            }}
+                        >
+                            <QrCodeIcon className="size-4" />
+                            Posters
+                        </Button>
                         <Button
                             size="sm"
                             variant="outline"
@@ -247,6 +281,12 @@ export default function PartiesIndex({
                         </Button>
                     </>
                 }
+            />
+
+            <PartyPostersDialog
+                open={isPostersModalOpen}
+                onOpenChange={setPostersModalOpen}
+                partyIds={postersPartyIds}
             />
 
             <PartyBulkCreateDialog

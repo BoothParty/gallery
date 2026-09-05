@@ -286,3 +286,42 @@ it('signs the user out from the sidebar menu', function () {
 
     $this->assertGuest();
 });
+
+// ── Affiches ──────────────────────────────────────────────────────────────────
+
+it('shows the poster qr code right after a bulk creation', function () {
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->click('Create from events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->click('#bulk-create-select-0')
+        ->fill('#bulk-create-party-name-0', 'soiree-affiches')
+        ->click('Create 1 party')
+        ->assertVisible('#posters-qr')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->attribute('#posters-qr', 'src'))->toStartWith('data:image/png;base64,');
+});
+
+it('opens the poster qr code for a selection of parties', function () {
+    Party::factory()->create();
+
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->assertPresent('table tbody tr:first-child')
+        ->click('table tbody tr:first-child [aria-label="Select row"]')
+        ->click('#open-posters-dialog')
+        ->assertVisible('#posters-qr')
+        ->assertNoJavaScriptErrors();
+});
+
+it('keeps the posters button disabled without a selection', function () {
+    Party::factory()->create();
+
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->assertPresent('#open-posters-dialog')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->attribute('#open-posters-dialog', 'disabled'))->not->toBeNull();
+});

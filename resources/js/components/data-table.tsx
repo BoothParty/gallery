@@ -7,9 +7,10 @@ interface DataTableProps {
     toolbarAction?: React.ReactNode
     onRowClick?: (row: CrudRow) => void
     rowActions?: CrudRowAction[]
+    onSelectionChange?: (rows: CrudRow[]) => void
 }
 
-export function DataTable({ tableData, rowEditHrefBase, toolbarAction, onRowClick, rowActions }: DataTableProps) {
+export function DataTable({ tableData, rowEditHrefBase, toolbarAction, onRowClick, rowActions, onSelectionChange }: DataTableProps) {
     return (
         <DataTableMain
             tableData={tableData}
@@ -17,6 +18,7 @@ export function DataTable({ tableData, rowEditHrefBase, toolbarAction, onRowClic
             toolbarAction={toolbarAction}
             onRowClick={onRowClick}
             rowActions={rowActions}
+            onSelectionChange={onSelectionChange}
         />
     )
 }
