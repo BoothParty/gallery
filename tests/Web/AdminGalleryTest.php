@@ -45,7 +45,7 @@ function browserAttachablePath(UploadedFile $file): string
 it('opens the upload dialog from the toolbar', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->assertDontSee('Select one or more images to add to this party.')
         ->click('Upload pictures')
@@ -57,7 +57,7 @@ it('opens the upload dialog from the toolbar', function () {
 it('only accepts multiple images in the file field', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click('Upload pictures')
         ->assertAttribute('#upload-photos', 'accept', 'image/*')
@@ -69,7 +69,7 @@ it('only accepts multiple images in the file field', function () {
 it('keeps the upload button disabled until an image is attached', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click('Upload pictures')
         ->assertButtonDisabled('Upload')
@@ -83,7 +83,7 @@ it('keeps the upload button disabled until an image is attached', function () {
 it('closes the upload dialog and clears the attached file when cancelling', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click('Upload pictures')
         ->attach('#upload-photos', browserAttachablePath(
@@ -103,7 +103,7 @@ it('closes the upload dialog and clears the attached file when cancelling', func
 it('closes the upload dialog and clears the attached file when pressing escape', function () {
     $party = Party::factory()->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click('Upload pictures')
         ->attach('#upload-photos', browserAttachablePath(
@@ -126,7 +126,7 @@ it('lazy loads pictures below the first row', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(10)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->assertCount('img[loading="eager"]', 6)
         ->assertCount('img[loading="lazy"]', 4)
@@ -138,7 +138,7 @@ it('shows a placeholder instead of the original when the thumbnail is missing', 
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->withoutThumbnail()->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->assertCount('[data-picture-placeholder]', 1)
         ->assertNoJavaScriptErrors();
@@ -150,7 +150,7 @@ it('hides the delete button until pictures are selected', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->assertSee('3 pictures')
         ->assertDontSee('Delete 1 picture')
@@ -161,7 +161,7 @@ it('shows the delete button with the number of selected pictures', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click(':nth-match([aria-label="Select picture"], 1)')
         ->assertSee('1 of 3 selected')
@@ -173,7 +173,7 @@ it('deletes nothing when the confirmation is cancelled', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click(':nth-match([aria-label="Select picture"], 1)')
         ->click('Delete 1 picture')
@@ -189,7 +189,7 @@ it('deletes the selected picture and refreshes the grid', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click(':nth-match([aria-label="Select picture"], 1)')
         ->click('Delete 1 picture')
@@ -204,7 +204,7 @@ it('deletes every picture on the page when selecting all', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click('[aria-label="Select all pictures on this page"]')
         ->assertSee('3 of 3 selected')
@@ -220,7 +220,7 @@ it('clears the selection after a successful delete', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->click(':nth-match([aria-label="Select picture"], 1)')
         ->click('Delete 1 picture')
@@ -236,7 +236,7 @@ it('has no smoke on the administration gallery page', function () {
     $party = Party::factory()->create();
     Picture::factory()->forParty($party)->count(3)->create();
 
-    $page = visit(route('party.dashboard.pictures', $party));
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
     $page->assertSee('3 pictures')
         ->assertNoSmoke();
