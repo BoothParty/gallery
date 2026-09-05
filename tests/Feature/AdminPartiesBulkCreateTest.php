@@ -169,3 +169,36 @@ it('requires a name for every selected event', function () {
 
     expect(Party::query()->count())->toBe(0);
 });
+
+it('hands the created party ids back to the parties list', function () {
+    $response = $this->post('/admin/parties/bulk', [
+        'parties' => [
+            ['name' => 'premiere-soiree', 'source_event_id' => 'stub:1'],
+            ['name' => 'seconde-soiree', 'source_event_id' => 'stub:2'],
+        ],
+    ]);
+
+    $expected = Party::query()
+        ->whereIn('name', ['premiere-soiree', 'seconde-soiree'])
+        ->orderBy('id')
+        ->pluck('id')
+        ->all();
+
+    $response->assertSessionHas('created_party_ids', $expected);
+
+    $this->followingRedirects()
+        ->post('/admin/parties/bulk', [
+            'parties' => [['name' => 'troisieme-soiree', 'source_event_id' => 'stub:3']],
+        ])
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/parties/index')
+            ->has('createdPartyIds', 1)
+            ->etc()
+        );
+});
+
+it('leaves the created party ids empty on a plain visit', function () {
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('createdPartyIds', [])->etc());
+});

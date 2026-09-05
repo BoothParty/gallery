@@ -35,6 +35,7 @@ class PartyController extends Controller
             'tableData' => $adminDashboardDataService->tableDataForResource('parties'),
             'users' => $this->userOptions(),
             'partyDomain' => config('party.domain'),
+            'createdPartyIds' => $request->session()->get('created_party_ids', []),
             'upcomingSourceEvents' => Inertia::defer(
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
@@ -66,19 +67,23 @@ class PartyController extends Controller
     {
         $parties = $request->validated('parties');
 
-        DB::transaction(function () use ($parties): void {
+        $createdIds = DB::transaction(function () use ($parties): array {
+            $ids = [];
+
             foreach ($parties as $party) {
                 $sourceEventId = $party['source_event_id'] ?? null;
 
-                Party::query()->create([
+                $ids[] = Party::query()->create([
                     'name' => $party['name'],
                     'source_key' => $sourceEventId === null ? null : Str::before($sourceEventId, ':'),
                     'source_event_id' => $sourceEventId,
-                ]);
+                ])->id;
             }
+
+            return $ids;
         });
 
-        return to_route('admin.parties.index');
+        return to_route('admin.parties.index')->with('created_party_ids', $createdIds);
     }
 
     /**
