@@ -61,7 +61,7 @@
 - Consumes: `App\Services\PartyPosterGenerator::generate(Party $party): string`, `App\Models\Party`.
 - Produces: la route nommée `posters.file`, d'URL `/affiches/{party}/png` liée par identifiant, protégée par `signed` et `throttle:poster-file`. Elle répond 200 avec les octets PNG et l'en-tête `Content-Disposition: inline; filename="<slug>-affiche.png"`, 403 sans signature valide, 404 si la party n'existe plus.
 
-- [ ] **Step 1: Écrire les tests de la route**
+- [x] **Step 1: Écrire les tests de la route**
 
 Créer `tests/Feature/PosterFileTest.php` :
 
@@ -149,12 +149,12 @@ it('rate limits the poster route', function () {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=PosterFileTest`
 Expected: FAIL — `Route [posters.file] not defined.`
 
-- [ ] **Step 3: Écrire le contrôleur**
+- [x] **Step 3: Écrire le contrôleur**
 
 Créer `app/Http/Controllers/PosterController.php` :
 
@@ -188,7 +188,7 @@ class PosterController extends Controller
 }
 ```
 
-- [ ] **Step 4: Déclarer la route**
+- [x] **Step 4: Déclarer la route**
 
 Dans `routes/web.php`, ajouter l'import :
 
@@ -213,12 +213,12 @@ RateLimiter::for('poster-file', function (Request $request): Limit {
 });
 ```
 
-- [ ] **Step 5: Lancer les tests pour les voir passer**
+- [x] **Step 5: Lancer les tests pour les voir passer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=PosterFileTest`
 Expected: PASS — 6 tests.
 
-- [ ] **Step 6: Formater et committer**
+- [x] **Step 6: Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -244,7 +244,7 @@ git commit -m "feat(posters): serve a party poster from a signed link"
   - `App\Services\PosterBatchLink::parseIds(?string $value): array` qui transforme `"12,13"` en `[12, 13]`, en écartant tout ce qui n'est pas un entier positif.
   - La route nommée `posters.index`, d'URL `/affiches?parties=12,13`, protégée par `signed`, qui rend le composant Inertia `party/posters` avec la prop `posters`.
 
-- [ ] **Step 1: Écrire les tests du service et de la page**
+- [x] **Step 1: Écrire les tests du service et de la page**
 
 Créer `tests/Feature/PosterBatchPageTest.php` :
 
@@ -358,12 +358,12 @@ it('refuses an expired page link', function () {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=PosterBatchPageTest`
 Expected: FAIL — `Class "App\Services\PosterBatchLink" not found`.
 
-- [ ] **Step 3: Écrire le service**
+- [x] **Step 3: Écrire le service**
 
 Créer `app/Services/PosterBatchLink.php` :
 
@@ -433,7 +433,7 @@ class PosterBatchLink
 }
 ```
 
-- [ ] **Step 4: Ajouter l'action de page au contrôleur**
+- [x] **Step 4: Ajouter l'action de page au contrôleur**
 
 Dans `app/Http/Controllers/PosterController.php`, ajouter les imports :
 
@@ -466,7 +466,7 @@ public function index(Request $request, PosterBatchLink $posterBatchLink): Respo
 }
 ```
 
-- [ ] **Step 5: Déclarer la route**
+- [x] **Step 5: Déclarer la route**
 
 Dans `routes/web.php`, au-dessus de la route `posters.file` :
 
@@ -476,12 +476,12 @@ Route::get('affiches', [PosterController::class, 'index'])
     ->name('posters.index');
 ```
 
-- [ ] **Step 6: Lancer les tests pour les voir passer**
+- [x] **Step 6: Lancer les tests pour les voir passer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=PosterBatchPageTest`
 Expected: PASS — 10 tests. `assertInertia` inspecte la réponse JSON d'Inertia sans monter le composant React, donc la page `party/posters`, écrite à la tâche 6, ne manque pas encore.
 
-- [ ] **Step 7: Formater et committer**
+- [x] **Step 7: Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -506,7 +506,7 @@ git commit -m "feat(posters): list a signed batch of posters for the phone"
   - `App\Services\PosterBatchLink::forParties(array $partyIds): array` qui renvoie `array{url: string, qr: string}`, où `url` est l'URL signée de `posters.index` valable `LIFETIME_IN_HOURS` heures et `qr` un data-URI `data:image/png;base64,…` de son QR code.
   - La route nommée `admin.parties.posters-link`, d'URL `/admin/parties/posters-link?parties=12,13`, sous `auth`, qui renvoie ce tableau en JSON.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 Créer `tests/Feature/AdminPosterLinkTest.php` :
 
@@ -572,12 +572,12 @@ it('keeps the link behind the admin session', function () {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=AdminPosterLinkTest`
 Expected: FAIL — `Route [admin.parties.posters-link] not defined.`
 
-- [ ] **Step 3: Ajouter la fabrication du lien au service**
+- [x] **Step 3: Ajouter la fabrication du lien au service**
 
 Dans `app/Services/PosterBatchLink.php`, ajouter les imports :
 
@@ -617,7 +617,7 @@ public function forParties(array $partyIds): array
 }
 ```
 
-- [ ] **Step 4: Écrire la validation**
+- [x] **Step 4: Écrire la validation**
 
 Créer `app/Http/Requests/PosterLinkRequest.php` :
 
@@ -688,7 +688,7 @@ class PosterLinkRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 5: Écrire le contrôleur**
+- [x] **Step 5: Écrire le contrôleur**
 
 Créer `app/Http/Controllers/Admin/PosterLinkController.php` :
 
@@ -714,7 +714,7 @@ class PosterLinkController extends Controller
 }
 ```
 
-- [ ] **Step 6: Déclarer la route**
+- [x] **Step 6: Déclarer la route**
 
 Dans `routes/web.php`, ajouter l'import :
 
@@ -728,12 +728,12 @@ et, dans le groupe `admin`, **avant** `Route::resource('parties', …)` pour que
 Route::get('parties/posters-link', [PosterLinkController::class, 'show'])->name('parties.posters-link');
 ```
 
-- [ ] **Step 7: Lancer les tests pour les voir passer**
+- [x] **Step 7: Lancer les tests pour les voir passer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=AdminPosterLinkTest`
 Expected: PASS — 5 tests.
 
-- [ ] **Step 8: Formater et committer**
+- [x] **Step 8: Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -753,7 +753,7 @@ git commit -m "feat(posters): mint the batch link and its qr code from the admin
 - Consumes: `bulkStore` existant.
 - Produces: la clé de session `created_party_ids` (`array<int, int>`) déposée par `bulkStore`, et la prop Inertia `createdPartyIds` de `admin/parties/index`, qui vaut cette liste au retour d'une création en lot et `[]` partout ailleurs.
 
-- [ ] **Step 1: Écrire les tests**
+- [x] **Step 1: Écrire les tests**
 
 Ajouter à la fin de `tests/Feature/AdminPartiesBulkCreateTest.php` :
 
@@ -792,12 +792,12 @@ it('leaves the created party ids empty on a plain visit', function () {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=AdminPartiesBulkCreateTest`
 Expected: FAIL — `Session is missing expected key [created_party_ids]`.
 
-- [ ] **Step 3: Déposer les identifiants et les repasser en prop**
+- [x] **Step 3: Déposer les identifiants et les repasser en prop**
 
 Dans `app/Http/Controllers/Admin/PartyController.php`, remplacer le corps de `bulkStore` par :
 
@@ -832,12 +832,12 @@ Puis, dans `index()`, ajouter la prop à côté de `partyDomain` :
 'createdPartyIds' => $request->session()->get('created_party_ids', []),
 ```
 
-- [ ] **Step 4: Lancer les tests pour les voir passer**
+- [x] **Step 4: Lancer les tests pour les voir passer**
 
 Run: `vendor/bin/sail artisan test --compact --filter=AdminPartiesBulkCreateTest`
 Expected: PASS.
 
-- [ ] **Step 5: Formater et committer**
+- [x] **Step 5: Formater et committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -860,7 +860,7 @@ git commit -m "feat(parties): hand the created party ids back to the list"
 - Consumes: la route `admin.parties.posters-link` (tâche 3), la prop `createdPartyIds` (tâche 4).
 - Produits attendus dans le DOM, sur lesquels s'appuient les tests : le bouton de barre d'outils `#open-posters-dialog`, l'image du QR code `#posters-qr`, le lien textuel `#posters-link`, le message d'erreur `#posters-error`.
 
-- [ ] **Step 1: Écrire les tests navigateur**
+- [x] **Step 1: Écrire les tests navigateur**
 
 Ajouter à la fin de `tests/Web/AdminPartiesTest.php` :
 
@@ -905,12 +905,12 @@ it('keeps the posters button disabled without a selection', function () {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail npm run build && vendor/bin/sail artisan test --compact --testsuite=Web --filter="poster"`
 Expected: FAIL — l'élément `#posters-qr` n'existe pas.
 
-- [ ] **Step 3: Remonter la sélection du tableau**
+- [x] **Step 3: Remonter la sélection du tableau**
 
 Dans `resources/js/components/data-table/data-table-main.tsx`, ajouter la prop à l'interface :
 
@@ -947,7 +947,7 @@ puis, juste après la déclaration de `table`, l'effet qui remonte la sélection
     }, [rowSelection, table])
 ```
 
-- [ ] **Step 4: Passer la prop par le composant d'enrobage**
+- [x] **Step 4: Passer la prop par le composant d'enrobage**
 
 Dans `resources/js/components/data-table.tsx` :
 
@@ -978,7 +978,7 @@ export function DataTable({ tableData, rowEditHrefBase, toolbarAction, onRowClic
 }
 ```
 
-- [ ] **Step 5: Écrire la boîte de dialogue**
+- [x] **Step 5: Écrire la boîte de dialogue**
 
 Créer `resources/js/components/parties/posters-dialog.tsx` :
 
@@ -1080,7 +1080,7 @@ export function PartyPostersDialog({ open, onOpenChange, partyIds }: PostersDial
 }
 ```
 
-- [ ] **Step 6: Brancher les deux entrées sur la liste des parties**
+- [x] **Step 6: Brancher les deux entrées sur la liste des parties**
 
 Dans `resources/js/pages/admin/parties/index.tsx` :
 
@@ -1171,17 +1171,17 @@ Enfin, monter la boîte à côté de `PartyBulkCreateDialog` :
             />
 ```
 
-- [ ] **Step 7: Reconstruire et lancer les tests**
+- [x] **Step 7: Reconstruire et lancer les tests**
 
 Run: `vendor/bin/sail npm run build && vendor/bin/sail artisan test --compact --testsuite=Web --filter="poster"`
 Expected: PASS — 3 tests.
 
-- [ ] **Step 8: Vérifier que le tableau n'a pas régressé ailleurs**
+- [x] **Step 8: Vérifier que le tableau n'a pas régressé ailleurs**
 
 Run: `vendor/bin/sail artisan test --compact --testsuite=Web tests/Web/AdminPartiesTest.php`
 Expected: PASS.
 
-- [ ] **Step 9: Committer**
+- [x] **Step 9: Committer**
 
 ```bash
 git add resources/js tests/Web/AdminPartiesTest.php
@@ -1201,7 +1201,7 @@ git commit -m "feat(parties): open the poster qr code from the list and after a 
 - Consumes: la prop `posters` (`array<{ id: number; name: string; url: string }>`) rendue par `posters.index` (tâche 2).
 - Produces : `usePosterShare(onError: (message: string) => void): PosterShare` avec `PosterShare = { supported: boolean; status: 'idle' | 'preparing' | 'sharing'; progress: { done: number; total: number }; share: (posters: SharePoster[]) => void }` et `SharePoster = { id: number; name: string; url: string }`. Dans le DOM : le bouton `#share-posters`, les liens de repli `[data-poster-link]`.
 
-- [ ] **Step 1: Écrire les tests navigateur**
+- [x] **Step 1: Écrire les tests navigateur**
 
 Créer `tests/Web/PostersTest.php` :
 
@@ -1312,12 +1312,12 @@ it('falls back to download links without native sharing', function () {
 });
 ```
 
-- [ ] **Step 2: Lancer les tests pour les voir échouer**
+- [x] **Step 2: Lancer les tests pour les voir échouer**
 
 Run: `vendor/bin/sail npm run build && vendor/bin/sail artisan test --compact --testsuite=Web tests/Web/PostersTest.php`
 Expected: FAIL — le composant `party/posters` est introuvable.
 
-- [ ] **Step 3: Écrire le hook de partage**
+- [x] **Step 3: Écrire le hook de partage**
 
 Créer `resources/js/hooks/use-poster-share.ts` :
 
@@ -1448,7 +1448,7 @@ export default function usePosterShare(onError: (message: string) => void): Post
 }
 ```
 
-- [ ] **Step 4: Écrire la page**
+- [x] **Step 4: Écrire la page**
 
 Créer `resources/js/pages/party/posters.tsx` :
 
@@ -1520,17 +1520,17 @@ export default function Posters({ posters }: PostersProps) {
 }
 ```
 
-- [ ] **Step 5: Reconstruire et lancer les tests**
+- [x] **Step 5: Reconstruire et lancer les tests**
 
 Run: `vendor/bin/sail npm run build && vendor/bin/sail artisan test --compact --testsuite=Web tests/Web/PostersTest.php`
 Expected: PASS — 4 tests.
 
-- [ ] **Step 6: Vérifier la suite complète**
+- [x] **Step 6: Vérifier la suite complète**
 
 Run: `vendor/bin/sail artisan test --compact`
 Expected: PASS.
 
-- [ ] **Step 7: Committer**
+- [x] **Step 7: Committer**
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
@@ -1542,14 +1542,30 @@ git commit -m "feat(posters): share a whole batch from the phone"
 
 ## Vérification finale
 
-- [ ] **Parcours manuel**
+- [x] **Parcours manuel**
 
 Sur `https://<app>/admin/parties`, créer deux parties depuis « Create from events », vérifier que la boîte « Posters » s'ouvre avec un QR code, l'ouvrir sur un téléphone et partager les deux affiches. Vérifier ensuite qu'une sélection dans le tableau ouvre la même boîte.
 
-- [ ] **Suites complètes**
+- [x] **Suites complètes**
 
 ```bash
 vendor/bin/sail bin pint --format agent
 vendor/bin/sail npm run build
 vendor/bin/sail artisan test --compact
 ```
+
+---
+
+## Écarts au plan
+
+**La page téléphone est née à la tâche 2, pas à la tâche 6.** Le plan pariait qu'`assertInertia`
+n'avait pas besoin du composant React ; il le cherche bel et bien
+(`inertia.testing.ensure_pages_exist`). `resources/js/pages/party/posters.tsx` a donc été créé
+dès la tâche 2 dans sa forme minimale — la liste des noms — puis complété à la tâche 6.
+
+**Le support du partage est sondé au clic, plus au montage.** Sondé au montage, le bouton
+n'existait pas dans les navigateurs de test, si bien que le bouchon de `navigator.share` posé
+après le chargement ne pouvait plus rien changer : le test du partage n'avait aucun élément à
+cliquer. La page rend donc toujours son bouton, et le clic décide — partage natif, ou bascule
+vers les liens de téléchargement. Conséquence visible : sur un navigateur de bureau, le repli
+apparaît après le premier clic au lieu du chargement, et le hook n'expose plus `supported`.
