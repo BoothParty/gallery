@@ -21,7 +21,8 @@
 - La page publique **doit** s'appeler `party/posters` : `resources/views/app.blade.php` ne sert le bundle CSS public qu'aux composants Inertia préfixés `party/`, et `resources/css/app.css` ne scanne que `pages/party`, `components/party` et `hooks`. Ailleurs, la page sort sans aucun style.
 - Aucune nouvelle dépendance : `endroid/qr-code` est déjà installé et utilisé par `PartyPosterGenerator`.
 - `tests/Unit` ne charge pas l'application Laravel — `tests/Pest.php` n'étend `Tests\TestCase` que dans `Feature` et `Web`. Tout test qui touche aux routes, aux URLs signées ou à la base va dans `tests/Feature`.
-- Les tests de `tests/Web/` de cette branche subissent encore les timeouts intermittents du plugin navigateur ; le correctif (`browserPage(fn () => visit(...))`) vit sur la PR #32. Tant qu'elle n'est pas fusionnée ici, écrire `visit(...)` comme le reste de la branche et relancer un test navigateur qui échoue avant d'enquêter. Après fusion, convertir les nouveaux tests à `browserPage`.
+- Les tests navigateur ouvrent leur page avec `browserPage(fn () => visit(...))`, jamais `visit()` nu : le plugin rejoue chaque clic avec une seconde de budget, et un clic qui aboutit juste après cette seconde fait échouer le test. Voir `tests/BrowserPage.php`.
+- Un nouveau limiteur de débit se déclare nommément dans `App\Providers\AppServiceProvider`, à côté de `party-download`, `party-picture` et `party-metadata`.
 
 ## File Structure
 
@@ -37,7 +38,7 @@
 | `resources/js/components/data-table.tsx` (modifié) | Passe la nouvelle prop au tableau |
 | `resources/js/components/parties/posters-dialog.tsx` (créé) | Boîte de dialogue : récupère le lien, affiche le QR code et les erreurs |
 | `resources/js/pages/admin/parties/index.tsx` (modifié) | Ouvre la boîte après création et depuis la barre d'outils |
-| `resources/js/hooks/use-poster-share.ts` (créé) | Téléchargement des affiches, appel à `navigator.share`, états |
+| `resources/js/hooks/use-poster-share.ts` (créé) | Téléchargement des affiches, appel à `navigator.share`, états ; voisin de `use-photo-share`, dont il ne partage ni le cycle de vie ni le nommage des fichiers |
 | `resources/js/pages/party/posters.tsx` (créé) | Page téléphone : liste, bouton de partage, repli |
 | `tests/Feature/PosterFileTest.php` (créé) | Couvre la route de fichier |
 | `tests/Feature/PosterBatchPageTest.php` (créé) | Couvre la page publique et `PosterBatchLink::posters()` |
@@ -54,10 +55,11 @@
 - Create: `app/Http/Controllers/PosterController.php`
 - Create: `tests/Feature/PosterFileTest.php`
 - Modify: `routes/web.php`
+- Modify: `app/Providers/AppServiceProvider.php`
 
 **Interfaces:**
 - Consumes: `App\Services\PartyPosterGenerator::generate(Party $party): string`, `App\Models\Party`.
-- Produces: la route nommée `posters.file`, d'URL `/affiches/{party}/png` liée par identifiant, protégée par `signed` et `throttle:30,1`. Elle répond 200 avec les octets PNG et l'en-tête `Content-Disposition: inline; filename="<slug>-affiche.png"`, 403 sans signature valide, 404 si la party n'existe plus.
+- Produces: la route nommée `posters.file`, d'URL `/affiches/{party}/png` liée par identifiant, protégée par `signed` et `throttle:poster-file`. Elle répond 200 avec les octets PNG et l'en-tête `Content-Disposition: inline; filename="<slug>-affiche.png"`, 403 sans signature valide, 404 si la party n'existe plus.
 
 - [ ] **Step 1: Écrire les tests de la route**
 
@@ -143,7 +145,7 @@ it('answers not found for a party deleted since the link was minted', function (
  */
 it('rate limits the poster route', function () {
     expect(app('router')->getRoutes()->getByName('posters.file')->gatherMiddleware())
-        ->toContain('throttle:30,1');
+        ->toContain('throttle:poster-file');
 });
 ```
 
@@ -198,8 +200,17 @@ puis déclarer la route **avant** le groupe `Route::prefix('{party}')`, qui capt
 
 ```php
 Route::get('affiches/{party:id}/png', [PosterController::class, 'file'])
-    ->middleware(['signed', 'throttle:30,1'])
+    ->middleware(['signed', 'throttle:poster-file'])
     ->name('posters.file');
+```
+
+Puis déclarer le limiteur dans `app/Providers/AppServiceProvider::boot()`, à la suite des trois
+autres :
+
+```php
+RateLimiter::for('poster-file', function (Request $request): Limit {
+    return Limit::perMinute(30)->by($request->ip());
+});
 ```
 
 - [ ] **Step 5: Lancer les tests pour les voir passer**
@@ -211,7 +222,7 @@ Expected: PASS — 6 tests.
 
 ```bash
 vendor/bin/sail bin pint --dirty --format agent
-git add app/Http/Controllers/PosterController.php routes/web.php tests/Feature/PosterFileTest.php
+git add app/Http/Controllers/PosterController.php app/Providers/AppServiceProvider.php routes/web.php tests/Feature/PosterFileTest.php
 git commit -m "feat(posters): serve a party poster from a signed link"
 ```
 
@@ -857,7 +868,7 @@ Ajouter à la fin de `tests/Web/AdminPartiesTest.php` :
 // ── Affiches ──────────────────────────────────────────────────────────────────
 
 it('shows the poster qr code right after a bulk creation', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create from events')
         ->assertVisible('#bulk-create-party-name-0')
@@ -873,7 +884,7 @@ it('shows the poster qr code right after a bulk creation', function () {
 it('opens the poster qr code for a selection of parties', function () {
     Party::factory()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->assertPresent('table tbody tr:first-child')
         ->click('table tbody tr:first-child [aria-label="Select row"]')
@@ -885,7 +896,7 @@ it('opens the poster qr code for a selection of parties', function () {
 it('keeps the posters button disabled without a selection', function () {
     Party::factory()->create();
 
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->assertPresent('#open-posters-dialog')
         ->assertNoJavaScriptErrors();
@@ -1250,7 +1261,7 @@ it('lists the parties of the batch', function () {
     $first = Party::factory()->create(['name' => 'premiere-soiree']);
     $second = Party::factory()->create(['name' => 'seconde-soiree']);
 
-    $page = visit(postersPageUrl([$first->id, $second->id]));
+    $page = browserPage(fn () => visit(postersPageUrl([$first->id, $second->id])));
 
     $page->assertSee('premiere-soiree')
         ->assertSee('seconde-soiree')
@@ -1261,7 +1272,7 @@ it('shares every poster of the batch at once', function () {
     $first = Party::factory()->create();
     $second = Party::factory()->create();
 
-    $page = visit(postersPageUrl([$first->id, $second->id]));
+    $page = browserPage(fn () => visit(postersPageUrl([$first->id, $second->id])));
 
     stubPosterShare($page);
 
@@ -1273,7 +1284,7 @@ it('shares every poster of the batch at once', function () {
 it('stays quiet when the share sheet is dismissed', function () {
     $party = Party::factory()->create();
 
-    $page = visit(postersPageUrl([$party->id]));
+    $page = browserPage(fn () => visit(postersPageUrl([$party->id])));
 
     stubPosterShare($page, 'reject');
 
@@ -1291,7 +1302,7 @@ it('stays quiet when the share sheet is dismissed', function () {
 it('falls back to download links without native sharing', function () {
     $party = Party::factory()->create(['name' => 'sans-partage']);
 
-    $page = visit(postersPageUrl([$party->id]));
+    $page = browserPage(fn () => visit(postersPageUrl([$party->id])));
 
     $page->assertVisible('[data-poster-link]')
         ->assertMissing('#share-posters')
