@@ -9,6 +9,7 @@ use App\Http\Controllers\PartyDashboardController;
 use App\Http\Controllers\PartyMetadataController;
 use App\Http\Controllers\PictureDownloadController;
 use App\Http\Controllers\PictureFileController;
+use App\Http\Controllers\PosterController;
 use App\Http\Middleware\ResolvePartyHost;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,10 @@ Route::get('login', [OAuthController::class, 'redirect'])->name('login');
 Route::get('auth/{provider}/redirect', [OAuthController::class, 'redirect'])->name('auth.redirect');
 Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->name('auth.callback');
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
+
+Route::get('affiches/{party:id}/png', [PosterController::class, 'file'])
+    ->middleware(['signed', 'throttle:poster-file'])
+    ->name('posters.file');
 
 Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])

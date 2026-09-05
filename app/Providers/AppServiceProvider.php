@@ -83,5 +83,14 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(20)->by($request->ip().':'.$party);
         });
+
+        /**
+         * Rendering a poster costs almost a second of CPU and 54 MB, and a
+         * batch link is meant to be opened by one phone: a low ceiling per
+         * address is enough to keep a leaked link from grinding the server.
+         */
+        RateLimiter::for('poster-file', function (Request $request): Limit {
+            return Limit::perMinute(30)->by((string) $request->ip());
+        });
     }
 }
