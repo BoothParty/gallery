@@ -83,5 +83,17 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(20)->by($request->ip().':'.$party);
         });
+
+        /**
+         * Every phone in the room polls this endpoint, so the ceiling is per
+         * event rather than per device: eighty guests at the fastest cadence
+         * spend 480 of it. Keyed like its neighbours, by address and party,
+         * because the guests of one venue share a single wifi address.
+         */
+        RateLimiter::for('party-state', function (Request $request): Limit {
+            $party = (string) $request->route('party');
+
+            return Limit::perMinute(600)->by($request->ip().':'.$party);
+        });
     }
 }
