@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Cache;
 class PartyPicturesState
 {
     /**
+     * Guard TTL for the memoised aggregate, in seconds.
+     *
+     * Not a freshness knob: picture writes invalidate the entry. It exists so
+     * that a future write skipping the model events leaves the gallery stale
+     * for a moment rather than for good.
+     */
+    private const CACHE_TTL = 600;
+
+    /**
      * The signal an open gallery polls to know whether its content moved.
      *
      * `count` catches an arrival and a deletion, `last_change` catches an
@@ -30,7 +39,7 @@ class PartyPicturesState
 
         return Cache::remember(
             self::key($party->id),
-            (int) config('party.refresh.cache_ttl'),
+            self::CACHE_TTL,
             fn (): array => $this->compute($party),
         );
     }
@@ -44,7 +53,7 @@ class PartyPicturesState
         Cache::forget(self::key($partyId));
     }
 
-    public static function key(int $partyId): string
+    private static function key(int $partyId): string
     {
         return "party:{$partyId}:pictures-state";
     }

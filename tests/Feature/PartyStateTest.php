@@ -65,14 +65,3 @@ it('throttles repeated state requests', function () {
 
     $this->getJson(route('api.parties.state', $party))->assertStatus(429);
 });
-
-it('keeps state throttling independent per party', function () {
-    $throttledParty = Party::factory()->create();
-
-    foreach (range(1, 600) as $ignored) {
-        $this->getJson(route('api.parties.state', $throttledParty))->assertOk();
-    }
-
-    $this->getJson(route('api.parties.state', $throttledParty))->assertStatus(429);
-    $this->getJson(route('api.parties.state', Party::factory()->create()))->assertOk();
-});

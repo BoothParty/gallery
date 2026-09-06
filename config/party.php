@@ -75,10 +75,6 @@ return [
     | than `warm_after`, `warm` up to `cold_after`, `cold` beyond. An empty
     | gallery stays hot, it being the case the whole feature exists for.
     |
-    | `cache_ttl` is only a guard. The aggregate the poll reads is invalidated
-    | by picture writes, so the TTL exists to bound the damage of a future
-    | write that skips the model events, not to keep the value fresh.
-    |
     */
 
     'refresh' => [
@@ -87,7 +83,6 @@ return [
         'cold' => (int) env('PARTY_REFRESH_COLD', 60),
         'warm_after' => (int) env('PARTY_REFRESH_WARM_AFTER', 120),
         'cold_after' => (int) env('PARTY_REFRESH_COLD_AFTER', 300),
-        'cache_ttl' => (int) env('PARTY_REFRESH_CACHE_TTL', 600),
     ],
 
 ];

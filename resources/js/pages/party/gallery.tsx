@@ -238,8 +238,6 @@ export default function Gallery({
         <PartyLayout>
             <Head title={title} />
 
-            {lightboxOpen && <div data-lightbox-open hidden />}
-
             <GalleryHero
                 title={title}
                 subtitle={party.description}

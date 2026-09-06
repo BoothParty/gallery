@@ -581,14 +581,14 @@ it('falls back to the zip form when the browser cannot share files', function ()
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 
-it('marks the page while the lightbox is open', function () {
+it('opens the lightbox on a picture', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->create();
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
-    $page->assertMissing('[data-lightbox-open]')
+    $page->assertMissing('.pswp--open')
         ->click('#gallery a')
-        ->assertPresent('[data-lightbox-open]')
+        ->assertPresent('.pswp--open')
         ->assertNoJavaScriptErrors();
 });
