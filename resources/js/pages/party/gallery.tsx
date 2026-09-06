@@ -44,10 +44,27 @@ export interface PicturePage {
     data: Picture[];
 }
 
+export interface PicturesState {
+    count: number;
+    last_change: string | null;
+}
+
+export interface RefreshConfig {
+    /** Seconds between polls while the gallery is empty or just moved. */
+    hot: number;
+    warm: number;
+    cold: number;
+    /** Seconds since the last change at which the cadence steps down. */
+    warm_after: number;
+    cold_after: number;
+}
+
 interface Props {
     party: Party;
     pictures: PicturePage;
     picturesCount: number;
+    picturesState: PicturesState;
+    refresh: RefreshConfig;
     hidePictures: boolean;
     canEdit: boolean;
     maxDownloadPictures: number;
@@ -80,6 +97,8 @@ export default function Gallery({
     party,
     pictures,
     picturesCount,
+    picturesState,
+    refresh,
     hidePictures,
     canEdit,
     maxDownloadPictures,
