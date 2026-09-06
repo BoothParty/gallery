@@ -112,7 +112,7 @@ export default function Gallery({
     const selection = usePhotoSelection(loadedIds);
     const flyToStack = useFlyToStack();
 
-    usePhotoSwipe('#gallery', !selection.selectMode);
+    const lightboxOpen = usePhotoSwipe('#gallery', !selection.selectMode);
 
     const [editorOpen, setEditorOpen] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
@@ -193,6 +193,8 @@ export default function Gallery({
     return (
         <PartyLayout>
             <Head title={title} />
+
+            {lightboxOpen && <div data-lightbox-open hidden />}
 
             <GalleryHero
                 title={title}
