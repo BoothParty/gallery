@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import GalleryEditor from '@/components/party/gallery-editor';
 import GalleryGrid from '@/components/party/gallery-grid';
 import GalleryHero from '@/components/party/gallery-hero';
+import GalleryNotice from '@/components/party/gallery-notice';
 import GalleryStickyBar from '@/components/party/gallery-sticky-bar';
 import GalleryToast from '@/components/party/gallery-toast';
 import SelectionBar, { type StackPhoto } from '@/components/party/selection-bar';
@@ -53,11 +54,25 @@ interface Props {
     csrfToken: string;
 }
 
-const EXPIRED_MESSAGE =
-    "Oh non ! Tu es arrivé trop tard, les photos sont désormais cachées. Tu peux toujours demander à l'organisateur de te les envoyer !";
+const EXPIRED_HEADING = 'Cette galerie a expiré';
+
+const EMPTY_HEADING = 'La galerie se remplit bientôt';
 
 const EMPTY_MESSAGE =
-    "Oh non ! Il n'y a pas encore de photos ici. Rends-toi au photobooth et prends la toute première photo. N'oublie pas de sortir ton meilleur sourire !";
+    'Aucune photo pour le moment. Les clichés apparaissent ici quelques instants après leur prise, rafraîchissez la page pour les découvrir.';
+
+const EXPIRY_DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+});
+
+/** Reads as « Les photos sont restées en ligne jusqu'au 11 décembre 2026. » */
+function expiredMessage(expireAt: string | null): string {
+    const until = expireAt === null ? '' : ` jusqu'au ${EXPIRY_DATE_FORMAT.format(new Date(expireAt))}`;
+
+    return `Les photos sont restées en ligne${until}. Vous pouvez demander à l'organisateur de vous les envoyer.`;
+}
 
 const TOAST_DURATION = 2200;
 
@@ -133,7 +148,10 @@ export default function Gallery({
             selection.landedIds
                 .map((id) => photos.find((picture) => picture.id === id))
                 .filter((picture): picture is NonNullable<typeof picture> => picture !== undefined)
-                .map((picture) => ({ id: picture.id, thumbnailUrl: picture.thumbnail_url })),
+                .map((picture) => ({
+                    id: picture.id,
+                    thumbnailUrl: picture.thumbnail_url,
+                })),
         [photos, selection.landedIds],
     );
 
@@ -147,9 +165,7 @@ export default function Gallery({
             }
 
             flash(
-                selection.count === 1
-                    ? 'Téléchargement de 1 photo'
-                    : `Préparation du ZIP · ${selection.count} photos`,
+                selection.count === 1 ? 'Téléchargement de 1 photo' : `Préparation du ZIP · ${selection.count} photos`,
             );
         },
         [flash, maxDownloadPictures, selection.count],
@@ -163,31 +179,31 @@ export default function Gallery({
                 title={title}
                 subtitle={party.description}
                 bannerUrl={party.banner_url}
-                position={{ x: party.banner_position_x, y: party.banner_position_y }}
+                position={{
+                    x: party.banner_position_x,
+                    y: party.banner_position_y,
+                }}
                 zoom={party.banner_zoom}
                 canEdit={canEdit}
                 onEdit={() => setEditorOpen(true)}
             />
 
-            <GalleryStickyBar
-                count={picturesCount}
-                selectable={!isEmpty}
-                selectMode={selection.selectMode}
-                allSelected={selection.allSelected}
-                onEnterSelect={onEnterSelect}
-                onExitSelect={selection.exit}
-                onSelectAll={selection.selectAll}
-            />
+            {!isEmpty && (
+                <GalleryStickyBar
+                    count={picturesCount}
+                    selectMode={selection.selectMode}
+                    allSelected={selection.allSelected}
+                    onEnterSelect={onEnterSelect}
+                    onExitSelect={selection.exit}
+                    onSelectAll={selection.selectAll}
+                />
+            )}
 
             <main className="mx-auto w-full max-w-[1440px] grow px-3 pt-4 pb-10 sm:px-8 sm:pt-6 lg:px-12 lg:pt-8 lg:pb-18">
                 {hidePictures ? (
-                    <p id="gallery" className="mx-auto max-w-[60ch] py-16 text-center text-xl">
-                        {EXPIRED_MESSAGE}
-                    </p>
+                    <GalleryNotice heading={EXPIRED_HEADING}>{expiredMessage(party.expire_at)}</GalleryNotice>
                 ) : isEmpty ? (
-                    <p id="gallery" className="mx-auto max-w-[60ch] py-16 text-center text-xl">
-                        {EMPTY_MESSAGE}
-                    </p>
+                    <GalleryNotice heading={EMPTY_HEADING}>{EMPTY_MESSAGE}</GalleryNotice>
                 ) : (
                     <GalleryGrid
                         pictures={photos}

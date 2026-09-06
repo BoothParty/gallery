@@ -37,13 +37,15 @@ it('falls back to the party name when no display name is set', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('renders no banner image when the party has none', function () {
-    $party = Party::factory()->create();
+it('renders the typographic hero when the party has no banner', function () {
+    $party = Party::factory()->create(['display_name' => 'Camille & Antoine']);
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
     $page->assertPresent('[data-gallery-hero]')
         ->assertMissing('[data-gallery-banner]')
+        ->assertSeeIn('[data-gallery-hero]', 'Camille & Antoine')
+        ->assertDontSee("Galerie de l'événement")
         ->assertNoJavaScriptErrors();
 });
 
@@ -86,16 +88,18 @@ it('shows empty state message when party has no pictures', function () {
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
-    $page->assertSee("Il n'y a pas encore de photos ici")
+    $page->assertSeeIn('[data-gallery-notice]', 'La galerie se remplit bientôt')
+        ->assertSeeIn('[data-gallery-notice]', 'Aucune photo pour le moment')
         ->assertNoJavaScriptErrors();
 });
 
-it('hides the select button when the party has no pictures', function () {
+it('hides the sticky bar when the party has no pictures', function () {
     $party = Party::factory()->create();
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
-    $page->assertDontSee('Sélectionner')
+    $page->assertMissing('[data-gallery-count]')
+        ->assertDontSee('Sélectionner')
         ->assertNoJavaScriptErrors();
 });
 
@@ -107,7 +111,7 @@ it('displays pictures when the party has some', function () {
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
-    $page->assertDontSee("Il n'y a pas encore de photos ici")
+    $page->assertMissing('[data-gallery-notice]')
         ->assertCount('#gallery img', 3)
         ->assertNoJavaScriptErrors();
 });
@@ -174,7 +178,27 @@ it('shows hidden message for an expired party', function () {
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
-    $page->assertSee('les photos sont désormais cachées')
+    $page->assertSeeIn('[data-gallery-notice]', 'Cette galerie a expiré')
+        ->assertSeeIn('[data-gallery-notice]', 'Les photos sont restées en ligne')
+        ->assertNoJavaScriptErrors();
+});
+
+it('keeps the banner hero for an expired party', function () {
+    $party = Party::factory()->expired()->withBanner()->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+
+    $page->assertPresent('[data-gallery-banner]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('hides the sticky bar for an expired party', function () {
+    $party = Party::factory()->expired()->create();
+    Picture::factory()->count(2)->for($party)->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+
+    $page->assertMissing('[data-gallery-count]')
         ->assertNoJavaScriptErrors();
 });
 
