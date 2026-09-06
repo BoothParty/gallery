@@ -34,7 +34,7 @@ sous ses doigts pendant qu'il s'en sert.
 Dans le périmètre :
 
 - un service qui calcule l'état des photos d'une party ;
-- un endpoint public de sondage, caché et throttlé ;
+- un endpoint public de sondage, stateless, caché et throttlé ;
 - un index composite sur `pictures` ;
 - un hook client qui possède la cadence de sondage ;
 - le rafraîchissement silencieux, et la pastille qui le remplace quand le
@@ -104,8 +104,9 @@ toucher aux lignes.
 
 ## L'endpoint
 
-`GET /{party}/state`, servi par `PartyStateController` (invokable), monté dans
-le groupe `party.` existant et nommé `party.state`.
+`GET /api/parties/{party}/state`, servi par `Api\PartyStateController`
+(invokable), monté dans `routes/api.php` hors du groupe Sanctum et nommé
+`api.parties.state`.
 
 ```json
 { "count": 128, "last_change": "2026-09-06T21:14:03+00:00" }
@@ -113,6 +114,15 @@ le groupe `party.` existant et nommé `party.state`.
 
 Pas de middleware `ResolvePartyHost` : le signal est le même pour tout le monde,
 et l'hôte n'a rien de plus à en apprendre.
+
+**Pourquoi dans les routes d'API et pas dans `web.php`.** L'application tourne
+avec `SESSION_DRIVER=database`. Toute route du groupe `web` traverse
+`StartSession`, qui écrit la session en base à chaque requête : 480 sondages par
+minute deviendraient 480 écritures par minute, soit bien plus cher que l'agrégat
+qu'on prend soin de cacher. Le groupe `api` est stateless et porte déjà
+`SubstituteBindings`, dont la route a besoin pour résoudre `{party}` par son
+`name`. L'URL s'aligne au passage sur `parties/{party}/pictures`, déjà servie
+là. La sonde n'est pas une page Inertia ; elle n'a rien à faire dans `web.php`.
 
 ### Cache
 
@@ -308,8 +318,8 @@ besoin d'être désactivé : les écritures du test l'invalident.
 ## Conséquences
 
 Le budget serveur d'une soirée de six heures avec 80 invités connectés en
-permanence : environ 170 000 requêtes HTTP sur `/{party}/state`, servies par le
-cache, et autant de requêtes SQL qu'il y a eu de photos dans la soirée —
+permanence : environ 170 000 requêtes HTTP sur `/api/parties/{party}/state`,
+servies par le cache et sans écriture de session, et autant de requêtes SQL qu'il y a eu de photos dans la soirée —
 quelques centaines. À comparer aux 240 requêtes/minute
 que `party-picture` autorise déjà par soirée pour le seul partage.
 
