@@ -75,9 +75,12 @@ deux agrégats se couvrent mutuellement ; aucun des deux ne suffit seul.
 Un service `App\Services\PartyPicturesState`, seule source du signal :
 
 ```php
-public function for(Party $party): array;   // ['count' => int, 'last_change' => ?string]
-public function cached(Party $party): array; // idem, mémorisé quelques secondes
+public function for(Party $party): array;      // ['count' => int, 'last_change' => ?string]
+public function forget(int $partyId): void;    // invalide l'entrée de cache
 ```
+
+`for()` sert toujours depuis le cache ; il n'existe pas de variante non cachée,
+puisque l'entrée n'est jamais périmée (voir « Cache »).
 
 `last_change` est sérialisé en ISO 8601, comme les autres dates exposées par les
 resources. Il vaut `null` sur une galerie sans photo.
@@ -113,16 +116,37 @@ et l'hôte n'a rien de plus à en apprendre.
 
 ### Cache
 
-La réponse passe par `PartyPicturesState::cached()`, mémorisée
-`refresh.cache_ttl` secondes — 5 par défaut — sous la clé
-`party:{id}:pictures-state`. C'est ce qui rend le sondage
-négligeable : 80 téléphones qui sondent toutes les 10 secondes font 480
-requêtes HTTP par minute mais seulement 12 requêtes SQL.
+L'agrégat est mémorisé sous la clé `party:{id}:pictures-state` et **invalidé par
+les écritures**, pas par le temps. `Picture` gagne deux hooks dans `booted()` :
 
-Le délai de 5 secondes s'ajoute à l'intervalle de sondage dans le pire cas. Une
-photo peut donc mettre jusqu'à 15 secondes à apparaître au lieu de 10. C'est
-assumé : l'invité qui vient de poser devant la borne met de toute façon plus
-longtemps à ressortir son téléphone.
+```php
+static::saved(fn (Picture $picture) => $state->forget($picture->party_id));
+static::deleted(fn (Picture $picture) => $state->forget($picture->party_id));
+```
+
+C'est ce qui rend le sondage négligeable : 80 téléphones qui sondent toutes les
+10 secondes font 480 requêtes HTTP par minute, et **une** requête SQL par photo
+qui arrive — de l'ordre de deux par minute au plus fort d'une soirée, zéro quand
+rien ne bouge.
+
+Tous les chemins d'écriture passent par des instances de modèle, donc les
+événements les voient tous : `$party->pictures()->create()` côté borne et côté
+admin, le `$picture->update()` du job vignette, le `->get()->each->delete()` de
+`AdminGalleryController::bulkDelete`, et le `$picture->delete()` de l'API. Le
+modèle dépend d'ailleurs déjà de ce contrat — `Picture::booting()` efface les
+fichiers S3 dans un hook `deleted`. Une écriture qui court-circuiterait les
+événements laisserait des orphelins sur S3 bien avant de fausser un compteur.
+
+Un **TTL de garde de 10 minutes** double malgré tout l'invalidation. Pas pour la
+fraîcheur, dont les événements se chargent, mais parce que le mode de panne d'un
+cache éternel est exactement le bug qu'on corrige : une galerie qui ne se met
+plus jamais à jour. Si quelqu'un ajoute un jour une écriture en masse qui saute
+les événements, le TTL transforme « figée pour toujours » en « en retard un
+instant ».
+
+Le cache n'ajoute donc aucune latence : une photo invalide l'entrée à l'instant
+où elle est créée, et le sondage suivant la voit. Le délai d'apparition reste
+l'intervalle de sondage, rien de plus.
 
 ### Throttle
 
@@ -156,16 +180,16 @@ export default function useGalleryChanges(
 
 ### La référence initiale
 
-`PartyController::show` expose une prop `picturesState`, calculée **sans cache**,
-qui sert de référence au client.
+`PartyController::show` expose une prop `picturesState`, servie par le même
+`for()` que l'endpoint, qui sert de référence au client.
 
 Le sondage pourrait établir sa propre référence à son premier tick, ce qui
 éviterait la prop. Mais une photo arrivée entre le rendu de la page et ce
-premier tick serait alors absorbée dans la référence et jamais affichée. La
-prop supprime cette fenêtre. Elle est calculée sans cache pour la raison
-inverse : partir d'une valeur vieille de cinq secondes ferait croire à un
-changement dès le premier tick et déclencherait un rafraîchissement inutile à
-chaque chargement de page.
+premier tick serait alors absorbée dans la référence et jamais affichée. La prop
+supprime cette fenêtre. Elle lit le cache sans précaution particulière :
+l'entrée étant invalidée à l'écriture, la référence est toujours exacte au
+moment du rendu, et un chargement de page ne déclenche jamais de
+rafraîchissement fantôme au premier tick.
 
 `picturesCount`, qui alimente la barre collante, reste calculé par
 `$picturesPage->total()`. Les deux valeurs peuvent diverger de quelques
@@ -183,7 +207,7 @@ page comme une prop, pour que les tests puissent les raccourcir :
 | `refresh.cold` | 60 s | rien depuis plus de `refresh.cold_after` |
 | `refresh.warm_after` | 120 s | seuil chaud → tiède |
 | `refresh.cold_after` | 300 s | seuil tiède → froid |
-| `refresh.cache_ttl` | 5 s | mémorisation de la réponse de l'endpoint |
+| `refresh.cache_ttl` | 600 s | TTL de garde de l'agrégat, doublé par l'invalidation |
 
 Une galerie vide reste chaude en permanence : c'est le cas cible, l'invité
 arrivé avant la première photo.
@@ -264,13 +288,16 @@ décrivait la limite qu'on lève ici. La promesse de la maquette devient vraie.
 - `count` monte à la création d'une photo, baisse à la suppression ;
 - `last_change` avance quand une vignette est écrite, sans que `count` bouge ;
 - une galerie expirée renvoie des zéros sans requête ;
-- la réponse est mémorisée : deux appels rapprochés ne voient pas une photo
-  insérée entre les deux ;
+- la réponse est mémorisée : deux appels rapprochés ne font qu'une requête ;
+- une photo créée, mise à jour ou supprimée invalide l'entrée, et l'appel
+  suivant voit la nouvelle valeur — y compris via le `bulkDelete` du dashboard,
+  qui est le chemin de suppression en masse existant ;
 - le throttle `party-state` répond `429` au-delà du plafond.
 
 ### `tests/Web/GalleryAutoRefreshTest.php`
 
-Cadence raccourcie par `config(['party.refresh.hot' => 1, 'party.refresh.cache_ttl' => 0])`.
+Cadence raccourcie par `config(['party.refresh.hot' => 1])`. Le cache n'a pas
+besoin d'être désactivé : les écritures du test l'invalident.
 
 - une photo insérée après le chargement apparaît toute seule, en haut de page ;
 - la même photo, en mode sélection, ne touche pas à la grille et fait apparaître
@@ -282,7 +309,8 @@ Cadence raccourcie par `config(['party.refresh.hot' => 1, 'party.refresh.cache_t
 
 Le budget serveur d'une soirée de six heures avec 80 invités connectés en
 permanence : environ 170 000 requêtes HTTP sur `/{party}/state`, servies par le
-cache, et de l'ordre de 4 000 requêtes SQL. À comparer aux 240 requêtes/minute
+cache, et autant de requêtes SQL qu'il y a eu de photos dans la soirée —
+quelques centaines. À comparer aux 240 requêtes/minute
 que `party-picture` autorise déjà par soirée pour le seul partage.
 
 Le sondage rend caduque une hypothèse de la refonte de la galerie
