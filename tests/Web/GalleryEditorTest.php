@@ -57,6 +57,34 @@ it('saves a new title from the editor', function () {
     expect($party->fresh()->display_name)->toBe('Camille & Antoine');
 });
 
+it('offers no removal when the party has no cover', function () {
+    $party = Party::factory()->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+
+    $page->click('[data-gallery-edit]')
+        ->assertSee('Importer une photo')
+        ->assertMissing('[data-cover-remove]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('removes the cover and falls back to the typographic hero', function () {
+    $party = Party::factory()->withBanner()->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+
+    $page->assertPresent('[data-gallery-banner]')
+        ->click('[data-gallery-edit]')
+        ->click('[data-cover-remove]')
+        ->assertMissing('[data-cover-frame] img')
+        ->assertSee('Aucune photo de couverture')
+        ->click('[data-gallery-editor] button[type="submit"]')
+        ->assertMissing('[data-gallery-banner]')
+        ->assertNoJavaScriptErrors();
+
+    expect($party->fresh()->banner_path)->toBeNull();
+});
+
 /*
  * The Pest browser driver does not forward multipart bodies to Laravel
  * (see Pest\Browser\Drivers\LaravelHttpServer: "@TODO files..."), so the
@@ -73,5 +101,6 @@ it('previews an imported cover inside the crop frame', function () {
         ->attach('[data-gallery-editor] input[type="file"]', base_path('tests/Fixtures/cover.jpg'))
         ->assertPresent('[data-cover-frame] img')
         ->assertDontSee('Aucune photo de couverture')
+        ->assertPresent('[data-cover-remove]')
         ->assertNoJavaScriptErrors();
 });

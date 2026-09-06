@@ -11,6 +11,7 @@ interface CoverCropperProps {
     onZoomChange: (zoom: number) => void;
     onReset: () => void;
     onPick: (file: File) => void;
+    onRemove: () => void;
 }
 
 /**
@@ -26,6 +27,7 @@ export default function CoverCropper({
     onZoomChange,
     onReset,
     onPick,
+    onRemove,
 }: CoverCropperProps) {
     return (
         <div className="flex flex-col gap-3">
@@ -96,7 +98,7 @@ export default function CoverCropper({
 
             <div className="flex flex-wrap gap-2 pt-0.5">
                 <label className="cursor-pointer rounded-full border border-ink/20 px-4 py-2.5 text-[13px] whitespace-nowrap transition-colors hover:border-ink">
-                    Importer une photo
+                    {src === null ? 'Importer une photo' : 'Remplacer la photo'}
                     <input
                         type="file"
                         accept="image/*"
@@ -112,6 +114,17 @@ export default function CoverCropper({
                         }}
                     />
                 </label>
+
+                {src !== null && (
+                    <button
+                        type="button"
+                        data-cover-remove
+                        onClick={onRemove}
+                        className="cursor-pointer rounded-full border border-ink/20 px-4 py-2.5 text-[13px] whitespace-nowrap text-muted transition-colors hover:border-ink hover:text-ink"
+                    >
+                        Retirer la photo
+                    </button>
+                )}
             </div>
         </div>
     );
