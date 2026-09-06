@@ -65,4 +65,29 @@ return [
         'max_pictures' => (int) env('PARTY_DOWNLOAD_MAX_PICTURES', 300),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Gallery Auto-Refresh
+    |--------------------------------------------------------------------------
+    |
+    | Cadence, in seconds, at which an open gallery polls for changes. The
+    | gallery slows down as the party quiets: `hot` while a change is fresher
+    | than `warm_after`, `warm` up to `cold_after`, `cold` beyond. An empty
+    | gallery stays hot, it being the case the whole feature exists for.
+    |
+    | `cache_ttl` is only a guard. The aggregate the poll reads is invalidated
+    | by picture writes, so the TTL exists to bound the damage of a future
+    | write that skips the model events, not to keep the value fresh.
+    |
+    */
+
+    'refresh' => [
+        'hot' => (int) env('PARTY_REFRESH_HOT', 10),
+        'warm' => (int) env('PARTY_REFRESH_WARM', 30),
+        'cold' => (int) env('PARTY_REFRESH_COLD', 60),
+        'warm_after' => (int) env('PARTY_REFRESH_WARM_AFTER', 120),
+        'cold_after' => (int) env('PARTY_REFRESH_COLD_AFTER', 300),
+        'cache_ttl' => (int) env('PARTY_REFRESH_CACHE_TTL', 600),
+    ],
+
 ];
