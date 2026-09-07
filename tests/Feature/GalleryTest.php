@@ -257,3 +257,40 @@ it('passes the banner framing to the gallery page', function () {
             ->where('party.banner_zoom', 1.5)
         );
 });
+
+// ── Polling props ─────────────────────────────────────────────────────────────
+
+it('passes the pictures state as the polling baseline', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertInertia(fn ($page) => $page
+            ->where('picturesState.count', 1)
+            ->where('picturesState.last_change', $picture->updated_at->toIso8601String())
+        );
+});
+
+it('passes a zeroed pictures state for an expired party', function () {
+    $party = Party::factory()->expired()->create();
+    Picture::factory()->count(2)->for($party)->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertInertia(fn ($page) => $page
+            ->where('picturesState.count', 0)
+            ->where('picturesState.last_change', null)
+        );
+});
+
+it('passes the refresh cadence to the page', function () {
+    $party = Party::factory()->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertInertia(fn ($page) => $page
+            ->where('refresh.hot', 10)
+            ->where('refresh.warm', 30)
+            ->where('refresh.cold', 60)
+            ->where('refresh.warm_after', 120)
+            ->where('refresh.cold_after', 300)
+        );
+});

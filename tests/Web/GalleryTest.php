@@ -578,3 +578,17 @@ it('falls back to the zip form when the browser cannot share files', function ()
         ->assertSeeIn('[data-download-button]', 'Télécharger le ZIP')
         ->assertNoJavaScriptErrors();
 });
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+
+it('opens the lightbox on a picture', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+
+    $page->assertMissing('.pswp--open')
+        ->click('#gallery a')
+        ->assertPresent('.pswp--open')
+        ->assertNoJavaScriptErrors();
+});

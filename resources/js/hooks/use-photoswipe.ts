@@ -1,13 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import 'photoswipe/style.css';
 
 /**
  * Initialize a PhotoSwipe lightbox on the given gallery selector.
  * Includes a custom download button in the lightbox UI.
+ *
+ * Returns whether the lightbox is currently showing, which the gallery uses
+ * to hold back an automatic refresh rather than yank a slide away.
  */
-export default function usePhotoSwipe(gallerySelector: string, enabled: boolean = true) {
+export default function usePhotoSwipe(gallerySelector: string, enabled: boolean = true): boolean {
+    const [open, setOpen] = useState(false);
+
     useEffect(() => {
+        setOpen(false);
+
         if (!enabled) {
             return;
         }
@@ -42,10 +49,15 @@ export default function usePhotoSwipe(gallerySelector: string, enabled: boolean 
             });
         });
 
+        lightbox.on('beforeOpen', () => setOpen(true));
+        lightbox.on('close', () => setOpen(false));
+
         lightbox.init();
 
         return () => {
             lightbox.destroy();
         };
     }, [gallerySelector, enabled]);
+
+    return open;
 }

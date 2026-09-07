@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import GalleryEditor from '@/components/party/gallery-editor';
@@ -7,8 +7,10 @@ import GalleryHero from '@/components/party/gallery-hero';
 import GalleryNotice from '@/components/party/gallery-notice';
 import GalleryStickyBar from '@/components/party/gallery-sticky-bar';
 import GalleryToast from '@/components/party/gallery-toast';
+import NewPicturesPill from '@/components/party/new-pictures-pill';
 import SelectionBar, { type StackPhoto } from '@/components/party/selection-bar';
 import useFlyToStack from '@/hooks/use-fly-to-stack';
+import useGalleryChanges from '@/hooks/use-gallery-changes';
 import usePhotoSelection from '@/hooks/use-photo-selection';
 import usePhotoShare from '@/hooks/use-photo-share';
 import usePhotoSwipe from '@/hooks/use-photoswipe';
@@ -44,10 +46,27 @@ export interface PicturePage {
     data: Picture[];
 }
 
+export interface PicturesState {
+    count: number;
+    last_change: string | null;
+}
+
+export interface RefreshConfig {
+    /** Seconds between polls while the gallery is empty or just moved. */
+    hot: number;
+    warm: number;
+    cold: number;
+    /** Seconds since the last change at which the cadence steps down. */
+    warm_after: number;
+    cold_after: number;
+}
+
 interface Props {
     party: Party;
     pictures: PicturePage;
     picturesCount: number;
+    picturesState: PicturesState;
+    refresh: RefreshConfig;
     hidePictures: boolean;
     canEdit: boolean;
     maxDownloadPictures: number;
@@ -59,7 +78,7 @@ const EXPIRED_HEADING = 'Cette galerie a expiré';
 const EMPTY_HEADING = 'La galerie se remplit bientôt';
 
 const EMPTY_MESSAGE =
-    'Aucune photo pour le moment. Les clichés apparaissent ici quelques instants après leur prise, rafraîchissez la page pour les découvrir.';
+    'Aucune photo pour le moment. Les clichés apparaissent ici quelques secondes après leur prise, gardez cette page ouverte.';
 
 const EXPIRY_DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
@@ -76,10 +95,15 @@ function expiredMessage(expireAt: string | null): string {
 
 const TOAST_DURATION = 2200;
 
+/** Past this many pixels of scroll, a refresh would move the grid under the reader. */
+const SILENT_REFRESH_SCROLL_LIMIT = 200;
+
 export default function Gallery({
     party,
     pictures,
     picturesCount,
+    picturesState,
+    refresh,
     hidePictures,
     canEdit,
     maxDownloadPictures,
@@ -93,7 +117,7 @@ export default function Gallery({
     const selection = usePhotoSelection(loadedIds);
     const flyToStack = useFlyToStack();
 
-    usePhotoSwipe('#gallery', !selection.selectMode);
+    const lightboxOpen = usePhotoSwipe('#gallery', !selection.selectMode);
 
     const [editorOpen, setEditorOpen] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
@@ -110,6 +134,45 @@ export default function Gallery({
     const photoShare = usePhotoShare(flash);
 
     const shareMode = photoShare.supported && !hidePictures;
+
+    const changes = useGalleryChanges(party.name, {
+        enabled: !hidePictures,
+        initial: picturesState,
+        config: refresh,
+    });
+
+    const { acknowledge } = changes;
+
+    /*
+     * `reset` is what keeps the refresh honest: `pictures` is a merged scroll
+     * prop, so without it the fresh page 1 would stack on top of what is
+     * already loaded and show every picture twice.
+     */
+    const refreshPictures = useCallback(() => {
+        acknowledge();
+        router.reload({ only: ['pictures', 'picturesCount'], reset: ['pictures'] });
+    }, [acknowledge]);
+
+    /*
+     * The refresh only happens on its own when nothing would move under the
+     * visitor's fingers. Otherwise the pill takes over and they decide.
+     */
+    useEffect(() => {
+        if (!changes.changed || selection.selectMode || lightboxOpen) {
+            return;
+        }
+
+        if (window.scrollY > SILENT_REFRESH_SCROLL_LIMIT) {
+            return;
+        }
+
+        refreshPictures();
+    }, [changes.changed, lightboxOpen, refreshPictures, selection.selectMode]);
+
+    const onPillClick = useCallback(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        refreshPictures();
+    }, [refreshPictures]);
 
     const onShare = useCallback(() => {
         if (selection.count > maxDownloadPictures) {
@@ -213,6 +276,8 @@ export default function Gallery({
                     />
                 )}
             </main>
+
+            {changes.changed && <NewPicturesPill delta={changes.delta} onClick={onPillClick} />}
 
             <SelectionBar
                 open={selection.selectMode}

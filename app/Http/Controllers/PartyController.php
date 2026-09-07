@@ -6,6 +6,7 @@ use App\Http\Middleware\ResolvePartyHost;
 use App\Http\Resources\PartyResource;
 use App\Http\Resources\PictureResource;
 use App\Models\Party;
+use App\Services\PartyPicturesState;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -16,7 +17,13 @@ class PartyController extends Controller
 {
     public const PICTURES_PER_PAGE = 24;
 
-    public function show(Request $request, Party $party): Response
+    /**
+     * `picturesState` is the reference the page's polling starts from. It has
+     * to travel with the render rather than be established by the first poll:
+     * a picture arriving between the two would otherwise be absorbed into the
+     * reference and never displayed.
+     */
+    public function show(Request $request, Party $party, PartyPicturesState $partyPicturesState): Response
     {
         $hidePictures = $party->hidePictures();
         $picturesPage = $this->pictures($party, $hidePictures);
@@ -27,6 +34,14 @@ class PartyController extends Controller
                 fn () => PictureResource::collection($picturesPage)
             ),
             'picturesCount' => $picturesPage->total(),
+            'picturesState' => $partyPicturesState->for($party),
+            'refresh' => [
+                'hot' => (int) config('party.refresh.hot'),
+                'warm' => (int) config('party.refresh.warm'),
+                'cold' => (int) config('party.refresh.cold'),
+                'warm_after' => (int) config('party.refresh.warm_after'),
+                'cold_after' => (int) config('party.refresh.cold_after'),
+            ],
             'hidePictures' => $hidePictures,
             'canEdit' => ResolvePartyHost::isHost($request, $party),
             'maxDownloadPictures' => (int) config('party.download.max_pictures'),

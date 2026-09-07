@@ -46,6 +46,7 @@ export default function GalleryStickyBar({
                     ) : (
                         <button
                             type="button"
+                            data-gallery-select
                             onClick={onEnterSelect}
                             className="rounded-full border border-ink/20 px-4 py-2 text-[13px] tracking-wide whitespace-nowrap transition-colors hover:border-ink hover:bg-ink/5"
                         >

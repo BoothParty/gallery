@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PartyPicturesState;
 use Database\Factories\PictureFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,9 +31,15 @@ class Picture extends Model
             $picture->path ??= 'pictures/'.Str::uuid().'.jpg';
         });
 
+        static::saved(function (Picture $picture): void {
+            app(PartyPicturesState::class)->forget($picture->party_id);
+        });
+
         static::deleted(function (Picture $picture): void {
             $paths = array_filter([$picture->path, $picture->thumbnail_path]);
             Storage::disk('s3')->delete($paths);
+
+            app(PartyPicturesState::class)->forget($picture->party_id);
         });
     }
 
