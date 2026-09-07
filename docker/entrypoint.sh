@@ -8,6 +8,7 @@ if [ "${RUN_MIGRATIONS}" = "true" ]; then
   until php artisan db:monitor >/dev/null 2>&1; do sleep 2; done
 
   php artisan migrate --force
+  php artisan storage:ensure-bucket
 fi
 
 # Les caches dépendent des variables injectées par Kamal : générés au boot.
