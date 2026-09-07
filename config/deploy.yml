@@ -78,7 +78,7 @@ env:
 
     PARTY_DOMAIN: boothparty.fr
     
-    ZOHO_REDIRECT_URI: http://10.117.19.66/auth/zoho/callback
+    ZOHO_REDIRECT_URI: https://boothparty.fr/auth/zoho/callback
     OAUTH_ALLOWED_DOMAINS: boothparty.fr
 
   secret:

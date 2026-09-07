@@ -23,6 +23,7 @@ env:
   clear:
     APP_URL: http://boothparty.test
     AWS_BROWSER_ENDPOINT: http://s3.boothparty.test
+    ZOHO_REDIRECT_URI: http://boothparty.test/auth/zoho/callback
 
 accessories:
   s3:
