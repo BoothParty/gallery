@@ -1,7 +1,5 @@
 interface GalleryStickyBarProps {
     count: number;
-    /** Hidden while the gallery holds nothing to select. */
-    selectable: boolean;
     selectMode: boolean;
     allSelected: boolean;
     onEnterSelect: () => void;
@@ -11,7 +9,6 @@ interface GalleryStickyBarProps {
 
 export default function GalleryStickyBar({
     count,
-    selectable,
     selectMode,
     allSelected,
     onEnterSelect,
@@ -28,36 +25,34 @@ export default function GalleryStickyBar({
                     <span className="text-xs tracking-[0.14em] text-muted uppercase">photos</span>
                 </div>
 
-                {selectable && (
-                    <div className="flex items-center gap-2">
-                        {selectMode ? (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={onSelectAll}
-                                    className="rounded-full border border-ink/20 px-4 py-2 text-[13px] whitespace-nowrap transition-colors hover:border-ink"
-                                >
-                                    {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onExitSelect}
-                                    className="rounded-full border border-transparent px-4 py-2 text-[13px] whitespace-nowrap text-muted transition-colors hover:text-ink"
-                                >
-                                    Annuler
-                                </button>
-                            </>
-                        ) : (
+                <div className="flex items-center gap-2">
+                    {selectMode ? (
+                        <>
                             <button
                                 type="button"
-                                onClick={onEnterSelect}
-                                className="rounded-full border border-ink/20 px-4 py-2 text-[13px] tracking-wide whitespace-nowrap transition-colors hover:border-ink hover:bg-ink/5"
+                                onClick={onSelectAll}
+                                className="rounded-full border border-ink/20 px-4 py-2 text-[13px] whitespace-nowrap transition-colors hover:border-ink"
                             >
-                                Sélectionner
+                                {allSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
                             </button>
-                        )}
-                    </div>
-                )}
+                            <button
+                                type="button"
+                                onClick={onExitSelect}
+                                className="rounded-full border border-transparent px-4 py-2 text-[13px] whitespace-nowrap text-muted transition-colors hover:text-ink"
+                            >
+                                Annuler
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={onEnterSelect}
+                            className="rounded-full border border-ink/20 px-4 py-2 text-[13px] tracking-wide whitespace-nowrap transition-colors hover:border-ink hover:bg-ink/5"
+                        >
+                            Sélectionner
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

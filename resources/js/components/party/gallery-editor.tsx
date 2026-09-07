@@ -32,6 +32,7 @@ export default function GalleryEditor({
         display_name: title,
         description: subtitle ?? '',
         banner: null as File | null,
+        remove_banner: false,
         banner_position_x: String(crop.x),
         banner_position_y: String(crop.y),
         banner_zoom: String(crop.zoom),
@@ -54,6 +55,7 @@ export default function GalleryEditor({
             display_name: title,
             description: subtitle ?? '',
             banner: null,
+            remove_banner: false,
             banner_position_x: String(crop.x),
             banner_position_y: String(crop.y),
             banner_zoom: String(crop.zoom),
@@ -91,8 +93,23 @@ export default function GalleryEditor({
 
         objectUrl.current = URL.createObjectURL(file);
 
-        form.setData('banner', file);
+        form.setData((current) => ({ ...current, banner: file, remove_banner: false }));
         setPreview(objectUrl.current);
+        cropper.reset();
+    };
+
+    /**
+     * Drops the cover from the draft. The gallery only falls back to its
+     * typographic hero once the submission goes through.
+     */
+    const onRemove = () => {
+        if (objectUrl.current !== null) {
+            URL.revokeObjectURL(objectUrl.current);
+            objectUrl.current = null;
+        }
+
+        form.setData((current) => ({ ...current, banner: null, remove_banner: true }));
+        setPreview(null);
         cropper.reset();
     };
 
@@ -108,7 +125,7 @@ export default function GalleryEditor({
         });
     };
 
-    const source = preview ?? bannerUrl;
+    const source = form.data.remove_banner ? null : (preview ?? bannerUrl);
     const subtitleLeft = SUBTITLE_LIMIT - form.data.description.length;
 
     return (
@@ -197,6 +214,7 @@ export default function GalleryEditor({
                             onZoomChange={cropper.setZoom}
                             onReset={cropper.reset}
                             onPick={onPick}
+                            onRemove={onRemove}
                         />
                         {form.errors.banner && <span className="text-xs text-red-600">{form.errors.banner}</span>}
                     </div>
