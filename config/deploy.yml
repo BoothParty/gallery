@@ -75,6 +75,9 @@ env:
     NOTION_PROPERTY_OPTIONS: Options
 
     PARTY_DOMAIN: boothparty.fr
+    
+    ZOHO_REDIRECT_URI: http://10.117.19.66/auth/zoho/callback
+    OAUTH_ALLOWED_DOMAINS: boothparty.fr
 
   secret:
     - APP_KEY
@@ -82,6 +85,8 @@ env:
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
     - NOTION_API_TOKEN
+    - ZOHO_CLIENT_ID
+    - ZOHO_CLIENT_SECRET
 
 aliases:
   shell: app exec --interactive --reuse "bash"
