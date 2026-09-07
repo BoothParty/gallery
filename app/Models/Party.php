@@ -5,12 +5,12 @@ namespace App\Models;
 use App\Attributes\CrudCountColumn;
 use App\Attributes\CrudRelationColumn;
 use App\Attributes\CrudResource;
+use App\Services\SignedStorageUrl;
 use Database\Factories\PartyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -100,10 +100,7 @@ class Party extends Model
             return null;
         }
 
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('s3');
-
-        return $disk->url($this->banner_path);
+        return SignedStorageUrl::for($this->banner_path);
     }
 
     /**

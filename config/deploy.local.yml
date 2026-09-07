@@ -1,0 +1,32 @@
+# Destination "local" : VM Ubuntu lancée avec multipass.
+#
+#   multipass launch --name boothparty-vm --cpus 2 --memory 4G --disk 20G 24.04
+#   kamal setup -d local
+
+# Garder la forme longue : une liste d'IP remplacerait le Hash de deploy.yml
+# et le rôle web perdrait son bloc env (donc RUN_MIGRATIONS).
+servers:
+  web:
+    hosts:
+      - 10.117.19.66
+
+ssh:
+  user: root
+
+# La VM n'a pas de domaine : ajouter dans le /etc/hosts du poste
+#   10.117.19.66  boothparty.test s3.boothparty.test
+#
+# Le rôle web est enregistré sur "*" auprès du proxy : il répond donc à
+# n'importe quel nom, l'IP comprise. Seul APP_URL doit suivre, pour les liens
+# absolus générés hors requête.
+env:
+  clear:
+    APP_URL: http://boothparty.test
+    AWS_BROWSER_ENDPOINT: http://s3.boothparty.test
+    ZOHO_REDIRECT_URI: http://boothparty.test/auth/zoho/callback
+
+accessories:
+  s3:
+    proxy:
+      host: s3.boothparty.test
+      ssl: false

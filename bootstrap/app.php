@@ -14,6 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Le conteneur n'est jamais joint directement : le port 80 n'est pas
+        // publié, seul le kamal-proxy du même réseau Docker parle à l'app. Sans
+        // ça, Laravel ignore X-Forwarded-Proto et génère des URL absolues en
+        // http:// sur une page servie en https:// (assets bloqués en contenu
+        // mixte, redirections qui sortent du HTTPS).
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);

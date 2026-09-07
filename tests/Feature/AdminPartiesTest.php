@@ -339,7 +339,8 @@ it('exposes the metadata to the party edit dialog', function () {
         ->assertInertia(fn ($page) => $page
             ->where('editableParties.0.display_name', 'Edited Title')
             ->where('editableParties.0.description', 'Edited description')
-            ->where('editableParties.0.banner_url', Storage::disk('s3')->url('banners/cover.jpg'))
+            ->where('editableParties.0.banner_url', fn (string $url) => str_contains($url, 'banners/cover.jpg')
+                && str_contains($url, 'X-Amz-Signature='))
         );
 });
 

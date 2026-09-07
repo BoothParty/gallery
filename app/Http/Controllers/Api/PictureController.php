@@ -26,6 +26,8 @@ class PictureController extends Controller
 
         $path = Storage::disk('s3')->putFile("pictures/{$party->id}", $photo);
 
+        abort_if($path === false, 500, 'Le stockage des photos est indisponible.');
+
         $picture = $party->pictures()->create([
             'path' => $path,
             'width' => $width,

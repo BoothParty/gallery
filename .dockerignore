@@ -1,0 +1,43 @@
+# Git & CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Configuration de déploiement : jamais nécessaire dans l'image
+.kamal
+config/deploy.yml
+
+# Environnement local : les variables sont injectées par Kamal, un .env
+# embarqué prendrait le pas sur elles pour tout ce qu'il définit.
+.env
+.env.*
+
+# Stack de développement Sail
+compose.yaml
+docker/8.5
+
+# Dépendances : réinstallées proprement dans l'image
+vendor
+node_modules
+
+# Artefacts de build : régénérés par le stage assets
+public/build
+public/hot
+public/storage
+
+# Runtime : recréé vide par le Dockerfile (et monté en volume en production)
+storage
+bootstrap/cache
+
+# Tests & outillage
+tests
+phpunit.xml
+.editorconfig
+.vscode
+.claude
+.agents
+boost.json
+opencode.json
+skills-lock.json
+*.md
