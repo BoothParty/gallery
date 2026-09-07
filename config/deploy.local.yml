@@ -14,9 +14,14 @@ ssh:
   user: root
 
 # La VM n'a pas de domaine : ajouter dans le /etc/hosts du poste
-#   10.117.19.66  s3.boothparty.test
+#   10.117.19.66  boothparty.test s3.boothparty.test
+#
+# Le rôle web est enregistré sur "*" auprès du proxy : il répond donc à
+# n'importe quel nom, l'IP comprise. Seul APP_URL doit suivre, pour les liens
+# absolus générés hors requête.
 env:
   clear:
+    APP_URL: http://boothparty.test
     AWS_BROWSER_ENDPOINT: http://s3.boothparty.test
 
 accessories:
