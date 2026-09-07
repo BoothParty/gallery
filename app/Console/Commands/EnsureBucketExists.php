@@ -19,22 +19,42 @@ class EnsureBucketExists extends Command
      *
      * @var string
      */
-    protected $description = 'Create the configured S3 bucket when it is missing';
+    protected $description = 'Create the configured S3 bucket and open it for anonymous reads';
 
     public function handle(): int
     {
         $bucket = config('filesystems.disks.s3.bucket');
         $client = Storage::disk('s3')->getClient();
 
-        if ($client->doesBucketExistV2($bucket, false)) {
-            $this->line("bucket {$bucket} déjà présent");
-
-            return self::SUCCESS;
+        if (! $client->doesBucketExistV2($bucket, false)) {
+            $client->createBucket(['Bucket' => $bucket]);
+            $this->info("bucket {$bucket} créé");
         }
 
-        $client->createBucket(['Bucket' => $bucket]);
-        $this->info("bucket {$bucket} créé");
+        $client->putBucketPolicy([
+            'Bucket' => $bucket,
+            'Policy' => json_encode($this->publicReadPolicy($bucket)),
+        ]);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Les navigateurs téléchargent photos et vignettes directement depuis le
+     * stockage, sans signature : les objets doivent être lisibles anonymement.
+     *
+     * @return array<string, mixed>
+     */
+    private function publicReadPolicy(string $bucket): array
+    {
+        return [
+            'Version' => '2012-10-17',
+            'Statement' => [[
+                'Effect' => 'Allow',
+                'Principal' => ['AWS' => ['*']],
+                'Action' => ['s3:GetObject'],
+                'Resource' => ["arn:aws:s3:::{$bucket}/*"],
+            ]],
+        ];
     }
 }

@@ -20,18 +20,42 @@ it('creates the bucket when it is missing', function () {
     $client = Mockery::mock(S3Client::class);
     $client->shouldReceive('doesBucketExistV2')->with('boothparty', false)->andReturnFalse();
     $client->shouldReceive('createBucket')->once()->with(['Bucket' => 'boothparty']);
+    $client->shouldReceive('putBucketPolicy')->once();
 
     fakeS3Client($client);
 
     $this->artisan('storage:ensure-bucket')->assertSuccessful();
 });
 
-it('leaves an existing bucket alone', function () {
+it('opens an existing bucket for anonymous reads without recreating it', function () {
     $client = Mockery::mock(S3Client::class);
     $client->shouldReceive('doesBucketExistV2')->with('boothparty', false)->andReturnTrue();
     $client->shouldNotReceive('createBucket');
+    $client->shouldReceive('putBucketPolicy')->once();
 
     fakeS3Client($client);
 
     $this->artisan('storage:ensure-bucket')->assertSuccessful();
+});
+
+it('grants anonymous read on every object of the bucket', function () {
+    $policy = null;
+
+    $client = Mockery::mock(S3Client::class);
+    $client->shouldReceive('doesBucketExistV2')->andReturnTrue();
+    $client->shouldReceive('putBucketPolicy')->once()
+        ->andReturnUsing(function (array $args) use (&$policy) {
+            $policy = json_decode($args['Policy'], true);
+        });
+
+    fakeS3Client($client);
+
+    $this->artisan('storage:ensure-bucket')->assertSuccessful();
+
+    expect($policy['Statement'][0])
+        ->toMatchArray([
+            'Effect' => 'Allow',
+            'Action' => ['s3:GetObject'],
+            'Resource' => ['arn:aws:s3:::boothparty/*'],
+        ]);
 });
