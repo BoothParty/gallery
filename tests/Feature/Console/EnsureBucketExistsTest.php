@@ -1,5 +1,7 @@
 <?php
 
+use Aws\CommandInterface;
+use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Support\Facades\Storage;
@@ -20,42 +22,31 @@ it('creates the bucket when it is missing', function () {
     $client = Mockery::mock(S3Client::class);
     $client->shouldReceive('doesBucketExistV2')->with('boothparty', false)->andReturnFalse();
     $client->shouldReceive('createBucket')->once()->with(['Bucket' => 'boothparty']);
-    $client->shouldReceive('putBucketPolicy')->once();
+    $client->shouldReceive('deleteBucketPolicy');
 
     fakeS3Client($client);
 
     $this->artisan('storage:ensure-bucket')->assertSuccessful();
 });
 
-it('opens an existing bucket for anonymous reads without recreating it', function () {
-    $client = Mockery::mock(S3Client::class);
-    $client->shouldReceive('doesBucketExistV2')->with('boothparty', false)->andReturnTrue();
-    $client->shouldNotReceive('createBucket');
-    $client->shouldReceive('putBucketPolicy')->once();
-
-    fakeS3Client($client);
-
-    $this->artisan('storage:ensure-bucket')->assertSuccessful();
-});
-
-it('grants anonymous read on every object of the bucket', function () {
-    $policy = null;
-
+it('closes an existing bucket to anonymous reads without recreating it', function () {
     $client = Mockery::mock(S3Client::class);
     $client->shouldReceive('doesBucketExistV2')->andReturnTrue();
-    $client->shouldReceive('putBucketPolicy')->once()
-        ->andReturnUsing(function (array $args) use (&$policy) {
-            $policy = json_decode($args['Policy'], true);
-        });
+    $client->shouldNotReceive('createBucket');
+    $client->shouldReceive('deleteBucketPolicy')->once()->with(['Bucket' => 'boothparty']);
 
     fakeS3Client($client);
 
     $this->artisan('storage:ensure-bucket')->assertSuccessful();
+});
 
-    expect($policy['Statement'][0])
-        ->toMatchArray([
-            'Effect' => 'Allow',
-            'Action' => ['s3:GetObject'],
-            'Resource' => ['arn:aws:s3:::boothparty/*'],
-        ]);
+it('survives a bucket that carries no policy', function () {
+    $client = Mockery::mock(S3Client::class);
+    $client->shouldReceive('doesBucketExistV2')->andReturnTrue();
+    $client->shouldReceive('deleteBucketPolicy')
+        ->andThrow(new AwsException('no policy', Mockery::mock(CommandInterface::class)));
+
+    fakeS3Client($client);
+
+    $this->artisan('storage:ensure-bucket')->assertSuccessful();
 });

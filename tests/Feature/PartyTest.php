@@ -169,7 +169,8 @@ it('exposes the banner url when a banner is stored', function () {
     $party = Party::factory()->create();
     $party->forceFill(['banner_path' => 'banners/1/cover.jpg'])->save();
 
-    expect($party->bannerUrl())->toBe(Storage::disk('s3')->url('banners/1/cover.jpg'));
+    expect($party->bannerUrl())->toContain('banners/1/cover.jpg')
+        ->toContain('X-Amz-Signature=');
 });
 
 it('ignores a banner path passed through mass assignment', function () {

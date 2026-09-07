@@ -230,7 +230,8 @@ it('exposes the event metadata to the gallery page', function () {
         ->assertInertia(fn ($page) => $page
             ->where('party.display_name', 'Camille & Antoine')
             ->where('party.description', 'Samedi 12 septembre · Domaine des Ormes')
-            ->where('party.banner_url', Storage::disk('s3')->url('banners/cover.jpg'))
+            ->where('party.banner_url', fn (string $url) => str_contains($url, 'banners/cover.jpg')
+                && str_contains($url, 'X-Amz-Signature='))
         );
 });
 

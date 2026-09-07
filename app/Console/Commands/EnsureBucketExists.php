@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Aws\Exception\AwsException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,7 +20,7 @@ class EnsureBucketExists extends Command
      *
      * @var string
      */
-    protected $description = 'Create the configured S3 bucket and open it for anonymous reads';
+    protected $description = 'Create the configured S3 bucket and keep it closed to anonymous reads';
 
     public function handle(): int
     {
@@ -31,30 +32,17 @@ class EnsureBucketExists extends Command
             $this->info("bucket {$bucket} créé");
         }
 
-        $client->putBucketPolicy([
-            'Bucket' => $bucket,
-            'Policy' => json_encode($this->publicReadPolicy($bucket)),
-        ]);
+        /*
+         * Les photos ne sont lisibles que par URL signée : toute policy
+         * anonyme laissée sur le bucket court-circuiterait l'expiration des
+         * liens, donc on la retire à chaque boot plutôt qu'à la création.
+         */
+        try {
+            $client->deleteBucketPolicy(['Bucket' => $bucket]);
+        } catch (AwsException) {
+            // Pas de policy à retirer.
+        }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Les navigateurs téléchargent photos et vignettes directement depuis le
-     * stockage, sans signature : les objets doivent être lisibles anonymement.
-     *
-     * @return array<string, mixed>
-     */
-    private function publicReadPolicy(string $bucket): array
-    {
-        return [
-            'Version' => '2012-10-17',
-            'Statement' => [[
-                'Effect' => 'Allow',
-                'Principal' => ['AWS' => ['*']],
-                'Action' => ['s3:GetObject'],
-                'Resource' => ["arn:aws:s3:::{$bucket}/*"],
-            ]],
-        ];
     }
 }
