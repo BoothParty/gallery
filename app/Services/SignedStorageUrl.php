@@ -21,16 +21,20 @@ class SignedStorageUrl
     /**
      * URL signée que le navigateur charge directement depuis le stockage.
      *
-     * L'échéance est arrondie à la fin de journée : deux rendus successifs
-     * produisent la même URL, donc le cache navigateur porte. Avec un
-     * `now()->addDays()` la signature changerait à chaque requête et la
-     * grille serait re-téléchargée à chaque scroll.
+     * L'heure de signature comme l'échéance sont arrondies au jour : sans
+     * cela le `X-Amz-Date` porterait la seconde courante et deux rendus
+     * successifs produiraient deux URL différentes, donc aucun cache
+     * navigateur et la grille re-téléchargée à chaque scroll.
      */
     public static function for(string $path): string
     {
         /** @var FilesystemAdapter $disk */
         $disk = Storage::disk('s3-public');
 
-        return $disk->temporaryUrl($path, now()->addDays(self::TTL_DAYS)->endOfDay());
+        return $disk->temporaryUrl(
+            $path,
+            now()->addDays(self::TTL_DAYS)->endOfDay(),
+            ['start_time' => today()],
+        );
     }
 }
