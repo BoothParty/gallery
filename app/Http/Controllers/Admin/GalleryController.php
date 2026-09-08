@@ -30,6 +30,7 @@ class GalleryController extends Controller
 
         $pictures = $party->pictures()
             ->latest()
+            ->latest('id')
             ->paginate($perPage)
             ->through(fn (Picture $picture) => [
                 'id' => $picture->id,
