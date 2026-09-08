@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Middleware\ResolvePartyHost;
 use App\Models\Party;
 use App\Rules\PictureBelongsToParty;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -37,7 +38,7 @@ class DownloadPicturesRequest extends FormRequest
                 'required',
                 'integer',
                 'distinct',
-                new PictureBelongsToParty($party),
+                new PictureBelongsToParty($party, ResolvePartyHost::isHost($this, $party)),
             ],
         ];
     }

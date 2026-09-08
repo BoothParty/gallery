@@ -103,7 +103,7 @@ it('returns the correct JSON structure for a picture resource', function () {
     $this->getJson(route('pictures.show', ['party' => $party, 'picture' => $picture]))
         ->assertOk()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'hidden', 'created_at', 'updated_at'],
         ]);
 });
 
@@ -164,7 +164,7 @@ it('returns the correct JSON structure on store', function () {
     ])
         ->assertCreated()
         ->assertExactJsonStructure([
-            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'created_at', 'updated_at'],
+            'data' => ['id', 'party_id', 'url', 'thumbnail_url', 'width', 'height', 'hidden', 'created_at', 'updated_at'],
         ]);
 });
 

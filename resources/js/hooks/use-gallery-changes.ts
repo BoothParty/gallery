@@ -44,6 +44,18 @@ export default function useGalleryChanges(
     const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const failures = useRef(0);
 
+    /*
+     * A state handed over by the server replaces both ends of the comparison:
+     * the page was just rendered from it, so it cannot be a change waiting to
+     * be announced. This is what keeps the host's own masking from raising the
+     * "new pictures" pill on their own screen.
+     */
+    useEffect(() => {
+        setBaseline(initial);
+        setLatest(initial);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initial.count, initial.last_change]);
+
     const { hot, warm, cold, warm_after: warmAfter, cold_after: coldAfter } = config;
 
     /** Seconds to wait before the next poll, from how long ago the gallery moved. */

@@ -47,6 +47,16 @@ class PictureFactory extends Factory
         ]);
     }
 
+    /**
+     * A picture the host has taken off the guests' gallery.
+     */
+    public function hidden(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'hidden_at' => now(),
+        ]);
+    }
+
     public function forParty(Party $party): static
     {
         return $this->state(fn (array $attributes) => [

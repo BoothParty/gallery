@@ -38,6 +38,8 @@ export interface Picture {
     thumbnail_url: string | null;
     width: number | null;
     height: number | null;
+    /** Taken off the guests' gallery by the host. Only ever true in a host's own page. */
+    hidden: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -95,6 +97,12 @@ function expiredMessage(expireAt: string | null): string {
 
 const TOAST_DURATION = 2200;
 
+const HIDDEN_TOAST = 'Photo masquée pour les invités';
+
+const SHOWN_TOAST = 'Photo remise en ligne';
+
+const VISIBILITY_ERROR_TOAST = "La photo n'a pas pu être mise à jour";
+
 /** Past this many pixels of scroll, a refresh would move the grid under the reader. */
 const SILENT_REFRESH_SCROLL_LIMIT = 200;
 
@@ -132,6 +140,41 @@ export default function Gallery({
     useEffect(() => () => clearTimeout(toastTimer.current), []);
 
     const photoShare = usePhotoShare(flash);
+
+    /*
+     * The host's masking is applied here rather than by reloading the grid: a
+     * hidden picture keeps its place in their own gallery, so the only thing
+     * that moves is one tile, and reloading would have collapsed the infinite
+     * scroll back to its first page under them.
+     */
+    const [maskEdits, setMaskEdits] = useState<Record<number, boolean>>({});
+
+    const isHidden = useCallback(
+        (picture: Picture) => maskEdits[picture.id] ?? picture.hidden,
+        [maskEdits],
+    );
+
+    const onToggleHidden = useCallback(
+        (id: number, hidden: boolean) => {
+            setMaskEdits((current) => ({ ...current, [id]: hidden }));
+
+            router.patch(
+                `/${encodeURIComponent(party.name)}/pictures/${id}/visibility`,
+                { hidden },
+                {
+                    preserveScroll: true,
+                    preserveState: true,
+                    only: ['picturesState'],
+                    onSuccess: () => flash(hidden ? HIDDEN_TOAST : SHOWN_TOAST),
+                    onError: () => {
+                        setMaskEdits((current) => ({ ...current, [id]: !hidden }));
+                        flash(VISIBILITY_ERROR_TOAST);
+                    },
+                },
+            );
+        },
+        [flash, party.name],
+    );
 
     const shareMode = photoShare.supported && !hidePictures;
 
@@ -273,6 +316,9 @@ export default function Gallery({
                         selectMode={selection.selectMode}
                         isSelected={selection.isSelected}
                         onSelect={onSelect}
+                        canEdit={canEdit}
+                        isHidden={isHidden}
+                        onToggleHidden={onToggleHidden}
                     />
                 )}
             </main>

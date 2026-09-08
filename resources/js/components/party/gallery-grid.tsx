@@ -15,6 +15,10 @@ interface GalleryGridProps {
     selectMode: boolean;
     isSelected: (id: number) => boolean;
     onSelect: (id: number, anchor: HTMLElement) => void;
+    /** True for the host, who alone sees and moves the masking control. */
+    canEdit?: boolean;
+    isHidden?: (picture: Picture) => boolean;
+    onToggleHidden?: (id: number, hidden: boolean) => void;
 }
 
 function Skeletons() {
@@ -31,14 +35,23 @@ function Skeletons() {
     );
 }
 
-export default function GalleryGrid({ pictures, selectMode, isSelected, onSelect }: GalleryGridProps) {
+export default function GalleryGrid({
+    pictures,
+    selectMode,
+    isSelected,
+    onSelect,
+    canEdit = false,
+    isHidden = (picture) => picture.hidden,
+    onToggleHidden,
+}: GalleryGridProps) {
     const gridRef = useRef<HTMLDivElement>(null);
     const selectModeRef = useRef(selectMode);
     selectModeRef.current = selectMode;
 
     /**
      * PhotoSwipe listens on the same anchors. Capturing the click one phase
-     * earlier lets select mode swallow it before the lightbox ever sees it.
+     * earlier lets select mode — and the host's masking control, which sits
+     * inside an anchor — swallow it before the lightbox ever sees it.
      */
     useEffect(() => {
         const grid = gridRef.current;
@@ -48,6 +61,17 @@ export default function GalleryGrid({ pictures, selectMode, isSelected, onSelect
         }
 
         const onClickCapture = (event: MouseEvent) => {
+            const hideButton = (event.target as HTMLElement).closest<HTMLElement>('[data-hide-button]');
+
+            if (hideButton !== null) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                onToggleHidden?.(Number(hideButton.dataset.hideButton), hideButton.dataset.hidden !== 'true');
+
+                return;
+            }
+
             if (!selectModeRef.current) {
                 return;
             }
@@ -67,7 +91,7 @@ export default function GalleryGrid({ pictures, selectMode, isSelected, onSelect
         grid.addEventListener('click', onClickCapture, true);
 
         return () => grid.removeEventListener('click', onClickCapture, true);
-    }, [onSelect]);
+    }, [onSelect, onToggleHidden]);
 
     return (
         <InfiniteScroll
@@ -103,6 +127,8 @@ export default function GalleryGrid({ pictures, selectMode, isSelected, onSelect
                         priority={index < EAGER_PICTURES_COUNT}
                         selectMode={selectMode}
                         selected={isSelected(picture.id)}
+                        hidden={isHidden(picture)}
+                        canEdit={canEdit}
                     />
                 ))}
             </div>

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Services\PartyPicturesState;
 use App\Services\SignedStorageUrl;
 use Database\Factories\PictureFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,7 +24,18 @@ class Picture extends Model
         'thumbnail_path',
         'width',
         'height',
+        'hidden_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'hidden_at' => 'datetime',
+        ];
+    }
 
     protected static function booting(): void
     {
@@ -41,6 +53,28 @@ class Picture extends Model
 
             app(PartyPicturesState::class)->forget($picture->party_id);
         });
+    }
+
+    /**
+     * Restrict a query to the pictures guests are allowed to see.
+     *
+     * A host may hide a picture without deleting it; everything a visitor can
+     * reach — the gallery, the ZIP, the picture stream, the polled count —
+     * goes through this scope so that one column governs them all.
+     *
+     * @param  Builder<Picture>  $query
+     */
+    public function scopeVisible(Builder $query): void
+    {
+        $query->whereNull('hidden_at');
+    }
+
+    /**
+     * Whether the host has taken this picture off the guests' gallery.
+     */
+    public function isHidden(): bool
+    {
+        return $this->hidden_at !== null;
     }
 
     public function party(): BelongsTo

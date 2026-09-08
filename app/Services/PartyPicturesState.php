@@ -27,7 +27,8 @@ class PartyPicturesState
      *
      * An expired party always reads as empty. The page shows nothing in that
      * case, and a client left open across the expiry date must not start
-     * announcing pictures it will never display.
+     * announcing pictures it will never display. Pictures the host has hidden
+     * are left out for the same reason.
      *
      * @return array{count: int, last_change: string|null}
      */
@@ -63,10 +64,10 @@ class PartyPicturesState
      */
     private function compute(Party $party): array
     {
-        $lastChange = $party->pictures()->max('updated_at');
+        $lastChange = $party->pictures()->visible()->max('updated_at');
 
         return [
-            'count' => $party->pictures()->count(),
+            'count' => $party->pictures()->visible()->count(),
             'last_change' => $lastChange === null ? null : Carbon::parse($lastChange)->toIso8601String(),
         ];
     }
