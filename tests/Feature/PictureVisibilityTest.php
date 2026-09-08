@@ -115,6 +115,20 @@ it('keeps a hidden picture in the hosts own gallery, marked as hidden', function
         );
 });
 
+it('moves the polled state as soon as the host masks a picture', function () {
+    $party = Party::factory()->create();
+    $pictures = Picture::factory()->count(3)->for($party)->create();
+    $partyPicturesState = app(PartyPicturesState::class);
+
+    expect($partyPicturesState->for($party)['count'])->toBe(3);
+
+    $this->withSession(hostSession($party))
+        ->patch(route('party.pictures.visibility', [$party, $pictures->first()]), ['hidden' => true])
+        ->assertRedirect();
+
+    expect($partyPicturesState->for($party)['count'])->toBe(2);
+});
+
 it('leaves hidden pictures out of the polled state', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();

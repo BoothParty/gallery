@@ -164,6 +164,13 @@ export default function Gallery({
                 {
                     preserveScroll: true,
                     preserveState: true,
+                    /*
+                     * Nothing on the page is read back from the answer: the
+                     * tile is already in its new state, and reloading
+                     * `pictures` would collapse the infinite scroll back to
+                     * its first page. The poller learns about the change on
+                     * its own tick, like it does for every other visitor.
+                     */
                     only: ['picturesState'],
                     onSuccess: () => flash(hidden ? HIDDEN_TOAST : SHOWN_TOAST),
                     onError: () => {
