@@ -1,12 +1,9 @@
 <?php
 
 use App\Models\Party;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('s3');

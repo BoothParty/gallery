@@ -35,9 +35,11 @@ class PartyBannerStorage
 
         Storage::disk('s3')->put($path, $image->toJpeg(quality: 82));
 
-        $this->deleteFile($party->banner_path);
+        $previousPath = $party->banner_path;
 
         $party->forceFill(['banner_path' => $path])->save();
+
+        $this->deleteFile($previousPath);
     }
 
     /**

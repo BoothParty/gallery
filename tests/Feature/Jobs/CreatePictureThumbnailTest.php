@@ -3,13 +3,10 @@
 use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
-
-uses(RefreshDatabase::class);
 
 it('creates a thumbnail for a given picture', function () {
     Storage::fake('s3');
@@ -19,9 +16,8 @@ it('creates a thumbnail for a given picture', function () {
     $path = Storage::disk('s3')->putFile('pictures/test', $file);
 
     $party = Party::factory()->create();
-    $picture = Picture::factory()->for($party)->create([
+    $picture = Picture::factory()->for($party)->withoutThumbnail()->create([
         'path' => $path,
-        'thumbnail_path' => null,
     ]);
 
     (new CreatePictureThumbnail($picture))->handle();
@@ -48,9 +44,8 @@ it('never scales a thumbnail beyond the configured max edge', function () {
     $path = Storage::disk('s3')->putFile('pictures/test', $file);
 
     $party = Party::factory()->create();
-    $picture = Picture::factory()->for($party)->create([
+    $picture = Picture::factory()->for($party)->withoutThumbnail()->create([
         'path' => $path,
-        'thumbnail_path' => null,
     ]);
 
     (new CreatePictureThumbnail($picture))->handle();
@@ -69,9 +64,8 @@ it('does not upscale a picture smaller than the max edge', function () {
     $path = Storage::disk('s3')->putFile('pictures/test', $file);
 
     $party = Party::factory()->create();
-    $picture = Picture::factory()->for($party)->create([
+    $picture = Picture::factory()->for($party)->withoutThumbnail()->create([
         'path' => $path,
-        'thumbnail_path' => null,
     ]);
 
     (new CreatePictureThumbnail($picture))->handle();
@@ -88,9 +82,8 @@ it('does nothing if the original picture file does not exist on disk', function 
     Storage::fake('s3');
 
     $party = Party::factory()->create();
-    $picture = Picture::factory()->for($party)->create([
+    $picture = Picture::factory()->for($party)->withoutThumbnail()->create([
         'path' => 'pictures/missing_file.jpg',
-        'thumbnail_path' => null,
     ]);
 
     $job = new CreatePictureThumbnail($picture);

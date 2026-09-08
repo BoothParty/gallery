@@ -3,9 +3,6 @@
 use App\Models\Party;
 use App\Models\User;
 use App\Services\PartyPosterGenerator;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());

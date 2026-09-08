@@ -2,9 +2,6 @@
 
 use App\Models\Party;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 /**
  * Matches a stylesheet entry in the rendered head, in both Vite dev mode

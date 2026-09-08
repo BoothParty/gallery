@@ -3,10 +3,7 @@
 use App\Models\Party;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 // ── Creation & persistence ──────────────────────────────────────────────────
 
@@ -247,4 +244,12 @@ it('casts the banner framing to floats', function () {
     expect($party->fresh()->banner_position_x)->toBe(12.5)
         ->and($party->fresh()->banner_position_y)->toBe(80.0)
         ->and($party->fresh()->banner_zoom)->toBe(2.25);
+});
+
+it('frames a banner centred and unzoomed on a party created without framing', function () {
+    $party = Party::query()->create(['name' => fake()->unique()->slug(2)]);
+
+    expect($party->banner_position_x)->toBe(50.0)
+        ->and($party->banner_position_y)->toBe(50.0)
+        ->and($party->banner_zoom)->toBe(1.0);
 });

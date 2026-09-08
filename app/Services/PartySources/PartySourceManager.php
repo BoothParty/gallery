@@ -5,7 +5,9 @@ namespace App\Services\PartySources;
 use App\Models\Party;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use Throwable;
 
 class PartySourceManager
 {
@@ -50,13 +52,37 @@ class PartySourceManager
     private function collectEvents(): array
     {
         return collect($this->sources())
-            ->flatMap(fn (PartySource $source): array => collect($source->events())
-                ->reject(fn (PartySourceEvent $event): bool => $event->startsAt !== null && $event->startsAt->isPast())
-                ->map(fn (PartySourceEvent $event): array => $event->toArray($source))
-                ->all())
+            ->flatMap(fn (PartySource $source): array => $this->eventsOf($source))
             ->sortBy(fn (array $event): string => $event['starts_at'] ?? '9999')
             ->values()
             ->all();
+    }
+
+    /**
+     * The upcoming events of one source, or none of them when it cannot be
+     * reached.
+     *
+     * A remote source is allowed to be down: it feeds a suggestion list on the
+     * admin parties page, so degrading to an empty list keeps the page usable
+     * where letting the failure through would take the whole page down with it.
+     *
+     * @return list<array<string, string|null>>
+     */
+    private function eventsOf(PartySource $source): array
+    {
+        try {
+            return collect($source->events())
+                ->reject(fn (PartySourceEvent $event): bool => $event->startsAt !== null && $event->startsAt->isPast())
+                ->map(fn (PartySourceEvent $event): array => $event->toArray($source))
+                ->all();
+        } catch (Throwable $exception) {
+            Log::error('Party source unreachable', [
+                'source' => $source->key(),
+                'exception' => $exception,
+            ]);
+
+            return [];
+        }
     }
 
     /**

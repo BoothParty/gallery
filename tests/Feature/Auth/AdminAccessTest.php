@@ -3,9 +3,6 @@
 use App\Models\Party;
 use App\Models\Picture;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('redirects a guest away from the administration', function (string $url) {
     $this->get($url)->assertRedirect(route('login'));
@@ -49,7 +46,7 @@ it('blocks a guest from uploading pictures and creates nothing', function () {
 
 it('blocks a guest from bulk deleting pictures and deletes nothing', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $this->delete(route('party.dashboard.pictures.bulk-delete', $party))
         ->assertRedirect(route('login'));

@@ -8,34 +8,36 @@ use Illuminate\Database\Eloquent\Model;
 
 class AdminDashboardDataService
 {
+    /**
+     * How many live parties the sidebar lists before the search box takes over.
+     */
+    private const SIDEBAR_PARTIES = 10;
+
     public function __construct(
         private readonly CrudDiscoveryService $crudDiscoveryService,
     ) {}
 
+    /**
+     * The sidebar's party list, its search index, and which party the page
+     * lands on. Both lists come from one pass over the table, ordered by name
+     * so the default party is a stable choice rather than whichever row the
+     * database happened to return first.
+     */
     public function sidebarData(?int $currentPartyId = null): array
     {
-        $parties = Party::query()
-            ->where(function ($query) {
-                $query
-                    ->whereNull('expire_at')
-                    ->orWhere('expire_at', '>', now());
-            })
-            ->limit(10)
-            ->get(['id', 'name'])
-            ->map(fn (Party $availableParty) => [
-                'id' => $availableParty->id,
-                'name' => $availableParty->name,
-                'expired' => false,
-            ])
-            ->values();
-
         $searchableParties = Party::query()
+            ->orderBy('name')
             ->get(['id', 'name', 'expire_at'])
-            ->map(fn (Party $availableParty) => [
+            ->map(fn (Party $availableParty): array => [
                 'id' => $availableParty->id,
                 'name' => $availableParty->name,
                 'expired' => $availableParty->expire_at !== null && $availableParty->expire_at->isPast(),
             ])
+            ->values();
+
+        $parties = $searchableParties
+            ->reject(fn (array $availableParty): bool => $availableParty['expired'])
+            ->take(self::SIDEBAR_PARTIES)
             ->values();
 
         $defaultPartyId = $searchableParties->first()['id'] ?? null;

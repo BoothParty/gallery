@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\BrowserPage;
 use Tests\TestCase;
 
@@ -14,8 +15,14 @@ use Tests\TestCase;
 |
 */
 
+/*
+| `LazilyRefreshDatabase` rather than `RefreshDatabase`: the transaction is
+| only opened by a test that actually touches the database, so the handful of
+| pure unit-style tests in `Feature` stay database-free without having to opt
+| out by hand.
+*/
 pest()->extend(TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->use(LazilyRefreshDatabase::class)
     ->in('Feature', 'Web');
 
 /*

@@ -39,8 +39,10 @@ class EnsureBucketExists extends Command
          */
         try {
             $client->deleteBucketPolicy(['Bucket' => $bucket]);
-        } catch (AwsException) {
-            // Pas de policy à retirer.
+        } catch (AwsException $exception) {
+            if ($exception->getAwsErrorCode() !== 'NoSuchBucketPolicy') {
+                throw $exception;
+            }
         }
 
         return self::SUCCESS;

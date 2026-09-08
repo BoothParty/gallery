@@ -22,7 +22,11 @@ class PictureController extends Controller
     public function store(StorePictureRequest $request, Party $party): PictureResource
     {
         $photo = $request->file('photo');
-        [$width, $height] = getimagesize($photo->getPathname());
+        $dimensions = getimagesize($photo->getPathname());
+
+        abort_if($dimensions === false, 422, 'La photo est illisible.');
+
+        [$width, $height] = $dimensions;
 
         $path = Storage::disk('s3')->putFile("pictures/{$party->id}", $photo);
 

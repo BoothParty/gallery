@@ -58,9 +58,10 @@ class Picture extends Model
     /**
      * Restrict a query to the pictures guests are allowed to see.
      *
-     * A host may hide a picture without deleting it; everything a visitor can
-     * reach — the gallery, the ZIP, the picture stream, the polled count —
-     * goes through this scope so that one column governs them all.
+     * A host may hide a picture without deleting it; the gallery, the picture
+     * stream and the polled count all go through this scope so that one column
+     * governs them. The ZIP reaches the same result upstream, its form request
+     * rejecting hidden ids through `PictureBelongsToParty`.
      *
      * @param  Builder<Picture>  $query
      */

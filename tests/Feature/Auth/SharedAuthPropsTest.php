@@ -2,9 +2,6 @@
 
 use App\Models\Party;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('shares the authenticated user with every inertia page', function () {
     $user = User::factory()->create(['name' => 'Alice', 'email' => 'alice@boothparty.fr']);

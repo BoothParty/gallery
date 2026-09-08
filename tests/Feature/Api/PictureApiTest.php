@@ -4,13 +4,10 @@ use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('s3');
@@ -236,6 +233,30 @@ it('rejects store when photo exceeds max size', function () {
         ->assertJsonValidationErrorFor('photo');
 });
 
+// ── Cross-party scoping ──────────────────────────────────────────────────────
+
+it('does not reach a picture through another party', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+    $otherParty = Party::factory()->create();
+    $picture = Picture::factory()->for($otherParty)->create();
+
+    $this->getJson(route('pictures.show', ['party' => $party, 'picture' => $picture]))
+        ->assertNotFound();
+});
+
+it('does not delete a picture through another party', function () {
+    Sanctum::actingAs(User::factory()->create());
+    $party = Party::factory()->create();
+    $otherParty = Party::factory()->create();
+    $picture = Picture::factory()->for($otherParty)->create();
+
+    $this->deleteJson(route('pictures.destroy', ['party' => $party, 'picture' => $picture]))
+        ->assertNotFound();
+
+    $this->assertModelExists($picture);
+});
+
 // ── Destroy ───────────────────────────────────────────────────────────────────
 
 it('deletes a picture and returns no content', function () {
@@ -246,7 +267,7 @@ it('deletes a picture and returns no content', function () {
     $this->deleteJson(route('pictures.destroy', ['party' => $party, 'picture' => $picture]))
         ->assertNoContent();
 
-    $this->assertDatabaseMissing('pictures', ['id' => $picture->id]);
+    $this->assertModelMissing($picture);
 });
 
 it('deletes the file from s3 when a picture is destroyed', function () {
