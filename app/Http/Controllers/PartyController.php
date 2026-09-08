@@ -25,8 +25,9 @@ class PartyController extends Controller
      */
     public function show(Request $request, Party $party, PartyPicturesState $partyPicturesState): Response
     {
+        $isHost = ResolvePartyHost::isHost($request, $party);
         $hidePictures = $party->hidePictures();
-        $picturesPage = $this->pictures($party, $hidePictures);
+        $picturesPage = $this->pictures($party, $hidePictures, $isHost);
 
         return Inertia::render('party/gallery', [
             'party' => PartyResource::make($party)->resolve(),
@@ -43,7 +44,7 @@ class PartyController extends Controller
                 'cold_after' => (int) config('party.refresh.cold_after'),
             ],
             'hidePictures' => $hidePictures,
-            'canEdit' => ResolvePartyHost::isHost($request, $party),
+            'canEdit' => $isHost,
             'maxDownloadPictures' => (int) config('party.download.max_pictures'),
             'csrfToken' => csrf_token(),
         ]);
@@ -52,15 +53,20 @@ class PartyController extends Controller
     /**
      * An expired party resolves to an empty paginator rather than to a
      * different prop shape, so the page always receives the same structure.
+     *
+     * The host keeps the pictures they have hidden in their own grid, marked
+     * as such, since they are the ones who decide to put them back.
      */
-    private function pictures(Party $party, bool $hidePictures): LengthAwarePaginatorContract
+    private function pictures(Party $party, bool $hidePictures, bool $isHost): LengthAwarePaginatorContract
     {
         if ($hidePictures) {
             return new LengthAwarePaginator([], 0, self::PICTURES_PER_PAGE);
         }
 
         return $party->pictures()
+            ->unless($isHost, fn ($query) => $query->visible())
             ->latest()
+            ->latest('id')
             ->paginate(self::PICTURES_PER_PAGE);
     }
 }

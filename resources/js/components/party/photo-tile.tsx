@@ -9,6 +9,29 @@ interface PhotoTileProps {
     priority?: boolean;
     selectMode?: boolean;
     selected?: boolean;
+    /** Taken off the guests' gallery. Only a host is ever shown such a tile. */
+    hidden?: boolean;
+    /** Show the host's masking control. */
+    canEdit?: boolean;
+}
+
+function EyeOffIcon({ size }: { size: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M2.5 2.5l11 11" />
+            <path d="M6.3 3.4A6.6 6.6 0 0 1 8 3.2c3.4 0 5.7 2.6 6.4 4.8-.3.9-.9 1.9-1.8 2.8M4.2 4.6C2.9 5.6 2 7 1.6 8c.7 2.2 3 4.8 6.4 4.8 1 0 1.9-.2 2.7-.6" />
+            <path d="M6.5 6.6a2.1 2.1 0 0 0 2.9 2.9" />
+        </svg>
+    );
+}
+
+function EyeIcon({ size }: { size: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M1.6 8C2.3 5.8 4.6 3.2 8 3.2s5.7 2.6 6.4 4.8c-.7 2.2-3 4.8-6.4 4.8S2.3 10.2 1.6 8z" />
+            <circle cx="8" cy="8" r="2.1" />
+        </svg>
+    );
 }
 
 export default function PhotoTile({
@@ -20,7 +43,11 @@ export default function PhotoTile({
     priority = false,
     selectMode = false,
     selected = false,
+    hidden = false,
+    canEdit = false,
 }: PhotoTileProps) {
+    const hideLabel = hidden ? 'Remettre en ligne' : 'Masquer pour les invités';
+
     return (
         <a
             href={url}
@@ -34,7 +61,9 @@ export default function PhotoTile({
                 <img
                     src={thumbnailUrl}
                     alt={`Photo ${id}`}
-                    className="block h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+                    className={`block h-full w-full object-cover transition-all duration-500 group-hover:scale-[1.035] ${
+                        hidden ? '[filter:grayscale(1)_brightness(0.34)_contrast(0.9)]' : ''
+                    }`}
                     loading={priority ? 'eager' : 'lazy'}
                     decoding="async"
                     fetchPriority={priority ? 'high' : 'low'}
@@ -46,6 +75,31 @@ export default function PhotoTile({
                     aria-label={`Photo ${id} en cours de préparation`}
                     data-picture-placeholder
                 />
+            )}
+
+            {hidden && (
+                <span
+                    data-picture-hidden
+                    className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-[7px] text-[11px] tracking-[0.18em] text-cream uppercase shadow-[inset_0_0_0_1px_rgba(253,252,250,0.28)]"
+                >
+                    <EyeOffIcon size={22} />
+                    Masquée
+                </span>
+            )}
+
+            {canEdit && !selectMode && (
+                <button
+                    type="button"
+                    data-hide-button={id}
+                    data-hidden={hidden}
+                    title={hideLabel}
+                    aria-label={hideLabel}
+                    className={`absolute top-2 left-2 flex h-[26px] w-[26px] items-center justify-center rounded-full border p-0 text-cream transition-all duration-150 hover:bg-ink/60 hover:opacity-100 ${
+                        hidden ? 'border-ink bg-ink opacity-100' : 'border-cream/70 bg-ink/35 opacity-70'
+                    }`}
+                >
+                    {hidden ? <EyeOffIcon size={13} /> : <EyeIcon size={13} />}
+                </button>
             )}
 
             <span

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ResolvePartyHost;
 use App\Models\Party;
 use App\Models\Picture;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -17,9 +19,10 @@ class PictureFileController extends Controller
      * be tainted and a fetch response opaque, so the bytes have to come back
      * through the application.
      */
-    public function __invoke(Party $party, Picture $picture): StreamedResponse
+    public function __invoke(Request $request, Party $party, Picture $picture): StreamedResponse
     {
         abort_if($party->hidePictures(), 403);
+        abort_if($picture->isHidden() && ! ResolvePartyHost::isHost($request, $party), 403);
 
         $stream = Storage::disk('s3')->readStream($picture->path);
 
