@@ -6,9 +6,6 @@ use App\Services\PartySources\PartySourceEvent;
 use App\Services\PartySources\PartySourceManager;
 use App\Services\PartySources\StubPartySource;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('resolves the sources enabled in the configuration', function () {
     $sources = app(PartySourceManager::class)->sources();
@@ -33,6 +30,14 @@ it('drops past events and orders the upcoming ones by date', function () {
     expect($events[0]['id'])->toBe('fake:soon');
     expect($events[0]['source_label'])->toBe('Fake');
     expect($events[2]['starts_at'])->toBeNull();
+});
+
+it('degrades to the reachable sources when one is down', function () {
+    config()->set('party.sources', ['broken' => BrokenPartySource::class, 'fake' => FakePartySource::class]);
+
+    $events = app(PartySourceManager::class)->upcomingEvents();
+
+    expect(collect($events)->pluck('name')->all())->toBe(['Soon', 'Later', 'Undated']);
 });
 
 it('exposes the stub events to the administration', function () {
@@ -112,6 +117,24 @@ class FakePartySource implements PartySource
             new PartySourceEvent(id: 'past', name: 'Past', startsAt: CarbonImmutable::now()->subDay()),
             new PartySourceEvent(id: 'soon', name: 'Soon', startsAt: CarbonImmutable::now()->addDay()),
         ];
+    }
+}
+
+class BrokenPartySource implements PartySource
+{
+    public function key(): string
+    {
+        return 'broken';
+    }
+
+    public function label(): string
+    {
+        return 'Broken';
+    }
+
+    public function events(): array
+    {
+        throw new RuntimeException('the source is down');
     }
 }
 

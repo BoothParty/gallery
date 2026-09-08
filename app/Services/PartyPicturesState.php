@@ -64,10 +64,15 @@ class PartyPicturesState
      */
     private function compute(Party $party): array
     {
-        $lastChange = $party->pictures()->visible()->max('updated_at');
+        $state = $party->pictures()
+            ->visible()
+            ->selectRaw('count(*) as pictures_count, max(updated_at) as last_change')
+            ->first();
+
+        $lastChange = $state?->last_change;
 
         return [
-            'count' => $party->pictures()->visible()->count(),
+            'count' => (int) ($state?->pictures_count ?? 0),
             'last_change' => $lastChange === null ? null : Carbon::parse($lastChange)->toIso8601String(),
         ];
     }

@@ -48,6 +48,19 @@ class Party extends Model
         'source_event_id',
     ];
 
+    /**
+     * Mirror the DB defaults so a freshly created instance frames its banner
+     * centred and unzoomed rather than reporting nulls to whatever renders it
+     * before the row is read back.
+     *
+     * @var array<string, int|float>
+     */
+    protected $attributes = [
+        'banner_position_x' => 50,
+        'banner_position_y' => 50,
+        'banner_zoom' => 1,
+    ];
+
     protected function casts(): array
     {
         return [

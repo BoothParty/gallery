@@ -2,11 +2,8 @@
 
 use App\Models\Party;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
@@ -177,7 +174,7 @@ it('deletes a party from administration', function () {
     $this->delete(route('admin.parties.destroy', $party))
         ->assertRedirect('/admin/parties');
 
-    expect(Party::query()->whereKey($party->id)->exists())->toBeFalse();
+    $this->assertModelMissing($party);
 });
 
 it('rejects creating a party whose name is already taken', function () {

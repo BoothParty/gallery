@@ -12,8 +12,14 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('parties', PartyController::class);
+    /**
+     * `scoped()` so `{picture}` is resolved through the party's own pictures:
+     * without it the id resolves globally and one party's URL reaches, and
+     * deletes, another party's picture.
+     */
     Route::apiResource('parties/{party}/pictures', PictureController::class)
-        ->only(['index', 'store', 'show', 'destroy']);
+        ->only(['index', 'store', 'show', 'destroy'])
+        ->scoped();
 });
 
 /**

@@ -2,13 +2,10 @@
 
 use App\Models\Party;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\AbstractProvider;
 use Laravel\Socialite\Two\User as SocialiteUser;
-
-uses(RefreshDatabase::class);
 
 function providerUser(?string $email, ?string $name = 'Jane Doe'): SocialiteUserContract
 {

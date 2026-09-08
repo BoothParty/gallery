@@ -2,9 +2,6 @@
 
 use App\Models\Party;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
@@ -76,7 +73,7 @@ it('deletes a user from administration', function () {
     $this->delete("/admin/users/{$user->id}")
         ->assertRedirect('/admin/users');
 
-    expect(User::query()->whereKey($user->id)->exists())->toBeFalse();
+    $this->assertModelMissing($user);
 });
 
 it('renders administration create user page', function () {

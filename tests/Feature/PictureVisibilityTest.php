@@ -3,10 +3,7 @@
 use App\Models\Party;
 use App\Models\Picture;
 use App\Services\PartyPicturesState;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('s3');
@@ -51,6 +48,17 @@ it('applies the asked state rather than flipping the stored one', function () {
     $this->withSession(hostSession($party))
         ->patch(route('party.pictures.visibility', [$party, $picture]), ['hidden' => true])
         ->assertRedirect();
+
+    expect($picture->fresh()->isHidden())->toBeTrue();
+});
+
+it('refuses a request that does not say which state it wants', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->hidden()->create();
+
+    $this->withSession(hostSession($party))
+        ->patch(route('party.pictures.visibility', [$party, $picture]), [])
+        ->assertSessionHasErrors('hidden');
 
     expect($picture->fresh()->isHidden())->toBeTrue();
 });

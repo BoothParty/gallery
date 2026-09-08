@@ -3,10 +3,7 @@
 use App\Models\Party;
 use App\Models\Picture;
 use App\Services\PartyPicturesState;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('s3');
@@ -55,7 +52,7 @@ it('drops the count when a picture is deleted', function () {
 
 it('moves the last change when a thumbnail is written, without touching the count', function () {
     $party = Party::factory()->create();
-    $picture = Picture::factory()->for($party)->create(['thumbnail_path' => null]);
+    $picture = Picture::factory()->for($party)->withoutThumbnail()->create();
     $before = picturesState($party);
 
     $this->travel(1)->minutes();

@@ -2,11 +2,8 @@
 
 use App\Models\User;
 use App\Services\OAuthUserResolver;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 use Laravel\Socialite\Two\User as SocialiteUser;
-
-uses(RefreshDatabase::class);
 
 function socialiteUser(?string $email, ?string $name = 'Jane Doe'): SocialiteUserContract
 {

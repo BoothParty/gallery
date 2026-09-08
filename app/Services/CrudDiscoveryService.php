@@ -16,31 +16,21 @@ class CrudDiscoveryService
 {
     private const RESOURCES_CACHE_KEY = 'admin.crud.resources';
 
-    private const RESOURCES_SIGNATURE_CACHE_KEY = 'admin.crud.resources.signature';
-
     /**
      * Discover all models annotated with #[CrudResource].
      * Returns a map of [ 'slug' => ResourceDefinition ].
+     *
+     * The signature of the models directory is part of the cache key, so
+     * editing a model's attributes lands immediately: the edit addresses a
+     * different entry rather than having to invalidate the previous one.
      */
     public function discover(): array
     {
-        $signature = $this->modelsSignature();
-        $cachedSignature = Cache::get(self::RESOURCES_SIGNATURE_CACHE_KEY);
-
-        if ($cachedSignature !== $signature) {
-            Cache::forget(self::RESOURCES_CACHE_KEY);
-            Cache::put(self::RESOURCES_SIGNATURE_CACHE_KEY, $signature, now()->addMinutes(5));
-        }
-
-        return Cache::remember(self::RESOURCES_CACHE_KEY, now()->addMinutes(5), function () {
-            return $this->scan();
-        });
-    }
-
-    public function forget(): void
-    {
-        Cache::forget(self::RESOURCES_CACHE_KEY);
-        Cache::forget(self::RESOURCES_SIGNATURE_CACHE_KEY);
+        return Cache::remember(
+            self::RESOURCES_CACHE_KEY.'.'.$this->modelsSignature(),
+            now()->addMinutes(5),
+            fn (): array => $this->scan(),
+        );
     }
 
     private function modelsSignature(): string

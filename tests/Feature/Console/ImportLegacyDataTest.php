@@ -3,13 +3,10 @@
 use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 /**
  * Monte une connexion « legacy » SQLite en mémoire portant le schéma de

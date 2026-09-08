@@ -5,9 +5,11 @@ namespace App\Jobs;
 use App\Models\Picture;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
+use Throwable;
 
 class CreatePictureThumbnail implements ShouldQueue
 {
@@ -20,6 +22,16 @@ class CreatePictureThumbnail implements ShouldQueue
      * while staying ~3x lighter than a 800px thumbnail.
      */
     public const MAX_EDGE = 480;
+
+    /**
+     * Retry delays, in seconds.
+     *
+     * The failures worth retrying here are S3 hiccups, which an immediate
+     * retry would only run into again.
+     *
+     * @var list<int>
+     */
+    public $backoff = [10, 60];
 
     /**
      * Create a new job instance.
@@ -46,5 +58,18 @@ class CreatePictureThumbnail implements ShouldQueue
         $disk->put($thumbnailPath, $image->toJpeg(quality: 80));
 
         $this->picture->update(['thumbnail_path' => $thumbnailPath]);
+    }
+
+    /**
+     * A picture whose thumbnail never arrives keeps rendering its placeholder
+     * in the grid, quietly and for good. Log it so that state has a cause.
+     */
+    public function failed(?Throwable $exception): void
+    {
+        Log::error('Thumbnail generation failed', [
+            'picture_id' => $this->picture->id,
+            'party_id' => $this->picture->party_id,
+            'exception' => $exception,
+        ]);
     }
 }

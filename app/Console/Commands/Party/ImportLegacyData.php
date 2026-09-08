@@ -104,7 +104,7 @@ class ImportLegacyData extends Command
         $this->newLine(2);
         $this->report();
 
-        return self::SUCCESS;
+        return $this->counters['errors'] === 0 ? self::SUCCESS : self::FAILURE;
     }
 
     /**
@@ -237,7 +237,7 @@ class ImportLegacyData extends Command
             Log::error('Legacy import: picture failed', [
                 'legacy_picture_id' => $row->id,
                 'path' => $row->path,
-                'message' => $exception->getMessage(),
+                'exception' => $exception,
             ]);
         }
     }

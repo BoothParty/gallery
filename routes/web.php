@@ -13,9 +13,16 @@ use App\Http\Controllers\PictureVisibilityController;
 use App\Http\Middleware\ResolvePartyHost;
 use Illuminate\Support\Facades\Route;
 
-Route::get('login', [OAuthController::class, 'redirect'])->name('login');
-Route::get('auth/{provider}/redirect', [OAuthController::class, 'redirect'])->name('auth.redirect');
-Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->name('auth.callback');
+/**
+ * The callback provisions a user on first login, so the three of them carry a
+ * ceiling. Keyed by address alone, unlike the party routes: staff logging in
+ * do not share a venue's wifi.
+ */
+Route::middleware('throttle:10,1')->group(function (): void {
+    Route::get('login', [OAuthController::class, 'redirect'])->name('login');
+    Route::get('auth/{provider}/redirect', [OAuthController::class, 'redirect'])->name('auth.redirect');
+    Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->name('auth.callback');
+});
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
 
 Route::prefix('{party}')->name('party.')->group(function () {

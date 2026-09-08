@@ -56,11 +56,4 @@ class PictureFactory extends Factory
             'hidden_at' => now(),
         ]);
     }
-
-    public function forParty(Party $party): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'party_id' => $party->id,
-        ]);
-    }
 }

@@ -2,10 +2,7 @@
 
 use App\Models\Party;
 use App\Models\Picture;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 // ── Creation & persistence ──────────────────────────────────────────────────
 
@@ -31,7 +28,7 @@ it('generates a unique path for each picture', function () {
 
 it('persists party_id', function () {
     $party = Party::factory()->create();
-    $picture = Picture::factory()->forParty($party)->create();
+    $picture = Picture::factory()->for($party)->create();
 
     expect($picture->fresh()->party_id)->toBe($party->id);
 });
@@ -40,7 +37,7 @@ it('persists party_id', function () {
 
 it('belongs to a party', function () {
     $party = Party::factory()->create();
-    $picture = Picture::factory()->forParty($party)->create();
+    $picture = Picture::factory()->for($party)->create();
 
     expect($picture->party)
         ->toBeInstanceOf(Party::class)
@@ -49,7 +46,7 @@ it('belongs to a party', function () {
 
 it('is deleted when its party is deleted (cascade)', function () {
     $party = Party::factory()->create();
-    $picture = Picture::factory()->forParty($party)->create();
+    $picture = Picture::factory()->for($party)->create();
 
     $party->delete();
 
@@ -60,7 +57,7 @@ it('is deleted when its party is deleted (cascade)', function () {
 
 it('can be accessed from a party via pictures relationship', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     expect($party->pictures)->toHaveCount(3)
         ->each->toBeInstanceOf(Picture::class);
@@ -111,7 +108,7 @@ it('factory creates the associated party automatically', function () {
 
 it('factory forParty state assigns the given party', function () {
     $party = Party::factory()->create();
-    $picture = Picture::factory()->forParty($party)->create();
+    $picture = Picture::factory()->for($party)->create();
 
     expect($picture->party_id)->toBe($party->id);
 });

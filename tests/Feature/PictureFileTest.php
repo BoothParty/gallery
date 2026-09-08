@@ -2,10 +2,7 @@
 
 use App\Models\Party;
 use App\Models\Picture;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('s3');

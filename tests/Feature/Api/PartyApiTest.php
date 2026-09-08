@@ -2,10 +2,7 @@
 
 use App\Models\Party;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-
-uses(RefreshDatabase::class);
 
 // ── Authentification ─────────────────────────────────────────────────────────
 
@@ -202,7 +199,7 @@ it('deletes a party', function () {
 
     $this->deleteJson(route('parties.show', $party))->assertNoContent();
 
-    $this->assertDatabaseMissing('parties', ['id' => $party->id]);
+    $this->assertModelMissing($party);
 });
 
 it('returns 404 when deleting a non-existent party', function () {

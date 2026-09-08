@@ -43,10 +43,32 @@ it('closes an existing bucket to anonymous reads without recreating it', functio
 it('survives a bucket that carries no policy', function () {
     $client = Mockery::mock(S3Client::class);
     $client->shouldReceive('doesBucketExistV2')->andReturnTrue();
-    $client->shouldReceive('deleteBucketPolicy')
-        ->andThrow(new AwsException('no policy', Mockery::mock(CommandInterface::class)));
+    $client->shouldReceive('deleteBucketPolicy')->andThrow(new AwsException(
+        'no policy',
+        Mockery::mock(CommandInterface::class),
+        ['code' => 'NoSuchBucketPolicy'],
+    ));
 
     fakeS3Client($client);
 
     $this->artisan('storage:ensure-bucket')->assertSuccessful();
+});
+
+/**
+ * A policy that could not be removed must not read as a closed bucket: the
+ * signed-URL expiry the whole gallery relies on would be short-circuited by a
+ * public policy left in place.
+ */
+it('surfaces a policy deletion that failed for any other reason', function () {
+    $client = Mockery::mock(S3Client::class);
+    $client->shouldReceive('doesBucketExistV2')->andReturnTrue();
+    $client->shouldReceive('deleteBucketPolicy')->andThrow(new AwsException(
+        'access denied',
+        Mockery::mock(CommandInterface::class),
+        ['code' => 'AccessDenied'],
+    ));
+
+    fakeS3Client($client);
+
+    expect(fn () => $this->artisan('storage:ensure-bucket'))->toThrow(AwsException::class);
 });

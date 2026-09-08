@@ -3,13 +3,10 @@
 use App\Models\Party;
 use App\Models\Picture;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
@@ -124,7 +121,7 @@ it('closes the upload dialog and clears the attached file when pressing escape',
 
 it('lazy loads pictures below the first row', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(10)->create();
+    Picture::factory()->for($party)->count(10)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -136,7 +133,7 @@ it('lazy loads pictures below the first row', function () {
 
 it('shows a placeholder instead of the original when the thumbnail is missing', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->withoutThumbnail()->create();
+    Picture::factory()->for($party)->withoutThumbnail()->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -148,7 +145,7 @@ it('shows a placeholder instead of the original when the thumbnail is missing', 
 
 it('hides the delete button until pictures are selected', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -159,7 +156,7 @@ it('hides the delete button until pictures are selected', function () {
 
 it('shows the delete button with the number of selected pictures', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -171,7 +168,7 @@ it('shows the delete button with the number of selected pictures', function () {
 
 it('deletes nothing when the confirmation is cancelled', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -187,7 +184,7 @@ it('deletes nothing when the confirmation is cancelled', function () {
 
 it('deletes the selected picture and refreshes the grid', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -202,7 +199,7 @@ it('deletes the selected picture and refreshes the grid', function () {
 
 it('deletes every picture on the page when selecting all', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -218,7 +215,7 @@ it('deletes every picture on the page when selecting all', function () {
 
 it('clears the selection after a successful delete', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
@@ -234,7 +231,7 @@ it('clears the selection after a successful delete', function () {
 
 it('has no smoke on the administration gallery page', function () {
     $party = Party::factory()->create();
-    Picture::factory()->forParty($party)->count(3)->create();
+    Picture::factory()->for($party)->count(3)->create();
 
     $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
 
