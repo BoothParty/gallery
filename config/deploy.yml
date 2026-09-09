@@ -81,6 +81,7 @@ env:
     # Identifiant du site créé dans Umami, dont le domaine doit être
     # *.boothparty.fr : le hostname sert de dimension « party ».
     UMAMI_SCRIPT_URL: https://umami.boothparty.fr/script.js
+    UMAMI_URL: https://umami.boothparty.fr
     UMAMI_WEBSITE_ID: 00000000-0000-0000-0000-000000000000
     
     ZOHO_REDIRECT_URI: https://boothparty.fr/auth/zoho/callback
@@ -92,6 +93,8 @@ env:
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
     - NOTION_API_TOKEN
+    - UMAMI_USERNAME
+    - UMAMI_PASSWORD
     - ZOHO_CLIENT_ID
     - ZOHO_CLIENT_SECRET
 

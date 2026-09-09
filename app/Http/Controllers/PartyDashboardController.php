@@ -5,16 +5,27 @@ namespace App\Http\Controllers;
 use App\Models\Party;
 use App\Models\Picture;
 use App\Services\AdminDashboardDataService;
+use App\Services\UmamiStats;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PartyDashboardController extends Controller
 {
-    public function show(Party $party, AdminDashboardDataService $adminDashboardDataService): Response
-    {
+    /**
+     * The audience is deferred: it costs a handful of round trips to Umami,
+     * which the page has no reason to wait for.
+     */
+    public function show(
+        Party $party,
+        AdminDashboardDataService $adminDashboardDataService,
+        UmamiStats $umamiStats,
+    ): Response {
         return Inertia::render('dashboard', [
             ...$adminDashboardDataService->sidebarData($party->id),
+            'partyName' => $party->displayTitle(),
+            'analyticsEnabled' => $umamiStats->isConfigured(),
+            'analytics' => Inertia::defer(fn (): ?array => $umamiStats->for($party)),
         ]);
     }
 

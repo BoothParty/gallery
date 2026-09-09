@@ -51,6 +51,11 @@ return [
     'umami' => [
         'script_url' => env('UMAMI_SCRIPT_URL'),
         'website_id' => env('UMAMI_WEBSITE_ID'),
+        'url' => env('UMAMI_URL'),
+        'username' => env('UMAMI_USERNAME'),
+        'password' => env('UMAMI_PASSWORD'),
+        'timeout' => (int) env('UMAMI_TIMEOUT', 5),
+        'cache_ttl' => (int) env('UMAMI_CACHE_TTL', 300),
     ],
 
     'zoho' => [
