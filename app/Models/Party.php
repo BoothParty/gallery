@@ -151,6 +151,16 @@ class Party extends Model
         return 'https://'.$this->publicHost();
     }
 
+    /**
+     * URL the poster's QR code encodes. The marker is what tells a scan of the
+     * printed poster apart from a link an invited guest passed on, the two
+     * being the only ways into a gallery.
+     */
+    public function posterUrl(): string
+    {
+        return $this->publicUrl().'/?s=poster';
+    }
+
     public function getRouteKeyName(): string
     {
         return 'name';

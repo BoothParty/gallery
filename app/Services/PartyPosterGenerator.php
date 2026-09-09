@@ -50,7 +50,7 @@ class PartyPosterGenerator
         $manager = new ImageManager(new Driver);
 
         $poster = $manager->read($this->templatePath());
-        $qrCode = $manager->read($this->qrCode($party->publicUrl()));
+        $qrCode = $manager->read($this->qrCode($party->posterUrl()));
 
         $poster->place(
             $qrCode,
