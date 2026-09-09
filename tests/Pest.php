@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Party;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\BrowserPage;
 use Tests\TestCase;
@@ -48,6 +49,22 @@ pest()->browser()->timeout(30_000);
 function browserPage(Closure $visit): BrowserPage
 {
     return new BrowserPage($visit());
+}
+
+/**
+ * Absolute URL of a page of the given party's gallery, on the host the gallery
+ * is published under.
+ *
+ * The browser plugin rewrites a path to its own 127.0.0.1 origin, which no
+ * longer matches the gallery's subdomain route. An absolute URL is left alone,
+ * and any `*.localhost` name resolves to the loopback without DNS, so the
+ * browser reaches the same test server while the app sees the party's host.
+ */
+function partyUrl(Party $party, string $path = '/'): string
+{
+    $port = parse_url((string) config('app.url'), PHP_URL_PORT);
+
+    return 'http://'.$party->publicHost().($port === null ? '' : ':'.$port).$path;
 }
 
 /*

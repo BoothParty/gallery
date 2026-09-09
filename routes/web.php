@@ -25,7 +25,12 @@ Route::middleware('throttle:10,1')->group(function (): void {
 });
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
 
-Route::prefix('{party}')->name('party.')->group(function () {
+/**
+ * Every gallery is published on its own subdomain: it is the address printed
+ * on the poster, and the dimension Umami tells one party's audience from
+ * another's.
+ */
+Route::domain('{party}.'.config('party.domain'))->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])
         ->middleware(ResolvePartyHost::class)
         ->name('gallery');
@@ -47,14 +52,19 @@ Route::prefix('{party}')->name('party.')->group(function () {
         ->scopeBindings()
         ->middleware(['party.host', 'throttle:party-metadata'])
         ->name('pictures.visibility');
+});
 
-    Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
-        Route::get('/', [PartyDashboardController::class, 'show'])->name('show');
+/**
+ * The party dashboard stays on the main domain, unlike the gallery it manages:
+ * the staff session cookie has no business being sent to a subdomain a room
+ * full of guests is browsing.
+ */
+Route::prefix('{party}/dashboard')->name('party.dashboard.')->middleware('auth')->group(function () {
+    Route::get('/', [PartyDashboardController::class, 'show'])->name('show');
 
-        Route::get('/pictures', [PartyDashboardController::class, 'pictures'])->name('pictures');
-        Route::post('/pictures', [AdminGalleryController::class, 'store'])->name('pictures.store');
-        Route::delete('/pictures', [AdminGalleryController::class, 'bulkDelete'])->name('pictures.bulk-delete');
-    });
+    Route::get('/pictures', [PartyDashboardController::class, 'pictures'])->name('pictures');
+    Route::post('/pictures', [AdminGalleryController::class, 'store'])->name('pictures.store');
+    Route::delete('/pictures', [AdminGalleryController::class, 'bulkDelete'])->name('pictures.bulk-delete');
 });
 
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {

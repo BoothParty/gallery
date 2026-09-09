@@ -9,15 +9,15 @@ it('creates a party with all options provided', function () {
     $user = User::factory()->create();
 
     $this->artisan('party:create', [
-        '--name' => 'Retro Night',
+        '--name' => 'retro-night',
         '--user' => $user->id,
         '--expires-at' => '2030-12-31 23:59:59',
     ])
-        ->expectsOutputToContain('Party "Retro Night" created successfully')
+        ->expectsOutputToContain('Party "retro-night" created successfully')
         ->assertSuccessful();
 
     $this->assertDatabaseHas('parties', [
-        'name' => 'Retro Night',
+        'name' => 'retro-night',
         'user_id' => $user->id,
     ]);
 });
@@ -26,7 +26,7 @@ it('creates a party with all options provided', function () {
 
 it('creates a party without an owner by selecting "No owner"', function () {
     $this->artisan('party:create', [
-        '--name' => 'Anonymous Party',
+        '--name' => 'anonymous-party',
     ])
         ->expectsSearch(
             'Search for an owner',
@@ -35,11 +35,11 @@ it('creates a party without an owner by selecting "No owner"', function () {
             answer: 0,
         )
         ->expectsQuestion('Expiration date', '')
-        ->expectsOutputToContain('Party "Anonymous Party" created successfully')
+        ->expectsOutputToContain('Party "anonymous-party" created successfully')
         ->assertSuccessful();
 
     $this->assertDatabaseHas('parties', [
-        'name' => 'Anonymous Party',
+        'name' => 'anonymous-party',
         'user_id' => null,
     ]);
 });
@@ -50,15 +50,15 @@ it('resolves owner by email via --user option', function () {
     $user = User::factory()->create();
 
     $this->artisan('party:create', [
-        '--name' => 'Email Party',
+        '--name' => 'email-party',
         '--user' => $user->email,
     ])
         ->expectsQuestion('Expiration date', '')
-        ->expectsOutputToContain('Party "Email Party" created successfully')
+        ->expectsOutputToContain('Party "email-party" created successfully')
         ->assertSuccessful();
 
     $this->assertDatabaseHas('parties', [
-        'name' => 'Email Party',
+        'name' => 'email-party',
         'user_id' => $user->id,
     ]);
 });
@@ -69,12 +69,12 @@ it('prompts for party name when --name is not provided', function () {
     $user = User::factory()->create();
 
     $this->artisan('party:create', ['--user' => $user->id])
-        ->expectsQuestion('Party name', 'Prompted Party')
+        ->expectsQuestion('Party name', 'prompted-party')
         ->expectsQuestion('Expiration date', '')
-        ->expectsOutputToContain('Party "Prompted Party" created successfully')
+        ->expectsOutputToContain('Party "prompted-party" created successfully')
         ->assertSuccessful();
 
-    $this->assertDatabaseHas('parties', ['name' => 'Prompted Party']);
+    $this->assertDatabaseHas('parties', ['name' => 'prompted-party']);
 });
 
 // ── Recherche interactive de l'owner ────────────────────────────────────────
@@ -82,7 +82,7 @@ it('prompts for party name when --name is not provided', function () {
 it('finds the owner via the interactive search prompt', function () {
     $user = User::factory()->create(['name' => 'Bob', 'email' => 'bob@example.com']);
 
-    $this->artisan('party:create', ['--name' => 'Search Party'])
+    $this->artisan('party:create', ['--name' => 'search-party'])
         ->expectsSearch(
             'Search for an owner',
             search: 'Bob',
@@ -93,11 +93,11 @@ it('finds the owner via the interactive search prompt', function () {
             answer: $user->id,
         )
         ->expectsQuestion('Expiration date', '')
-        ->expectsOutputToContain('Party "Search Party" created successfully')
+        ->expectsOutputToContain('Party "search-party" created successfully')
         ->assertSuccessful();
 
     $this->assertDatabaseHas('parties', [
-        'name' => 'Search Party',
+        'name' => 'search-party',
         'user_id' => $user->id,
     ]);
 });
@@ -106,18 +106,18 @@ it('finds the owner via the interactive search prompt', function () {
 
 it('fails with an error when the user ID does not exist', function () {
     $this->artisan('party:create', [
-        '--name' => 'Ghost Party',
+        '--name' => 'ghost-party',
         '--user' => 99999,
     ])
         ->expectsOutputToContain('User not found')
         ->assertFailed();
 
-    expect(Party::where('name', 'Ghost Party')->exists())->toBeFalse();
+    expect(Party::where('name', 'ghost-party')->exists())->toBeFalse();
 });
 
 it('fails with an error when the user email does not exist', function () {
     $this->artisan('party:create', [
-        '--name' => 'Ghost Party',
+        '--name' => 'ghost-party',
         '--user' => 'nobody@example.com',
     ])
         ->expectsOutputToContain('User not found')
@@ -128,7 +128,7 @@ it('fails with an error when the user email does not exist', function () {
 
 it('stores the expiration date when provided via option', function () {
     $this->artisan('party:create', [
-        '--name' => 'Timed Party',
+        '--name' => 'timed-party',
         '--expires-at' => '2030-06-15 18:00:00',
     ])
         ->expectsSearch(
@@ -139,7 +139,7 @@ it('stores the expiration date when provided via option', function () {
         )
         ->assertSuccessful();
 
-    $party = Party::where('name', 'Timed Party')->first();
+    $party = Party::where('name', 'timed-party')->first();
 
     expect($party->expire_at->toDateTimeString())->toBe('2030-06-15 18:00:00');
 });
@@ -148,44 +148,44 @@ it('stores the expiration date when provided via option', function () {
 
 it('fails when --expires-at is not a valid date', function () {
     $this->artisan('party:create', [
-        '--name' => 'Bad Date Party',
+        '--name' => 'bad-date-party',
         '--user' => User::factory()->create()->id,
         '--expires-at' => 'not-a-date',
     ])
         ->expectsOutputToContain('The expiration date is not a valid date.')
         ->assertFailed();
 
-    expect(Party::where('name', 'Bad Date Party')->exists())->toBeFalse();
+    expect(Party::where('name', 'bad-date-party')->exists())->toBeFalse();
 });
 
 it('fails when --expires-at is in the past', function () {
     $this->artisan('party:create', [
-        '--name' => 'Past Date Party',
+        '--name' => 'past-date-party',
         '--user' => User::factory()->create()->id,
         '--expires-at' => '2000-01-01 00:00:00',
     ])
         ->expectsOutputToContain('The expiration date must be in the future.')
         ->assertFailed();
 
-    expect(Party::where('name', 'Past Date Party')->exists())->toBeFalse();
+    expect(Party::where('name', 'past-date-party')->exists())->toBeFalse();
 });
 
 it('accepts an empty expiration date interactively', function () {
     $user = User::factory()->create();
 
-    $this->artisan('party:create', ['--name' => 'No Expiry Party', '--user' => $user->id])
+    $this->artisan('party:create', ['--name' => 'no-expiry-party', '--user' => $user->id])
         ->expectsQuestion('Expiration date', '')
         ->assertSuccessful();
 
-    expect(Party::where('name', 'No Expiry Party')->value('expire_at'))->toBeNull();
+    expect(Party::where('name', 'no-expiry-party')->value('expire_at'))->toBeNull();
 });
 
 it('re-prompts with an error when an invalid date is entered interactively', function () {
     $user = User::factory()->create();
 
-    $this->artisan('party:create', ['--name' => 'Retry Party', '--user' => $user->id])
+    $this->artisan('party:create', ['--name' => 'retry-party', '--user' => $user->id])
         ->expectsQuestion('Expiration date', 'not-a-date')
         ->assertFailed();
 
-    expect(Party::where('name', 'Retry Party')->exists())->toBeFalse();
+    expect(Party::where('name', 'retry-party')->exists())->toBeFalse();
 });

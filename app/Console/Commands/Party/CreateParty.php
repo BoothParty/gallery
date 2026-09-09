@@ -37,9 +37,16 @@ class CreateParty extends Command
         // Get party name
         $name = $this->option('name') ?? text(
             label: 'Party name',
-            placeholder: 'My Party',
+            placeholder: 'my-party',
             required: true,
+            validate: ['name' => Party::nameRules()],
         );
+
+        if ($this->option('name') !== null && ! $this->isValidName($name)) {
+            $this->components->error(Party::nameRuleMessage());
+
+            return self::FAILURE;
+        }
 
         // Resolve owner
         $user = $this->resolveUser();
@@ -70,6 +77,15 @@ class CreateParty extends Command
         $this->newLine();
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Whether the given name can be published as a subdomain, the option
+     * bypassing the prompt's own validation.
+     */
+    private function isValidName(string $name): bool
+    {
+        return Validator::make(['name' => $name], ['name' => Party::nameRules()])->passes();
     }
 
     /**

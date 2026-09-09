@@ -12,7 +12,7 @@ beforeEach(function () {
 it('hides the edit button from a plain visitor', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('[data-gallery-hero]')
         ->assertMissing('[data-gallery-edit]')
@@ -22,7 +22,7 @@ it('hides the edit button from a plain visitor', function () {
 it('shows the edit button to whoever opens the tokenised link', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->assertPresent('[data-gallery-edit]')
         ->assertSee('Modifier la galerie')
@@ -32,7 +32,7 @@ it('shows the edit button to whoever opens the tokenised link', function () {
 it('shows no edit button for a wrong token', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token=wrong'));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token=wrong')));
 
     $page->assertMissing('[data-gallery-edit]')
         ->assertNoJavaScriptErrors();
@@ -43,7 +43,7 @@ it('shows no edit button for a wrong token', function () {
 it('saves a new title from the editor', function () {
     $party = Party::factory()->create(['name' => 'noces-de-juin']);
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-gallery-edit]')
         ->type('[data-gallery-editor] input[placeholder="Camille & Antoine"]', 'Camille & Antoine')
@@ -57,7 +57,7 @@ it('saves a new title from the editor', function () {
 it('offers no removal when the party has no cover', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-gallery-edit]')
         ->assertSee('Importer une photo')
@@ -68,7 +68,7 @@ it('offers no removal when the party has no cover', function () {
 it('removes the cover and falls back to the typographic hero', function () {
     $party = Party::factory()->withBanner()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->assertPresent('[data-gallery-banner]')
         ->click('[data-gallery-edit]')
@@ -91,7 +91,7 @@ it('removes the cover and falls back to the typographic hero', function () {
 it('previews an imported cover inside the crop frame', function () {
     $party = Party::factory()->create(['name' => 'noces-de-juin']);
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-gallery-edit]')
         ->assertMissing('[data-cover-frame] img')

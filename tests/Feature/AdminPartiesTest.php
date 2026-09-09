@@ -10,7 +10,7 @@ beforeEach(function () {
 });
 
 it('renders administration parties index with datatable data', function () {
-    $party = Party::factory()->create(['name' => 'My Party']);
+    $party = Party::factory()->create(['name' => 'my-party']);
     $owner = User::factory()->create(['name' => 'Owner User']);
 
     $this->get('/admin/parties')
@@ -34,11 +34,11 @@ it('stores a new party from administration create modal', function () {
     $owner = User::factory()->create();
 
     $this->post('/admin/parties', [
-        'name' => 'Birthday Bash',
+        'name' => 'birthday-bash',
         'user_id' => $owner->id,
     ])->assertRedirect('/admin/parties');
 
-    $party = Party::query()->where('name', 'Birthday Bash')->first();
+    $party = Party::query()->where('name', 'birthday-bash')->first();
 
     expect($party)->not->toBeNull();
     expect($party?->user_id)->toBe($owner->id);
@@ -47,7 +47,7 @@ it('stores a new party from administration create modal', function () {
 it('maps relation labels and exposes count-link metadata in parties datatable', function () {
     $owner = User::factory()->create(['name' => 'Owner Label']);
     $party = Party::factory()->create([
-        'name' => 'Linked Party',
+        'name' => 'linked-party',
         'user_id' => $owner->id,
     ]);
 
@@ -70,7 +70,7 @@ it('maps relation labels and exposes count-link metadata in parties datatable', 
 it('exposes the editable parties to the administration index', function () {
     $owner = User::factory()->create(['name' => 'Current Owner']);
     $party = Party::factory()->create([
-        'name' => 'Editable Party',
+        'name' => 'editable-party',
         'user_id' => $owner->id,
     ]);
 
@@ -79,9 +79,9 @@ it('exposes the editable parties to the administration index', function () {
         ->assertInertia(fn ($page) => $page
             ->component('admin/parties/index')
             ->where('editableParties.0.id', $party->id)
-            ->where('editableParties.0.name', 'Editable Party')
+            ->where('editableParties.0.name', 'editable-party')
             ->where('editableParties.0.user_id', $owner->id)
-            ->where('editableParties.0.route_key', 'Editable Party')
+            ->where('editableParties.0.route_key', 'editable-party')
             ->where('users', fn ($users) => collect($users)
                 ->contains(fn (array $user) => $user['id'] === $owner->id)
             )
@@ -92,29 +92,29 @@ it('updates an existing party from administration', function () {
     $owner = User::factory()->create();
     $newOwner = User::factory()->create();
     $party = Party::factory()->create([
-        'name' => 'Old Party Name',
+        'name' => 'old-party-name',
         'user_id' => $owner->id,
     ]);
 
     $this->put(route('admin.parties.update', $party), [
-        'name' => 'New Party Name',
+        'name' => 'new-party-name',
         'user_id' => $newOwner->id,
     ])->assertRedirect('/admin/parties');
 
     $party->refresh();
 
-    expect($party->name)->toBe('New Party Name');
+    expect($party->name)->toBe('new-party-name');
     expect($party->user_id)->toBe($newOwner->id);
 });
 
 it('stores a party with an expiry date from administration', function () {
     $this->post('/admin/parties', [
-        'name' => 'Expiring Party',
+        'name' => 'expiring-party',
         'user_id' => null,
         'expire_at' => '2030-06-15T16:00:00.000Z',
     ])->assertRedirect('/admin/parties');
 
-    $party = Party::query()->where('name', 'Expiring Party')->first();
+    $party = Party::query()->where('name', 'expiring-party')->first();
 
     expect($party?->expire_at?->toDateTimeString())->toBe('2030-06-15 16:00:00');
 });
@@ -161,11 +161,11 @@ it('exposes a null expiry date when the party never expires', function () {
 
 it('rejects an invalid expiry date from administration', function () {
     $this->post('/admin/parties', [
-        'name' => 'Bad Date Party',
+        'name' => 'bad-date-party',
         'expire_at' => 'not-a-date',
     ])->assertSessionHasErrors('expire_at');
 
-    expect(Party::query()->where('name', 'Bad Date Party')->exists())->toBeFalse();
+    expect(Party::query()->where('name', 'bad-date-party')->exists())->toBeFalse();
 });
 
 it('deletes a party from administration', function () {
@@ -178,25 +178,39 @@ it('deletes a party from administration', function () {
 });
 
 it('rejects creating a party whose name is already taken', function () {
-    Party::factory()->create(['name' => 'Taken Name']);
+    Party::factory()->create(['name' => 'taken-name']);
 
     $this->post('/admin/parties', [
-        'name' => 'Taken Name',
+        'name' => 'taken-name',
     ])->assertSessionHasErrors('name');
 
-    expect(Party::query()->where('name', 'Taken Name')->count())->toBe(1);
+    expect(Party::query()->where('name', 'taken-name')->count())->toBe(1);
+});
+
+/**
+ * The name is the gallery's address, so anything a browser could not resolve
+ * as a subdomain is refused rather than turned into a party nobody can reach.
+ */
+it('rejects a party name that could not be published as a subdomain', function () {
+    $this->post('/admin/parties', ['name' => 'Ma Belle Soirée'])
+        ->assertSessionHasErrors('name');
+
+    $this->post('/admin/parties', ['name' => 'ma-belle-soiree'])
+        ->assertSessionDoesntHaveErrors();
+
+    expect(Party::query()->pluck('name')->all())->toBe(['ma-belle-soiree']);
 });
 
 it('accepts updating a party with its own unchanged name', function () {
-    $party = Party::factory()->create(['name' => 'Unchanged Name']);
+    $party = Party::factory()->create(['name' => 'unchanged-name']);
 
     $this->put(route('admin.parties.update', $party), [
-        'name' => 'Unchanged Name',
+        'name' => 'unchanged-name',
         'user_id' => null,
     ])->assertRedirect('/admin/parties')
         ->assertSessionDoesntHaveErrors();
 
-    expect($party->refresh()->name)->toBe('Unchanged Name');
+    expect($party->refresh()->name)->toBe('unchanged-name');
 });
 
 // ── Event metadata ───────────────────────────────────────────────────────────

@@ -28,7 +28,7 @@ class UpdatePartyRequest extends FormRequest
         $party = $this->route('party');
 
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('parties', 'name')->ignore($party->id)],
+            'name' => ['sometimes', 'required', ...Party::nameRules(), Rule::unique('parties', 'name')->ignore($party->id)],
             'expire_at' => ['sometimes', 'nullable', 'date'],
         ];
     }
@@ -42,6 +42,7 @@ class UpdatePartyRequest extends FormRequest
     {
         return [
             'name.unique' => 'A party already uses this name.',
+            'name.regex' => Party::nameRuleMessage(),
         ];
     }
 }

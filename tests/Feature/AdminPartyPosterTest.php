@@ -60,6 +60,7 @@ it('never goes below the minimum font size', function () {
 
 it('prints the gallery host under the configured party domain', function () {
     config()->set('party.domain', 'example.test');
+    config()->set('app.url', 'https://example.test');
 
     $party = Party::factory()->create(['name' => 'hosted-party']);
 

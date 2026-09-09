@@ -44,7 +44,10 @@ env:
     APP_NAME: BoothParty
     APP_ENV: production
     APP_DEBUG: "false"
-    APP_URL: http://10.117.19.66
+    # Les galeries sont servies sur *.boothparty.fr : APP_URL porte le domaine
+    # et le schéma dont dérivent les liens absolus, l'adresse imprimée sur
+    # l'affiche la première.
+    APP_URL: https://boothparty.fr
 
     LOG_CHANNEL: stderr
     LOG_LEVEL: warning

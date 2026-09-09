@@ -40,12 +40,12 @@ it('round-trips an expiry date entered in the create dialog', function () {
     $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create party')
-        ->fill('#create-party-name', 'Browser Party')
+        ->fill('#create-party-name', 'browser-party')
         ->fill('#create-party-expire-at', '2030-06-15T18:00')
         ->click('Save party')
         ->assertNoJavaScriptErrors();
 
-    expect(Party::query()->where('name', 'Browser Party')->value('expire_at'))->not->toBeNull();
+    expect(Party::query()->where('name', 'browser-party')->value('expire_at'))->not->toBeNull();
 
     openFirstPartyDetails($page->navigate(route('admin.parties.index')))
         ->assertValue('#edit-party-expire-at', '2030-06-15T18:00')
@@ -118,7 +118,7 @@ it('marks the events already turned into a party', function () {
 
 it('prefills the expiry date in the edit dialog', function () {
     Party::factory()->create([
-        'name' => 'Timed Party',
+        'name' => 'timed-party',
         'expire_at' => '2030-06-15 18:00:00',
     ]);
 
@@ -134,7 +134,7 @@ it('prefills the expiry date in the edit dialog', function () {
 
 it('leaves the expiry date untouched when the dialog is saved unchanged', function () {
     $party = Party::factory()->create([
-        'name' => 'Stable Party',
+        'name' => 'stable-party',
         'expire_at' => '2030-06-15 18:00:00',
     ]);
 
@@ -149,7 +149,7 @@ it('leaves the expiry date untouched when the dialog is saved unchanged', functi
 
 it('clears the expiry date from the edit dialog', function () {
     $party = Party::factory()->create([
-        'name' => 'Clearable Party',
+        'name' => 'clearable-party',
         'expire_at' => '2030-06-15 18:00:00',
     ]);
 

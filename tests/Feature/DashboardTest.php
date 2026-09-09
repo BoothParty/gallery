@@ -9,7 +9,7 @@ beforeEach(function () {
 });
 
 it('renders the party dashboard page with sidebar data', function () {
-    $currentParty = Party::factory()->create(['name' => 'Alpha']);
+    $currentParty = Party::factory()->create(['name' => 'alpha']);
 
     $this->get(route('party.dashboard.show', $currentParty))
         ->assertOk()
@@ -18,11 +18,11 @@ it('renders the party dashboard page with sidebar data', function () {
             ->where('currentPartyId', $currentParty->id)
             ->has('parties', 1)
             ->where('parties.0.id', $currentParty->id)
-            ->where('parties.0.name', 'Alpha')
+            ->where('parties.0.name', 'alpha')
             ->where('parties.0.expired', false)
             ->has('searchableParties', 1)
             ->where('searchableParties.0.id', $currentParty->id)
-            ->where('searchableParties.0.name', 'Alpha')
+            ->where('searchableParties.0.name', 'alpha')
             ->where('searchableParties.0.expired', false)
         );
 });

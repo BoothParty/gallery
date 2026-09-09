@@ -13,13 +13,33 @@ beforeEach(function () {
 // ── Route model binding ───────────────────────────────────────────────────────
 
 it('returns 404 for a non-existent party', function () {
-    $this->get('/unknown-party')->assertNotFound();
+    $this->get(route('party.gallery', 'unknown-party'))->assertNotFound();
+});
+
+// ── Publication on a subdomain ────────────────────────────────────────────────
+
+/**
+ * The gallery is addressed by its host, not by a path segment: that address is
+ * what the poster prints, and what tells one party's audience from another's in
+ * the analytics.
+ */
+it('serves the gallery on the party subdomain only', function () {
+    $party = Party::factory()->create();
+
+    $this->get(route('party.gallery', $party))->assertOk();
+    $this->get('http://'.config('party.domain').'/'.$party->name)->assertNotFound();
+});
+
+it('keeps the party dashboard on the main domain', function () {
+    $party = Party::factory()->create();
+
+    expect(route('party.dashboard.show', $party))->not->toContain($party->publicHost());
 });
 
 // ── Inertia rendering ─────────────────────────────────────────────────────────
 
 it('renders the gallery page with party data', function () {
-    $party = Party::factory()->create(['name' => 'Test Party']);
+    $party = Party::factory()->create(['name' => 'test-party']);
 
     $this->get(route('party.gallery', $party))
         ->assertOk()
@@ -27,7 +47,7 @@ it('renders the gallery page with party data', function () {
             ->component('party/gallery')
             ->has('party')
             ->where('party.id', $party->id)
-            ->where('party.name', 'Test Party')
+            ->where('party.name', 'test-party')
         );
 });
 

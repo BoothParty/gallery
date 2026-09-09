@@ -17,7 +17,7 @@ it('renders the gallery hero with the event metadata', function () {
         'description' => 'Samedi 12 septembre · Domaine des Ormes',
     ]);
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('[data-gallery-hero]')
         ->assertSee('Camille & Antoine')
@@ -26,18 +26,18 @@ it('renders the gallery hero with the event metadata', function () {
 });
 
 it('falls back to the party name when no display name is set', function () {
-    $party = Party::factory()->create(['name' => 'Mariage de Paul']);
+    $party = Party::factory()->create(['name' => 'mariage-de-paul']);
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
-    $page->assertSeeIn('[data-gallery-hero]', 'Mariage de Paul')
+    $page->assertSeeIn('[data-gallery-hero]', 'mariage-de-paul')
         ->assertNoJavaScriptErrors();
 });
 
 it('renders the typographic hero when the party has no banner', function () {
     $party = Party::factory()->create(['display_name' => 'Camille & Antoine']);
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('[data-gallery-hero]')
         ->assertMissing('[data-gallery-banner]')
@@ -49,7 +49,7 @@ it('renders the typographic hero when the party has no banner', function () {
 it('renders the banner image when the party has one', function () {
     $party = Party::factory()->withBanner()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('[data-gallery-banner]')
         ->assertAttribute('[data-gallery-banner]', 'src', $party->bannerUrl())
@@ -62,7 +62,7 @@ it('displays the event title in the page title', function () {
         'display_name' => 'Soirée Anniversaire',
     ]);
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertTitleContains('Soirée Anniversaire')
         ->assertNoJavaScriptErrors();
@@ -72,7 +72,7 @@ it('displays the total picture count in the sticky bar, not the loaded batch siz
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSeeIn('[data-gallery-count]', '30')
         ->assertNoJavaScriptErrors();
@@ -83,7 +83,7 @@ it('displays the total picture count in the sticky bar, not the loaded batch siz
 it('shows empty state message when party has no pictures', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSeeIn('[data-gallery-notice]', 'La galerie se remplit bientôt')
         ->assertSeeIn('[data-gallery-notice]', 'Aucune photo pour le moment')
@@ -93,7 +93,7 @@ it('shows empty state message when party has no pictures', function () {
 it('hides the sticky bar when the party has no pictures', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertMissing('[data-gallery-count]')
         ->assertDontSee('Sélectionner')
@@ -106,7 +106,7 @@ it('displays pictures when the party has some', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertMissing('[data-gallery-notice]')
         ->assertCount('#gallery img', 3)
@@ -117,7 +117,7 @@ it('lazy loads pictures below the first row', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(10)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img[loading="eager"]', 6)
         ->assertCount('#gallery img[loading="lazy"]', 4)
@@ -129,7 +129,7 @@ it('shows a placeholder instead of the original when the thumbnail is missing', 
     $party = Party::factory()->create();
     Picture::factory()->for($party)->withoutThumbnail()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery [data-picture-placeholder]', 1)
         ->assertCount('#gallery img', 0)
@@ -140,7 +140,7 @@ it('links each tile to the full resolution picture for the lightbox', function (
     $party = Party::factory()->create();
     Picture::factory()->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertAttribute('#gallery a', 'data-pswp-width', '1600')
         ->assertAttribute('#gallery a', 'data-pswp-height', '1200')
@@ -151,7 +151,7 @@ it('renders a tile for a picture stored without dimensions', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->withoutDimensions()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('#gallery img')
         ->assertNoJavaScriptErrors();
@@ -161,7 +161,7 @@ it('shows the end of gallery marker once every picture is loaded', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSee('Fin de la galerie')
         ->assertNoJavaScriptErrors();
@@ -173,7 +173,7 @@ it('shows hidden message for an expired party', function () {
     $party = Party::factory()->expired()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSeeIn('[data-gallery-notice]', 'Cette galerie a expiré')
         ->assertSeeIn('[data-gallery-notice]', 'Les photos sont restées en ligne')
@@ -183,7 +183,7 @@ it('shows hidden message for an expired party', function () {
 it('keeps the banner hero for an expired party', function () {
     $party = Party::factory()->expired()->withBanner()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('[data-gallery-banner]')
         ->assertNoJavaScriptErrors();
@@ -193,7 +193,7 @@ it('hides the sticky bar for an expired party', function () {
     $party = Party::factory()->expired()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertMissing('[data-gallery-count]')
         ->assertNoJavaScriptErrors();
@@ -203,7 +203,7 @@ it('does not show pictures for an expired party', function () {
     $party = Party::factory()->expired()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 0)
         ->assertNoJavaScriptErrors();
@@ -215,7 +215,7 @@ it('no longer displays pagination controls', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(5)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertDontSee('Page suivante')
         ->assertDontSee('Page précédente')
@@ -226,7 +226,7 @@ it('loads only the first batch of pictures on arrival', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 24)
         ->assertNoJavaScriptErrors();
@@ -236,7 +236,7 @@ it('loads a second batch of pictures when scrolling to the bottom', function () 
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 24)
         ->script('window.scrollTo(0, document.body.scrollHeight)');
@@ -250,7 +250,7 @@ it('shows the loading skeletons while the next batch is fetched', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 24)
         ->assertNotPresent('[data-gallery-skeletons]')
@@ -269,7 +269,7 @@ it('shows the loading skeletons while the next batch is fetched', function () {
 it('no longer displays the old navigation bar', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertDontSee('Accueil')
         ->assertNoJavaScriptErrors();
@@ -280,7 +280,7 @@ it('no longer displays the old navigation bar', function () {
 it('displays the footer call to action', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSee('Louer un photobooth')
         ->assertNoJavaScriptErrors();
@@ -289,7 +289,7 @@ it('displays the footer call to action', function () {
 it('displays the footer legal links', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSee('Mentions légales')
         ->assertSee('Confidentialité')
@@ -299,7 +299,7 @@ it('displays the footer legal links', function () {
 it('displays the footer social links', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('footer a[aria-label="Instagram"]')
         ->assertPresent('footer a[aria-label="Facebook"]')
@@ -313,7 +313,7 @@ it('reveals the selection controls when entering select mode', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->assertSee('Tout sélectionner')
@@ -326,7 +326,7 @@ it('counts a picture picked in select mode', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('#gallery a:first-child')
@@ -339,7 +339,7 @@ it('selects every loaded picture at once', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('Tout sélectionner')
@@ -353,7 +353,7 @@ it('clears the selection when cancelling', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('Tout sélectionner')
@@ -367,7 +367,7 @@ it('does not open the lightbox while in select mode', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('#gallery a:first-child')
@@ -379,7 +379,7 @@ it('posts the selection to the download route', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('Tout sélectionner')
@@ -395,7 +395,7 @@ it('refuses to submit a selection above the cap', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('Tout sélectionner')
@@ -410,7 +410,7 @@ it('keeps the current selection when a new batch arrives while selecting', funct
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('#gallery a:first-child')
@@ -428,7 +428,7 @@ it('selects all 30 pictures, not just the first batch, after a new batch arrives
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 24)
         ->script('window.scrollTo(0, document.body.scrollHeight)');
@@ -445,7 +445,7 @@ it('still opens the lightbox correctly after a new batch arrives', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 24)
         ->script('window.scrollTo(0, document.body.scrollHeight)');
@@ -463,7 +463,7 @@ it('has no smoke on the gallery page', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertNoSmoke();
 });
@@ -507,7 +507,7 @@ it('shares the selection natively when the browser supports it', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubWebShare($page);
 
@@ -522,7 +522,7 @@ it('keeps the download label while sharing', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubWebShare($page);
 
@@ -536,7 +536,7 @@ it('shows the download progress while the files are fetched', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubWebShare($page, 'resolve', 1500);
 
@@ -552,7 +552,7 @@ it('keeps the selection usable when the share sheet is dismissed', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubWebShare($page, 'reject');
 
@@ -568,7 +568,7 @@ it('falls back to the zip form when the browser cannot share files', function ()
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('Sélectionner')
         ->click('Tout sélectionner')
@@ -582,7 +582,7 @@ it('opens the lightbox on a picture', function () {
     $party = Party::factory()->create();
     Picture::factory()->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertMissing('.pswp--open')
         ->click('#gallery a')

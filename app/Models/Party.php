@@ -95,6 +95,30 @@ class Party extends Model
     }
 
     /**
+     * Validation the name carries because it is published as a subdomain: one
+     * DNS label, so lowercase letters, digits and inner hyphens only, and 63
+     * characters at most.
+     *
+     * The gallery is addressed by this name; a value a browser cannot resolve
+     * would be a party nobody can reach.
+     *
+     * @return list<string>
+     */
+    public static function nameRules(): array
+    {
+        return ['string', 'max:63', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'];
+    }
+
+    /**
+     * The message the name rules deserve, none of them saying by themselves
+     * that the name is an address.
+     */
+    public static function nameRuleMessage(): string
+    {
+        return 'The party name is published as a subdomain: lowercase letters, digits and hyphens only.';
+    }
+
+    /**
      * Title the gallery is published under, the name serving as a fallback for
      * a party whose host never set a display name.
      */
@@ -145,10 +169,16 @@ class Party extends Model
 
     /**
      * Absolute URL of the party's gallery, as encoded in the poster QR code.
+     *
+     * The scheme follows the application's own: a local install serves its
+     * galleries over http, and a link the host cannot open is worse than an
+     * ugly one.
      */
     public function publicUrl(): string
     {
-        return 'https://'.$this->publicHost();
+        $scheme = str_starts_with((string) config('app.url'), 'https://') ? 'https' : 'http';
+
+        return $scheme.'://'.$this->publicHost();
     }
 
     /**
