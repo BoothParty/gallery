@@ -20,7 +20,11 @@ class PartyFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->words(3, true),
+            /*
+             * A slug rather than words: the name is published as a subdomain,
+             * so a space would make the gallery unreachable.
+             */
+            'name' => fake()->unique()->slug(2),
             'display_name' => null,
             'description' => null,
             'banner_path' => null,

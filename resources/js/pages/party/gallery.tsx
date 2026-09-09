@@ -160,7 +160,7 @@ export default function Gallery({
             setMaskEdits((current) => ({ ...current, [id]: hidden }));
 
             router.patch(
-                `/${encodeURIComponent(party.name)}/pictures/${id}/visibility`,
+                `/pictures/${id}/visibility`,
                 { hidden },
                 {
                     preserveScroll: true,
@@ -181,7 +181,7 @@ export default function Gallery({
                 },
             );
         },
-        [flash, party.name],
+        [flash],
     );
 
     const shareMode = photoShare.supported && !hidePictures;
@@ -235,10 +235,10 @@ export default function Gallery({
         photoShare.share(
             selection.selectedIds.map((id) => ({
                 id,
-                url: `/${encodeURIComponent(party.name)}/pictures/${id}`,
+                url: `/pictures/${id}`,
             })),
         );
-    }, [flash, maxDownloadPictures, party.name, photoShare, selection.count, selection.selectedIds]);
+    }, [flash, maxDownloadPictures, photoShare, selection.count, selection.selectedIds]);
 
     const onEnterSelect = useCallback(() => {
         photoShare.refreshSupport();
@@ -340,7 +340,7 @@ export default function Gallery({
                 count={selection.count}
                 stack={stack}
                 selectedIds={selection.selectedIds}
-                action={`/${encodeURIComponent(party.name)}/download`}
+                action="/download"
                 csrfToken={csrfToken}
                 mode={shareMode ? 'share' : 'zip'}
                 shareStatus={photoShare.status}
@@ -353,7 +353,6 @@ export default function Gallery({
                 <GalleryEditor
                     open={editorOpen}
                     onClose={() => setEditorOpen(false)}
-                    partyName={party.name}
                     title={party.display_name ?? ''}
                     subtitle={party.description}
                     bannerUrl={party.banner_url}

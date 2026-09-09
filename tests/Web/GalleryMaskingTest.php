@@ -13,7 +13,7 @@ it('shows no masking control to a plain visitor', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('#gallery a[data-id]')
         ->assertMissing('[data-hide-button]')
@@ -24,7 +24,7 @@ it('masks a picture from the grid and marks the tile', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-hide-button="'.$picture->id.'"]')
         ->assertPresent('[data-picture-hidden]')
@@ -39,7 +39,7 @@ it('puts a masked picture back online', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->hidden()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->assertPresent('[data-picture-hidden]')
         ->click('[data-hide-button="'.$picture->id.'"]')
@@ -55,7 +55,7 @@ it('does not open the lightbox when masking a picture', function () {
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-hide-button="'.$picture->id.'"]')
         ->assertPresent('[data-picture-hidden]')
@@ -69,7 +69,7 @@ it('drops a masked picture from a guests open gallery on its own', function () {
     $party = Party::factory()->create();
     $pictures = Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 3);
 
@@ -85,7 +85,7 @@ it('brings a picture back to a guests open gallery when it is unmasked', functio
     $picture = Picture::factory()->for($party)->hidden()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 2);
 
@@ -99,7 +99,7 @@ it('still announces a new picture to the host after they masked one', function (
     $party = Party::factory()->create();
     $picture = Picture::factory()->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-hide-button="'.$picture->id.'"]')
         ->assertPresent('[data-picture-hidden]');
@@ -128,7 +128,7 @@ it('keeps the loaded grid in place when a picture is masked', function () {
     $party = Party::factory()->create();
     $pictures = Picture::factory()->count(30)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+    $page = browserPage(fn () => visit(partyUrl($party, '/?token='.$party->host_token)));
 
     $page->click('[data-hide-button="'.$pictures->last()->id.'"]')
         ->assertPresent('[data-picture-hidden]')

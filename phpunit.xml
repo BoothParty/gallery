@@ -36,5 +36,8 @@
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="NOTION_API_TOKEN" value=""/>
         <env name="PARTY_SOURCE_STUB" value="true"/>
+        <!-- Les galeries vivent sur un sous-domaine ; `*.localhost` résout sur
+             la boucle locale sans DNS, ce dont le navigateur des tests a besoin. -->
+        <env name="PARTY_DOMAIN" value="localhost"/>
     </php>
 </phpunit>

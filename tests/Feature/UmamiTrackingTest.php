@@ -47,6 +47,7 @@ it('loads nothing while umami is unconfigured', function () {
 
 it('marks the poster url so a scan is told apart from a shared link', function () {
     config()->set('party.domain', 'example.test');
+    config()->set('app.url', 'https://example.test');
 
     expect(Party::factory()->create(['name' => 'scanned'])->posterUrl())
         ->toBe('https://scanned.example.test/?s=poster');

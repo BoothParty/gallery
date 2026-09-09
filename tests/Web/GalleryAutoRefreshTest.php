@@ -13,7 +13,7 @@ it('shows a picture that arrives after the page loaded', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertCount('#gallery img', 2);
 
@@ -27,7 +27,7 @@ it('shows a picture that arrives after the page loaded', function () {
 it('fills an empty gallery on its own', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertPresent('[data-gallery-notice]');
 
@@ -42,7 +42,7 @@ it('offers a pill instead of moving the grid while selecting', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('[data-gallery-select]');
 
@@ -57,7 +57,7 @@ it('refreshes and hides the pill when it is tapped', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->click('[data-gallery-select]');
 
@@ -73,7 +73,7 @@ it('refreshes and hides the pill when it is tapped', function () {
 it('never polls an expired gallery', function () {
     $party = Party::factory()->expired()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSeeIn('[data-gallery-notice]', 'Cette galerie a expiré');
 
@@ -88,7 +88,7 @@ it('never polls an expired gallery', function () {
 it('tells an empty gallery to stay open rather than to reload', function () {
     $party = Party::factory()->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     $page->assertSeeIn('[data-gallery-notice]', 'gardez cette page ouverte')
         ->assertDontSee('rafraîchissez la page')

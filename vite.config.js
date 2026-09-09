@@ -13,6 +13,14 @@ export default defineConfig({
         react(),
     ],
     server: {
+        /*
+         * Les galeries sont servies depuis leur propre sous-domaine
+         * (ma-soiree.localhost) : sans ces origines autorisées, le navigateur
+         * refuse les modules que le serveur de dev livre sur localhost:5173.
+         */
+        cors: {
+            origin: /^https?:\/\/(([a-z0-9-]+\.)*localhost|127\.0\.0\.1|([a-z0-9-]+\.)*[a-z0-9-]+\.test)(:\d+)?$/,
+        },
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },

@@ -47,7 +47,7 @@ it('tracks a picture opened in the lightbox', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubUmami($page);
 
@@ -60,7 +60,7 @@ it('tracks a zip download with the size of the selection', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubUmami($page);
 
@@ -77,7 +77,7 @@ it('tracks nothing when the selection is refused for being too large', function 
     $party = Party::factory()->create(['display_name' => 'Galerie sans événement']);
     Picture::factory()->count(3)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubUmami($page);
 
@@ -94,7 +94,7 @@ it('tracks a native share with the size of the selection', function () {
     $party = Party::factory()->create();
     Picture::factory()->count(2)->for($party)->create();
 
-    $page = browserPage(fn () => visit(route('party.gallery', $party)));
+    $page = browserPage(fn () => visit(partyUrl($party)));
 
     stubUmami($page, withWebShare: true);
 

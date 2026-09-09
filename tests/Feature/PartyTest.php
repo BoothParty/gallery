@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Storage;
 // ── Creation & persistence ──────────────────────────────────────────────────
 
 it('can be created with only a name', function () {
-    $party = Party::factory()->create(['name' => 'My Party']);
+    $party = Party::factory()->create(['name' => 'my-party']);
 
     expect($party->exists)->toBeTrue()
-        ->and($party->name)->toBe('My Party')
+        ->and($party->name)->toBe('my-party')
         ->and($party->user_id)->toBeNull()
         ->and($party->expire_at)->toBeNull();
 });
@@ -21,13 +21,13 @@ it('persists all fillable attributes', function () {
     $expiresAt = now()->addWeek()->startOfMinute();
 
     $party = Party::factory()->create([
-        'name' => 'Booth Night',
+        'name' => 'booth-night',
         'user_id' => $user->id,
         'expire_at' => $expiresAt,
     ]);
 
     expect($party->fresh())
-        ->name->toBe('Booth Night')
+        ->name->toBe('booth-night')
         ->user_id->toBe($user->id)
         ->expire_at->toEqual($expiresAt);
 });
@@ -218,10 +218,23 @@ it('keeps a host token that was set explicitly', function () {
 });
 
 it('composes the host edit url from the public url and the token', function () {
+    config()->set('app.url', 'https://boothparty.test');
+
     $party = Party::factory()->create(['name' => 'noces']);
 
     expect($party->hostEditUrl())
         ->toBe('https://noces.'.config('party.domain').'/?token='.$party->host_token);
+});
+
+/**
+ * A local install serves its galleries over http, and a link the host cannot
+ * open is worse than an ugly one.
+ */
+it('follows the application scheme rather than forcing https', function () {
+    config()->set('app.url', 'http://localhost');
+
+    expect(Party::factory()->create(['name' => 'noces'])->publicUrl())
+        ->toBe('http://noces.'.config('party.domain'));
 });
 
 // ── Banner framing ──────────────────────────────────────────────────────────

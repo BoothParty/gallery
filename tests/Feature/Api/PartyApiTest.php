@@ -17,13 +17,13 @@ it('rejects unauthenticated requests on show', function () {
 });
 
 it('rejects unauthenticated requests on store', function () {
-    $this->postJson('/api/parties', ['name' => 'Test'])->assertUnauthorized();
+    $this->postJson('/api/parties', ['name' => 'test'])->assertUnauthorized();
 });
 
 it('rejects unauthenticated requests on update', function () {
     $party = Party::factory()->create();
 
-    $this->putJson(route('parties.show', $party), ['name' => 'Updated'])->assertUnauthorized();
+    $this->putJson(route('parties.show', $party), ['name' => 'updated'])->assertUnauthorized();
 });
 
 it('rejects unauthenticated requests on destroy', function () {
@@ -60,12 +60,12 @@ it('returns an empty list when no parties exist', function () {
 
 it('returns a single party', function () {
     Sanctum::actingAs(User::factory()->create());
-    $party = Party::factory()->create(['name' => 'Gala Night']);
+    $party = Party::factory()->create(['name' => 'gala-night']);
 
     $this->getJson(route('parties.show', $party))
         ->assertOk()
         ->assertJsonPath('data.id', $party->id)
-        ->assertJsonPath('data.name', 'Gala Night');
+        ->assertJsonPath('data.name', 'gala-night');
 });
 
 it('returns 404 for a non-existent party', function () {
@@ -80,19 +80,19 @@ it('creates a party with valid data', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
 
-    $this->postJson('/api/parties', ['name' => 'New Party'])
+    $this->postJson('/api/parties', ['name' => 'new-party'])
         ->assertCreated()
-        ->assertJsonPath('data.name', 'New Party')
+        ->assertJsonPath('data.name', 'new-party')
         ->assertJsonPath('data.user_id', $user->id);
 
-    $this->assertDatabaseHas('parties', ['name' => 'New Party', 'user_id' => $user->id]);
+    $this->assertDatabaseHas('parties', ['name' => 'new-party', 'user_id' => $user->id]);
 });
 
 it('creates a party with an expiry date', function () {
     Sanctum::actingAs(User::factory()->create());
     $expireAt = now()->addWeek()->startOfMinute()->toIso8601String();
 
-    $this->postJson('/api/parties', ['name' => 'Timed Party', 'expire_at' => $expireAt])
+    $this->postJson('/api/parties', ['name' => 'timed-party', 'expire_at' => $expireAt])
         ->assertCreated()
         ->assertJsonPath('data.expire_at', $expireAt);
 });
@@ -101,7 +101,7 @@ it('assigns the authenticated user as owner on creation', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
 
-    $response = $this->postJson('/api/parties', ['name' => 'Owned Party']);
+    $response = $this->postJson('/api/parties', ['name' => 'owned-party']);
 
     $response->assertCreated();
     $this->assertDatabaseHas('parties', ['id' => $response->json('data.id'), 'user_id' => $user->id]);
@@ -128,7 +128,7 @@ it('rejects store when name exceeds 255 characters', function () {
 it('rejects store when expire_at is not a valid date', function () {
     Sanctum::actingAs(User::factory()->create());
 
-    $this->postJson('/api/parties', ['name' => 'Party', 'expire_at' => 'not-a-date'])
+    $this->postJson('/api/parties', ['name' => 'party', 'expire_at' => 'not-a-date'])
         ->assertUnprocessable()
         ->assertJsonValidationErrorFor('expire_at');
 });
@@ -136,7 +136,7 @@ it('rejects store when expire_at is not a valid date', function () {
 it('accepts store when expire_at is null', function () {
     Sanctum::actingAs(User::factory()->create());
 
-    $this->postJson('/api/parties', ['name' => 'No Expiry', 'expire_at' => null])
+    $this->postJson('/api/parties', ['name' => 'no-expiry', 'expire_at' => null])
         ->assertCreated()
         ->assertJsonPath('data.expire_at', null);
 });
@@ -145,30 +145,30 @@ it('accepts store when expire_at is null', function () {
 
 it('updates a party with valid data', function () {
     Sanctum::actingAs(User::factory()->create());
-    $party = Party::factory()->create(['name' => 'Old Name']);
+    $party = Party::factory()->create(['name' => 'old-name']);
 
-    $this->putJson(route('parties.show', $party), ['name' => 'New Name'])
+    $this->putJson(route('parties.show', $party), ['name' => 'new-name'])
         ->assertOk()
-        ->assertJsonPath('data.name', 'New Name');
+        ->assertJsonPath('data.name', 'new-name');
 
-    $this->assertDatabaseHas('parties', ['id' => $party->id, 'name' => 'New Name']);
+    $this->assertDatabaseHas('parties', ['id' => $party->id, 'name' => 'new-name']);
 });
 
 it('updates only the provided fields (partial update)', function () {
     Sanctum::actingAs(User::factory()->create());
     $expireAt = now()->addMonth()->startOfMinute();
-    $party = Party::factory()->expiresAt($expireAt)->create(['name' => 'Keep Me']);
+    $party = Party::factory()->expiresAt($expireAt)->create(['name' => 'keep-me']);
 
-    $this->patchJson(route('parties.show', $party), ['name' => 'Changed'])
+    $this->patchJson(route('parties.show', $party), ['name' => 'changed'])
         ->assertOk()
-        ->assertJsonPath('data.name', 'Changed')
+        ->assertJsonPath('data.name', 'changed')
         ->assertJsonPath('data.expire_at', $expireAt->toIso8601String());
 });
 
 it('returns 404 when updating a non-existent party', function () {
     Sanctum::actingAs(User::factory()->create());
 
-    $this->putJson('/api/unknown-party', ['name' => 'Ghost'])->assertNotFound();
+    $this->putJson('/api/unknown-party', ['name' => 'ghost'])->assertNotFound();
 });
 
 // ── Update – Validation ──────────────────────────────────────────────────────

@@ -13,14 +13,14 @@ beforeEach(function () {
 });
 
 it('renders administration gallery for a party', function () {
-    $party = Party::factory()->create(['name' => 'My Party']);
+    $party = Party::factory()->create(['name' => 'my-party']);
 
     $this->get(route('party.dashboard.pictures', $party))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('admin/gallery/index')
             ->where('party.id', $party->id)
-            ->where('party.name', 'My Party')
+            ->where('party.name', 'my-party')
             ->has('pictures.data')
             ->where('pictures.total', 0)
         );

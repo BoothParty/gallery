@@ -10,7 +10,6 @@ const SUBTITLE_LIMIT = 90;
 interface GalleryEditorProps {
     open: boolean;
     onClose: () => void;
-    partyName: string;
     title: string;
     subtitle: string | null;
     bannerUrl: string | null;
@@ -21,7 +20,6 @@ interface GalleryEditorProps {
 export default function GalleryEditor({
     open,
     onClose,
-    partyName,
     title,
     subtitle,
     bannerUrl,
@@ -116,7 +114,7 @@ export default function GalleryEditor({
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        form.post(`/${encodeURIComponent(partyName)}/metadata`, {
+        form.post('/metadata', {
             preserveScroll: true,
             onSuccess: () => {
                 onSaved();

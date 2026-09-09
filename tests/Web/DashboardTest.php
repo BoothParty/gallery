@@ -10,9 +10,9 @@ beforeEach(function () {
 });
 
 it('can search parties in the switcher including expired ones', function () {
-    $currentParty = Party::factory()->create(['name' => 'Alpha Party']);
-    Party::factory()->create(['name' => 'Beta Party']);
-    $expiredParty = Party::factory()->expired()->create(['name' => 'Zeta Expired']);
+    $currentParty = Party::factory()->create(['name' => 'alpha-party']);
+    Party::factory()->create(['name' => 'beta-party']);
+    $expiredParty = Party::factory()->expired()->create(['name' => 'zeta-expired']);
 
     $page = browserPage(fn () => visit(route('party.dashboard.show', $currentParty)));
 
@@ -22,7 +22,7 @@ it('can search parties in the switcher including expired ones', function () {
         ->fill('input[aria-label="Search parties"]', 'Zeta')
         ->assertSee($expiredParty->name)
         ->assertSee('Expired')
-        ->assertDontSee('Beta Party')
+        ->assertDontSee('beta-party')
         ->assertNoJavaScriptErrors();
 });
 
