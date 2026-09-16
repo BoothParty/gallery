@@ -404,7 +404,7 @@ jobs:
     # registre au lieu de la reconstruire sur le poste qui déploie.
     if: github.ref == 'refs/heads/main'
     needs: [lint, tests-unit, tests-feature, tests-web]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     permissions:
       contents: read
@@ -429,7 +429,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64
+          platforms: linux/arm64
           tags: ghcr.io/boothparty/gallery:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
