@@ -142,3 +142,29 @@ accessories:
     # hôte créé par Kamal appartient à root → "Permission denied" au démarrage.
     volumes:
       - boothparty_gallery_s3_data:/data
+      
+  umami-db:
+    image: postgres:15.6
+    host: 10.117.19.66
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_DB: umami
+        POSTGRES_USER: umami
+        POSTGRES_PASSWORD: umami
+    directories:
+      - data:/var/lib/postgresql/data
+  umami:
+    image: docker.umami.is/umami-software/umami:postgresql-latest
+    host: 10.117.19.66
+    env:
+      clear:
+        DATABASE_URL: postgresql://umami:umami@boothparty-gallery-umami-db:5432/umami
+      secret:
+        - APP_SECRET
+    proxy:
+      host: umami.boothparty.fr
+      app_port: 3000
+      ssl: true
+      healthcheck:
+        path: /api/heartbeat

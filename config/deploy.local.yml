@@ -30,3 +30,7 @@ accessories:
     proxy:
       host: s3.boothparty.test
       ssl: false
+  umami:
+    proxy:
+      host: umami.boothparty.test
+      ssl: false
