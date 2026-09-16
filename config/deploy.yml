@@ -4,14 +4,14 @@ image: boothparty/gallery
 servers:
   web:
     hosts:
-      - 10.117.19.66
+      - 141.145.198.30
     env:
       clear:
         # Un seul rôle joue les migrations (cf. docker/entrypoint.sh).
         RUN_MIGRATIONS: "true"
   job:
     hosts:
-      - 10.117.19.66
+      - 141.145.198.30
     cmd: php artisan queue:work --tries=3 --max-time=3600
     options:
       # L'image FrankenPHP embarque un HEALTHCHECK sur le port admin de Caddy,
@@ -19,7 +19,9 @@ servers:
       no-healthcheck: true
 
 proxy:
+  host: boothparty.fr
   app_port: 80
+  ssl: true
   healthcheck:
     path: /up
     interval: 3
@@ -30,21 +32,23 @@ deploy_timeout: 120
 
 registry:
   server: ghcr.io
-  # Compte GitHub (pas l'organisation) dont le PAT a write:packages sur BoothParty.
   username: BoothParty
   password:
     - KAMAL_REGISTRY_PASSWORD
 
 builder:
-  arch:
-    - amd64
+  arch: arm64
+  remote: ssh://ubuntu@141.145.198.30
+
+ssh:
+  user: ubuntu
 
 env:
   clear:
     APP_NAME: BoothParty
     APP_ENV: production
     APP_DEBUG: "false"
-    APP_URL: http://10.117.19.66
+    APP_URL: https://boothparty.fr
 
     LOG_CHANNEL: stderr
     LOG_LEVEL: warning
@@ -94,6 +98,8 @@ env:
     - NOTION_API_TOKEN
     - ZOHO_CLIENT_ID
     - ZOHO_CLIENT_SECRET
+    - UMAMI_USERNAME
+    - UMAMI_PASSWORD
 
 aliases:
   shell: app exec --interactive --reuse "bash"
@@ -104,8 +110,8 @@ asset_path: /app/public/build
 accessories:
   db:
     image: mysql:9.7.2
-    host: 10.117.19.66
-    port: "127.0.0.1:3306:3306"
+    host: 141.145.198.30
+    port: "127.0.0.1:13306:3306"
     env:
       clear:
         MYSQL_DATABASE: boothparty
@@ -117,7 +123,7 @@ accessories:
       - data:/var/lib/mysql
   s3:
     image: rustfs/rustfs:latest
-    host: 10.117.19.66
+    host: 141.145.198.30
     # Le port 9000 n'est plus publié : le stockage n'est joignable que par le
     # proxy, et seulement par les URL signées qu'émet l'application. La console
     # d'administration reste sur la loopback, via un tunnel SSH.
@@ -150,7 +156,7 @@ accessories:
       
   umami-db:
     image: postgres:15.6
-    host: 10.117.19.66
+    host: 141.145.198.30
     port: "127.0.0.1:5432:5432"
     env:
       clear:
@@ -161,7 +167,7 @@ accessories:
       - data:/var/lib/postgresql/data
   umami:
     image: docker.umami.is/umami-software/umami:postgresql-latest
-    host: 10.117.19.66
+    host: 141.145.198.30
     env:
       clear:
         DATABASE_URL: postgresql://umami:umami@boothparty-gallery-umami-db:5432/umami
