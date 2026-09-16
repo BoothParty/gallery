@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
+import track from '@/lib/analytics';
+
 export type ShareStatus = 'idle' | 'preparing' | 'ready' | 'sharing';
 
 export interface ShareProgress {
@@ -74,6 +76,8 @@ export default function usePhotoShare(onError: (message: string) => void): Photo
 
         try {
             await navigator.share({ files: filesRef.current });
+
+            track('share', { count: filesRef.current.length });
 
             forget();
             setStatus('idle');

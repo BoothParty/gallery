@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import 'photoswipe/style.css';
 
+import track from '@/lib/analytics';
+
 /**
  * Initialize a PhotoSwipe lightbox on the given gallery selector.
  * Includes a custom download button in the lightbox UI.
@@ -49,7 +51,10 @@ export default function usePhotoSwipe(gallerySelector: string, enabled: boolean 
             });
         });
 
-        lightbox.on('beforeOpen', () => setOpen(true));
+        lightbox.on('beforeOpen', () => {
+            setOpen(true);
+            track('photo_open');
+        });
         lightbox.on('close', () => setOpen(false));
 
         lightbox.init();

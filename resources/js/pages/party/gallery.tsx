@@ -15,6 +15,7 @@ import usePhotoSelection from '@/hooks/use-photo-selection';
 import usePhotoShare from '@/hooks/use-photo-share';
 import usePhotoSwipe from '@/hooks/use-photoswipe';
 import PartyLayout from '@/layouts/party-layout';
+import track from '@/lib/analytics';
 
 interface Party {
     id: number;
@@ -276,6 +277,8 @@ export default function Gallery({
 
                 return;
             }
+
+            track('download', { count: selection.count });
 
             flash(
                 selection.count === 1 ? 'Téléchargement de 1 photo' : `Préparation du ZIP · ${selection.count} photos`,
