@@ -15,18 +15,18 @@ import {
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
+export type SidebarParty = {
+    id: number
+    name: string
+    expired: boolean
+    has_gallery: boolean
+    has_audio_guestbook: boolean
+}
+
 type SidebarData = {
     currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
+    parties: SidebarParty[]
+    searchableParties: SidebarParty[]
 }
 
 type AdminLayoutProps = React.PropsWithChildren<{

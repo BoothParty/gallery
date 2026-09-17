@@ -1,17 +1,9 @@
-import { AdminLayout } from "@/components/admin-layout"
+import { AdminLayout, type SidebarParty } from "@/components/admin-layout"
 
 type DashboardProps = {
   currentPartyId: number | null
-  parties: {
-    id: number
-    name: string
-    expired: boolean
-  }[]
-  searchableParties: {
-    id: number
-    name: string
-    expired: boolean
-  }[]
+  parties: SidebarParty[]
+  searchableParties: SidebarParty[]
 }
 
 export default function Page({ currentPartyId, parties, searchableParties }: DashboardProps) {

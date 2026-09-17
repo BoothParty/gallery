@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkStorePartiesRequest;
 use App\Http\Requests\StoreAdminPartyRequest;
 use App\Http\Requests\UpdateAdminPartyRequest;
+use App\Http\Requests\UpdatePartyModulesRequest;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
@@ -116,6 +117,20 @@ class PartyController extends Controller
         }
 
         return to_route('admin.parties.index');
+    }
+
+    /**
+     * Turn a module on or off for one party.
+     *
+     * The only place a module is switched: the sidebar's activation dialog and
+     * the party form both come through here rather than each writing the flag
+     * their own way.
+     */
+    public function updateModules(UpdatePartyModulesRequest $request, Party $party): RedirectResponse
+    {
+        $party->update($request->validated());
+
+        return back();
     }
 
     /**

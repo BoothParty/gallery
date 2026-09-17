@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react"
 import { useForm } from "@inertiajs/react"
 import { DownloadIcon, WandSparklesIcon } from "lucide-react"
 
-import { AdminLayout } from "@/components/admin-layout"
+import { AdminLayout, type SidebarParty } from "@/components/admin-layout"
 import { DataTable } from "@/components/data-table"
 import {
     PartyBulkCreateDialog,
@@ -32,16 +32,8 @@ import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime"
 
 type PageProps = {
     currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
+    parties: SidebarParty[]
+    searchableParties: SidebarParty[]
     users: {
         id: number
         name: string
