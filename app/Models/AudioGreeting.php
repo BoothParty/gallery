@@ -75,4 +75,23 @@ class AudioGreeting extends Model
 
         return SignedStorageUrl::for($this->mp3_path);
     }
+
+    /**
+     * Signed URL the client listens to in their own space.
+     *
+     * The MP3 once the conversion has run, the original take until then: the
+     * browser can replay what it just recorded, and leaving the client unable
+     * to hear their own submission while the job is queued would be worse than
+     * serving a format the handset happens not to read.
+     */
+    public function playbackUrl(): ?string
+    {
+        $path = $this->mp3_path ?: $this->original_path;
+
+        if (! $path) {
+            return null;
+        }
+
+        return SignedStorageUrl::for($path);
+    }
 }

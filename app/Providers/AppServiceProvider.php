@@ -101,6 +101,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by($request->ip());
         });
 
+        /**
+         * Recording is a rare gesture, and the uuid is already known by the
+         * time these are reached: keyed by address and party, like the
+         * gallery's own write endpoints.
+         */
+        RateLimiter::for('audiobook-write', function (Request $request): Limit {
+            return Limit::perMinute(20)->by($request->ip().':'.$request->route('party'));
+        });
+
         RateLimiter::for('party-state', function (Request $request): Limit {
             $party = (string) $request->route('party');
 
