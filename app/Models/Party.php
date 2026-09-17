@@ -35,6 +35,15 @@ class Party extends Model
     /** @use HasFactory<PartyFactory> */
     use HasFactory;
 
+    /**
+     * Names a party may not take: `/{party}` is a catch-all prefix, so a party
+     * called `audiobook` or `pictures` would shadow the literal routes of the
+     * uuid-addressed surfaces.
+     *
+     * @var list<string>
+     */
+    public const RESERVED_NAMES = ['audiobook', 'pictures'];
+
     /** @var list<string> */
     protected $fillable = [
         'name',
@@ -95,6 +104,15 @@ class Party extends Model
             $party->client_uuid ??= (string) Str::uuid();
         });
 
+        /**
+         * The audio rows cascade at the database level, so their paths have to
+         * be read while they still exist: by the time `deleted` fires they are
+         * gone and their files would be stranded on the storage.
+         */
+        static::deleting(function (Party $party): void {
+            $party->purgeAudioFiles();
+        });
+
         static::deleted(function (Party $party): void {
             if ($party->banner_path) {
                 Storage::disk('s3')->delete($party->banner_path);
@@ -126,12 +144,38 @@ class Party extends Model
     }
 
     /**
-     * Title the gallery is published under, the name serving as a fallback for
-     * a party whose host never set a display name.
+     * Remove every audio file this party owns from the storage.
+     *
+     * Both audio tables cascade on delete at the database level, which never
+     * fires the models' own `deleted` hooks; without this the rows would go
+     * and their files would stay on S3 forever.
+     */
+    private function purgeAudioFiles(): void
+    {
+        $paths = $this->audioMessages()->pluck('path')->all();
+
+        $greeting = $this->greeting()->first();
+
+        if ($greeting instanceof AudioGreeting) {
+            $paths[] = $greeting->original_path;
+            $paths[] = $greeting->mp3_path;
+        }
+
+        $paths = array_filter($paths);
+
+        if ($paths !== []) {
+            Storage::disk('s3')->delete($paths);
+        }
+    }
+
+    /**
+     * Title the gallery is published under, the display name falling back to
+     * the subdomain, and that to a generic line for a party addressed by uuid
+     * whose client never named their event.
      */
     public function displayTitle(): string
     {
-        return $this->display_name ?: $this->name;
+        return $this->display_name ?: $this->name ?: 'Votre événement';
     }
 
     /**
@@ -149,10 +193,15 @@ class Party extends Model
 
     /**
      * Link the host uses to edit their own gallery. The only place that knows
-     * the shape of that link.
+     * the shape of that link. Null for a party addressed by uuid, which has no
+     * gallery to edit.
      */
-    public function hostEditUrl(): string
+    public function hostEditUrl(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return $this->publicUrl().'/?token='.$this->host_token;
     }
 
@@ -166,19 +215,36 @@ class Party extends Model
     }
 
     /**
+     * Whether this party is published on a subdomain of its own. Only the
+     * events sold as a published gallery are; the rest are addressed by uuid.
+     */
+    public function hasSubdomain(): bool
+    {
+        return filled($this->name);
+    }
+
+    /**
      * Host the party's gallery is published under, the name being the
      * subdomain part. This is what gets printed on the party's poster.
      */
-    public function publicHost(): string
+    public function publicHost(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return $this->name.'.'.config('party.domain');
     }
 
     /**
      * Absolute URL of the party's gallery, as encoded in the poster QR code.
      */
-    public function publicUrl(): string
+    public function publicUrl(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return 'https://'.$this->publicHost();
     }
 
@@ -187,8 +253,12 @@ class Party extends Model
      * printed poster apart from a link an invited guest passed on, the two
      * being the only ways into a gallery.
      */
-    public function posterUrl(): string
+    public function posterUrl(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return $this->publicUrl().'/?s=poster';
     }
 

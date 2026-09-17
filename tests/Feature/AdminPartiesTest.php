@@ -391,3 +391,20 @@ it('refuses to regenerate a host token for a guest', function () {
 
     $this->post(route('admin.parties.host-token', $party))->assertRedirect(route('login'));
 });
+
+it('refuses a party named after a reserved route prefix', function () {
+    $this->post('/admin/parties', ['name' => 'audiobook'])
+        ->assertSessionHasErrors('name');
+
+    $this->post('/admin/parties', ['name' => 'pictures'])
+        ->assertSessionHasErrors('name');
+
+    expect(Party::query()->count())->toBe(0);
+});
+
+it('accepts a party created without a name', function () {
+    $this->post('/admin/parties', ['name' => null])
+        ->assertSessionHasNoErrors();
+
+    expect(Party::query()->whereNull('name')->count())->toBe(1);
+});

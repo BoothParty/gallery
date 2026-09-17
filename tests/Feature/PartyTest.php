@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\AudioGreeting;
+use App\Models\AudioMessage;
 use App\Models\Party;
 use App\Models\User;
 use Carbon\Carbon;
@@ -312,4 +314,47 @@ it('stores the client email', function () {
     $party = Party::factory()->create(['client_email' => 'camille@example.test']);
 
     expect($party->fresh()->client_email)->toBe('camille@example.test');
+});
+
+// ── Adressage sans sous-domaine ─────────────────────────────────────────────
+
+it('has no public host without a subdomain', function () {
+    $party = Party::factory()->audioOnly()->create();
+
+    expect($party->hasSubdomain())->toBeFalse()
+        ->and($party->publicHost())->toBeNull()
+        ->and($party->publicUrl())->toBeNull()
+        ->and($party->posterUrl())->toBeNull()
+        ->and($party->hostEditUrl())->toBeNull();
+});
+
+it('still builds its public host when it has a subdomain', function () {
+    $party = Party::factory()->create(['name' => 'camille-antoine']);
+
+    expect($party->hasSubdomain())->toBeTrue()
+        ->and($party->publicHost())->toBe('camille-antoine.'.config('party.domain'));
+});
+
+it('falls back to a generic title when it has neither display name nor subdomain', function () {
+    $party = Party::factory()->audioOnly()->create(['display_name' => null]);
+
+    expect($party->displayTitle())->toBe('Votre événement');
+});
+
+it('deletes the audio files of its greeting and messages when it is deleted', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->withAudioGuestbook()->create();
+    $greeting = AudioGreeting::factory()->for($party)->validated()->create();
+    $message = AudioMessage::factory()->for($party)->create();
+
+    Storage::disk('s3')->put($greeting->original_path, 'original');
+    Storage::disk('s3')->put($greeting->mp3_path, 'converted');
+    Storage::disk('s3')->put($message->path, 'audio');
+
+    $party->delete();
+
+    Storage::disk('s3')->assertMissing($greeting->original_path);
+    Storage::disk('s3')->assertMissing($greeting->mp3_path);
+    Storage::disk('s3')->assertMissing($message->path);
 });
