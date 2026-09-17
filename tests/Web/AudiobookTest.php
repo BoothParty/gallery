@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AudioGreeting;
+use App\Models\AudioMessage;
 use App\Models\Party;
 
 /**
@@ -89,4 +90,47 @@ it('offers a validated greeting back for changes', function () {
         ->assertMissing('[data-greeting-status]')
         ->assertSee('Enregistrez le message que vos invités entendront')
         ->assertNoJavaScriptErrors();
+});
+
+it('lists the guests messages once the studio has uploaded them', function () {
+    $party = Party::factory()->withAudioGuestbook()->create();
+    AudioMessage::factory()->for($party)->create(['title' => 'Mamie Jeanne', 'position' => 1]);
+    AudioMessage::factory()->for($party)->create(['title' => null, 'position' => 2]);
+
+    $page = browserPage(fn () => visit(audiobookUrlFor($party)));
+
+    $page->click('[data-onboarding-dismiss]')
+        ->assertPresent('[data-guest-messages]')
+        ->assertSee('Les messages de vos invités')
+        ->assertSee('Mamie Jeanne')
+        ->assertSee('Message 02')
+        ->assertSee('Tout télécharger')
+        ->assertNoJavaScriptErrors();
+});
+
+it('hides the messages section while the studio has uploaded nothing', function () {
+    $party = Party::factory()->withAudioGuestbook()->create();
+
+    $page = browserPage(fn () => visit(audiobookUrlFor($party)));
+
+    $page->click('[data-onboarding-dismiss]')
+        ->assertMissing('[data-guest-messages]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('renames a message from the client space', function () {
+    $party = Party::factory()->withAudioGuestbook()->create();
+    $message = AudioMessage::factory()->for($party)->create(['title' => null, 'position' => 3]);
+
+    $page = browserPage(fn () => visit(audiobookUrlFor($party)));
+
+    $page->click('[data-onboarding-dismiss]')
+        ->assertSee('Message 03')
+        ->click('[data-rename="'.$message->id.'"]')
+        ->type('[data-message="'.$message->id.'"] input', 'Théo (5 ans)')
+        ->keys('[data-message="'.$message->id.'"] input', ['Enter'])
+        ->assertSee('Théo (5 ans)')
+        ->assertNoJavaScriptErrors();
+
+    expect($message->fresh()->title)->toBe('Théo (5 ans)');
 });

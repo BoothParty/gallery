@@ -1,6 +1,6 @@
 import { useForm } from "@inertiajs/react"
-import { useState, type FormEvent } from "react"
-import { CheckIcon, LinkIcon, XIcon } from "lucide-react"
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react"
+import { CheckIcon, LinkIcon, Trash2Icon, UploadIcon, XIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarParty } from "@/components/admin-layout"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +42,15 @@ type PageProps = {
         client_url: string
     }
     greeting: Greeting | null
+    messages: GuestMessage[]
+}
+
+type GuestMessage = {
+    id: number
+    display_title: string
+    url: string
+    duration_seconds: number
+    recorded_at: string | null
 }
 
 const STATUS_LABEL: Record<GreetingStatus, string> = {
@@ -86,12 +95,16 @@ export default function AudiobookIndex({
     audiobookPending,
     party,
     greeting,
+    messages,
 }: PageProps) {
     const [isRejectOpen, setRejectOpen] = useState(false)
     const [linkCopied, setLinkCopied] = useState(false)
 
     const approveForm = useForm({})
     const rejectForm = useForm({ rejection_reason: "" })
+    const uploadForm = useForm<{ messages: File[]; recorded_at: string[] }>({ messages: [], recorded_at: [] })
+    const deleteForm = useForm({})
+    const fileInput = useRef<HTMLInputElement | null>(null)
 
     const basePath = `/admin/livre-or/${party.id}`
 
@@ -107,6 +120,41 @@ export default function AudiobookIndex({
                 setRejectOpen(false)
             },
         })
+    }
+
+    /**
+     * A multipart upload carries no modification time, so the browser reads it
+     * from each file and sends it alongside: that is what orders the messages
+     * by the moment they were recorded rather than by upload order.
+     */
+    const upload = (event: ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files ?? [])
+
+        if (files.length === 0) {
+            return
+        }
+
+        uploadForm.transform(() => ({
+            messages: files,
+            recorded_at: files.map((file) => new Date(file.lastModified).toISOString()),
+        }))
+        uploadForm.post(`${basePath}/messages`, {
+            forceFormData: true,
+            preserveScroll: true,
+            onFinish: () => {
+                if (fileInput.current) {
+                    fileInput.current.value = ""
+                }
+            },
+        })
+    }
+
+    const deleteMessage = (message: GuestMessage) => {
+        if (!window.confirm(`Supprimer « ${message.display_title} » ?`)) {
+            return
+        }
+
+        deleteForm.delete(`${basePath}/messages/${message.id}`, { preserveScroll: true })
     }
 
     const copyClientLink = async () => {
@@ -206,6 +254,69 @@ export default function AudiobookIndex({
                         )}
                     </div>
                 )}
+                <div className="flex flex-col gap-3 rounded-xl border p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="font-medium">
+                            Messages des invités
+                            {messages.length > 0 && (
+                                <span className="ml-2 text-sm text-muted-foreground">{messages.length}</span>
+                            )}
+                        </h3>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={uploadForm.processing}
+                            onClick={() => fileInput.current?.click()}
+                        >
+                            <UploadIcon />
+                            {uploadForm.processing ? "Dépôt en cours…" : "Déposer les fichiers"}
+                        </Button>
+                        <input
+                            ref={fileInput}
+                            type="file"
+                            accept="audio/mpeg,.mp3"
+                            multiple
+                            hidden
+                            onChange={upload}
+                        />
+                    </div>
+
+                    {uploadForm.errors.messages && (
+                        <p className="text-sm text-destructive">{uploadForm.errors.messages}</p>
+                    )}
+
+                    {messages.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                            Rien de déposé. Les fichiers viennent de la carte du combiné, en MP3.
+                        </p>
+                    ) : (
+                        <ul className="divide-y">
+                            {messages.map((message) => (
+                                <li
+                                    key={message.id}
+                                    className="flex flex-wrap items-center gap-3 py-2"
+                                    data-message={message.id}
+                                >
+                                    <span className="min-w-0 flex-1 truncate text-sm">
+                                        {message.display_title}
+                                    </span>
+                                    <audio controls src={message.url} className="h-8 max-w-xs" />
+                                    <span className="text-sm text-muted-foreground tabular-nums">
+                                        {formatDuration(message.duration_seconds)}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label="Supprimer"
+                                        onClick={() => deleteMessage(message)}
+                                    >
+                                        <Trash2Icon />
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             </div>
 
             <Dialog open={isRejectOpen} onOpenChange={setRejectOpen}>

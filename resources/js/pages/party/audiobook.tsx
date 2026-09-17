@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 import AudiobookHeader from '@/components/party/audiobook-header';
+import AudiobookMessages, { type GuestMessage } from '@/components/party/audiobook-messages';
 import AudiobookOnboarding from '@/components/party/audiobook-onboarding';
 import AudiobookRecorder from '@/components/party/audiobook-recorder';
 import AudiobookReview from '@/components/party/audiobook-review';
@@ -30,8 +31,13 @@ interface AudiobookProps {
     routes: {
         store: string;
         submit: string;
+        download: string;
+        /** Carries the literal `__id__` placeholder, swapped per message. */
+        messages: string;
     };
+    csrfToken: string;
     greeting: GreetingState | null;
+    messages: GuestMessage[];
 }
 
 const STEP_OF: Record<GreetingStatus, number> = {
@@ -73,7 +79,7 @@ const BLOCK_BODY: Record<BlockKey, string> = {
     rejected: "Le studio n'a pas pu retenir cet enregistrement. Réenregistrez-le en tenant compte de sa remarque.",
 };
 
-export default function Audiobook({ party, routes, greeting }: AudiobookProps) {
+export default function Audiobook({ party, routes, csrfToken, greeting, messages }: AudiobookProps) {
     const recorder = useAudioRecorder({ maxSeconds: MAX_SECONDS });
 
     /**
@@ -176,6 +182,26 @@ export default function Audiobook({ party, routes, greeting }: AudiobookProps) {
                 )}
 
                 <AudiobookTips onReopenOnboarding={() => setOnboarding(true)} />
+
+                {messages.length > 0 && (
+                    <>
+                        <div className="flex flex-col gap-3.5 border-t border-line pt-8">
+                            <h2 className="font-serif text-[clamp(25px,3.6vw,36px)] leading-[1.12] text-pretty">
+                                Les messages de vos invités
+                            </h2>
+                            <p className="max-w-[56ch] text-[15px] leading-[1.65] text-pretty text-muted">
+                                Écoutez-les, nommez ceux dont vous reconnaissez la voix, et emportez-les quand
+                                vous voulez.
+                            </p>
+                        </div>
+                        <AudiobookMessages
+                            messages={messages}
+                            downloadUrl={routes.download}
+                            csrfToken={csrfToken}
+                            renameUrl={(message) => routes.messages.replace('__id__', String(message.id))}
+                        />
+                    </>
+                )}
             </div>
 
             <AudiobookOnboarding

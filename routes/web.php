@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\AudiobookController as AdminAudiobookController;
+use App\Http\Controllers\Admin\AudioMessageController as AdminAudioMessageController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\PartyController as AdminPartyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AudiobookController;
 use App\Http\Controllers\AudioGreetingController;
+use App\Http\Controllers\AudioMessageController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
@@ -44,6 +46,14 @@ Route::post('audiobook/{party:client_uuid}/annonce', [AudioGreetingController::c
 Route::post('audiobook/{party:client_uuid}/annonce/soumettre', [AudioGreetingController::class, 'submit'])
     ->middleware(['audiobook', 'throttle:audiobook-write'])
     ->name('audiobook.greeting.submit');
+
+Route::patch('audiobook/{party:client_uuid}/messages/{message}', [AudioMessageController::class, 'update'])
+    ->middleware(['audiobook', 'throttle:audiobook-write'])
+    ->name('audiobook.messages.update');
+
+Route::post('audiobook/{party:client_uuid}/telecharger', [AudioMessageController::class, 'download'])
+    ->middleware(['audiobook', 'throttle:audiobook-write'])
+    ->name('audiobook.messages.download');
 
 Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])
@@ -91,6 +101,10 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         ->name('audiobook.approve');
     Route::post('livre-or/{party:id}/annonce/refuser', [AdminAudiobookController::class, 'reject'])
         ->name('audiobook.reject');
+    Route::post('livre-or/{party:id}/messages', [AdminAudioMessageController::class, 'store'])
+        ->name('audiobook.messages.store');
+    Route::delete('livre-or/{party:id}/messages/{message}', [AdminAudioMessageController::class, 'destroy'])
+        ->name('audiobook.messages.destroy');
 
     Route::post('parties/bulk', [AdminPartyController::class, 'bulkStore'])->name('parties.bulk-store');
     Route::get('parties/{party:id}/poster', [AdminPartyController::class, 'poster'])->name('parties.poster');

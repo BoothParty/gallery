@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AudioGreeting;
+use App\Models\AudioMessage;
 use App\Models\Party;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,7 +31,10 @@ class AudiobookController extends Controller
             'routes' => [
                 'store' => route('audiobook.greeting.store', $party->client_uuid),
                 'submit' => route('audiobook.greeting.submit', $party->client_uuid),
+                'download' => route('audiobook.messages.download', $party->client_uuid),
+                'messages' => route('audiobook.messages.update', [$party->client_uuid, '__id__']),
             ],
+            'csrfToken' => csrf_token(),
             'greeting' => $greeting instanceof AudioGreeting ? [
                 'status' => $greeting->status->value,
                 'url' => $greeting->playbackUrl(),
@@ -39,6 +43,15 @@ class AudiobookController extends Controller
                 'rejection_reason' => $greeting->rejection_reason,
                 'submitted_at' => $greeting->submitted_at?->toIso8601String(),
             ] : null,
+            'messages' => $party->audioMessages()->get()->map(fn (AudioMessage $message): array => [
+                'id' => $message->id,
+                'title' => $message->title,
+                'display_title' => $message->displayTitle(),
+                'url' => $message->url(),
+                'duration_seconds' => $message->duration_seconds,
+                'recorded_at' => $message->recorded_at?->toIso8601String(),
+                'position' => $message->position,
+            ])->values(),
         ]);
     }
 }
