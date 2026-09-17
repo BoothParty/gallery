@@ -32,6 +32,19 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Studio Mailbox
+    |--------------------------------------------------------------------------
+    |
+    | Address the team reads: it receives the alert raised when a client hands
+    | their audio greeting over for validation. Left empty, the alert is simply
+    | not sent, which is preferable to failing the client's own submission.
+    |
+    */
+
+    'studio_email' => env('PARTY_STUDIO_EMAIL'),
+
     'sources' => array_filter([
         'notion' => filled(env('NOTION_API_TOKEN')) ? NotionPartySource::class : null,
         'stub' => env('PARTY_SOURCE_STUB', false) ? StubPartySource::class : null,
