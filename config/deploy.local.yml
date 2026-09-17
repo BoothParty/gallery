@@ -13,6 +13,10 @@ servers:
 ssh:
   user: root
 
+builder:
+  arch: amd64
+  remote:
+
 # La VM n'a pas de domaine : ajouter dans le /etc/hosts du poste
 #   10.117.19.66  boothparty.test s3.boothparty.test
 #
