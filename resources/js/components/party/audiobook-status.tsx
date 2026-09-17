@@ -47,7 +47,7 @@ export default function AudiobookStatus({ greeting, onReopen }: AudiobookStatusP
             : null;
 
         return (
-            <section className={PANEL}>
+            <section className={PANEL} data-greeting-status={greeting.status}>
                 <div className="flex flex-col gap-[7px]">
                     <span className="text-[11px] tracking-[0.16em] text-muted uppercase">En cours de relecture</span>
                     <p className="max-w-[54ch] text-sm leading-[1.6] text-pretty text-muted">
@@ -66,7 +66,7 @@ export default function AudiobookStatus({ greeting, onReopen }: AudiobookStatusP
 
     if (greeting.status === 'validated') {
         return (
-            <section className={PANEL}>
+            <section className={PANEL} data-greeting-status={greeting.status}>
                 <div className="flex items-start gap-3">
                     {CHECK_ICON}
                     <div className="flex flex-col gap-[7px]">
@@ -97,7 +97,7 @@ export default function AudiobookStatus({ greeting, onReopen }: AudiobookStatusP
 
     if (greeting.status === 'rejected') {
         return (
-            <section className={PANEL}>
+            <section className={PANEL} data-greeting-status={greeting.status}>
                 <div className="flex flex-col gap-[7px]">
                     <span className="text-[11px] tracking-[0.16em] text-accent uppercase">À refaire</span>
                     <p className="max-w-[54ch] text-sm leading-[1.6] text-pretty text-muted">

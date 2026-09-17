@@ -2,10 +2,12 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 import AudiobookHeader from '@/components/party/audiobook-header';
+import AudiobookOnboarding from '@/components/party/audiobook-onboarding';
 import AudiobookRecorder from '@/components/party/audiobook-recorder';
 import AudiobookReview from '@/components/party/audiobook-review';
 import AudiobookStatus from '@/components/party/audiobook-status';
 import AudiobookSteps from '@/components/party/audiobook-steps';
+import AudiobookTips from '@/components/party/audiobook-tips';
 import useAudioRecorder from '@/hooks/use-audio-recorder';
 import PartyLayout from '@/layouts/party-layout';
 
@@ -80,6 +82,7 @@ export default function Audiobook({ party, routes, greeting }: AudiobookProps) {
      * intact if they change their mind and reload.
      */
     const [reopened, setReopened] = useState(false);
+    const [onboarding, setOnboarding] = useState(false);
 
     const stored = reopened ? null : greeting;
 
@@ -171,7 +174,15 @@ export default function Audiobook({ party, routes, greeting }: AudiobookProps) {
                 {!recorder.take && stored && stored.status !== 'draft' && (
                     <AudiobookStatus greeting={stored} onReopen={reopen} />
                 )}
+
+                <AudiobookTips onReopenOnboarding={() => setOnboarding(true)} />
             </div>
+
+            <AudiobookOnboarding
+                open={onboarding}
+                onOpen={() => setOnboarding(true)}
+                onClose={() => setOnboarding(false)}
+            />
         </PartyLayout>
     );
 }
