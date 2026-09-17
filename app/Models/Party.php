@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -109,6 +110,19 @@ class Party extends Model
     public function pictures(): HasMany
     {
         return $this->hasMany(Picture::class);
+    }
+
+    public function greeting(): HasOne
+    {
+        return $this->hasOne(AudioGreeting::class);
+    }
+
+    /**
+     * The guests' messages, in the order they were recorded on the handset.
+     */
+    public function audioMessages(): HasMany
+    {
+        return $this->hasMany(AudioMessage::class)->orderBy('position');
     }
 
     /**
