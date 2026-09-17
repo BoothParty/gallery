@@ -10,6 +10,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Typography\FontFactory;
+use InvalidArgumentException;
 use RuntimeException;
 
 /**
@@ -47,6 +48,12 @@ class PartyPosterGenerator
      */
     public function generate(Party $party): string
     {
+        if (! $party->hasSubdomain()) {
+            throw new InvalidArgumentException(
+                'A party without a subdomain has no gallery address to print on a poster.'
+            );
+        }
+
         $manager = new ImageManager(new Driver);
 
         $poster = $manager->read($this->templatePath());

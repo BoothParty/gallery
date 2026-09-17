@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkStorePartiesRequest;
-use App\Http\Requests\StorePartyRequest;
+use App\Http\Requests\StoreAdminPartyRequest;
 use App\Http\Requests\UpdateAdminPartyRequest;
 use App\Models\Party;
 use App\Models\User;
@@ -55,7 +55,7 @@ class PartyController extends Controller
         ]);
     }
 
-    public function store(StorePartyRequest $request): RedirectResponse
+    public function store(StoreAdminPartyRequest $request): RedirectResponse
     {
         Party::query()->create($request->validated());
 

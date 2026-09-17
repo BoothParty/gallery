@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -34,6 +35,15 @@ class Party extends Model
     /** @use HasFactory<PartyFactory> */
     use HasFactory;
 
+    /**
+     * Names a party may not take: `/{party}` is a catch-all prefix, so a party
+     * called `audiobook` or `pictures` would shadow the literal routes of the
+     * uuid-addressed surfaces.
+     *
+     * @var list<string>
+     */
+    public const RESERVED_NAMES = ['audiobook', 'pictures'];
+
     /** @var list<string> */
     protected $fillable = [
         'name',
@@ -46,6 +56,14 @@ class Party extends Model
         'expire_at',
         'source_key',
         'source_event_id',
+        'gallery_uuid',
+        'client_uuid',
+        'has_gallery',
+        'has_audio_guestbook',
+        'client_email',
+        'event_at',
+        'greeting_reminder_sent_at',
+        'expiry_reminder_sent_at',
     ];
 
     /**
@@ -53,12 +71,14 @@ class Party extends Model
      * centred and unzoomed rather than reporting nulls to whatever renders it
      * before the row is read back.
      *
-     * @var array<string, int|float>
+     * @var array<string, int|float|bool>
      */
     protected $attributes = [
         'banner_position_x' => 50,
         'banner_position_y' => 50,
         'banner_zoom' => 1,
+        'has_gallery' => true,
+        'has_audio_guestbook' => false,
     ];
 
     protected function casts(): array
@@ -68,6 +88,11 @@ class Party extends Model
             'banner_position_x' => 'float',
             'banner_position_y' => 'float',
             'banner_zoom' => 'float',
+            'event_at' => 'datetime',
+            'greeting_reminder_sent_at' => 'datetime',
+            'expiry_reminder_sent_at' => 'datetime',
+            'has_gallery' => 'boolean',
+            'has_audio_guestbook' => 'boolean',
         ];
     }
 
@@ -75,6 +100,17 @@ class Party extends Model
     {
         static::creating(function (Party $party): void {
             $party->host_token ??= Str::random(48);
+            $party->gallery_uuid ??= (string) Str::uuid();
+            $party->client_uuid ??= (string) Str::uuid();
+        });
+
+        /**
+         * The audio rows cascade at the database level, so their paths have to
+         * be read while they still exist: by the time `deleted` fires they are
+         * gone and their files would be stranded on the storage.
+         */
+        static::deleting(function (Party $party): void {
+            $party->purgeAudioFiles();
         });
 
         static::deleted(function (Party $party): void {
@@ -94,13 +130,52 @@ class Party extends Model
         return $this->hasMany(Picture::class);
     }
 
+    public function greeting(): HasOne
+    {
+        return $this->hasOne(AudioGreeting::class);
+    }
+
     /**
-     * Title the gallery is published under, the name serving as a fallback for
-     * a party whose host never set a display name.
+     * The guests' messages, in the order they were recorded on the handset.
+     */
+    public function audioMessages(): HasMany
+    {
+        return $this->hasMany(AudioMessage::class)->orderBy('position');
+    }
+
+    /**
+     * Remove every audio file this party owns from the storage.
+     *
+     * Both audio tables cascade on delete at the database level, which never
+     * fires the models' own `deleted` hooks; without this the rows would go
+     * and their files would stay on S3 forever.
+     */
+    private function purgeAudioFiles(): void
+    {
+        $paths = $this->audioMessages()->pluck('path')->all();
+
+        $greeting = $this->greeting()->first();
+
+        if ($greeting instanceof AudioGreeting) {
+            $paths[] = $greeting->original_path;
+            $paths[] = $greeting->mp3_path;
+        }
+
+        $paths = array_filter($paths);
+
+        if ($paths !== []) {
+            Storage::disk('s3')->delete($paths);
+        }
+    }
+
+    /**
+     * Title the gallery is published under, the display name falling back to
+     * the subdomain, and that to a generic line for a party addressed by uuid
+     * whose client never named their event.
      */
     public function displayTitle(): string
     {
-        return $this->display_name ?: $this->name;
+        return $this->display_name ?: $this->name ?: 'Votre événement';
     }
 
     /**
@@ -118,10 +193,15 @@ class Party extends Model
 
     /**
      * Link the host uses to edit their own gallery. The only place that knows
-     * the shape of that link.
+     * the shape of that link. Null for a party addressed by uuid, which has no
+     * gallery to edit.
      */
-    public function hostEditUrl(): string
+    public function hostEditUrl(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return $this->publicUrl().'/?token='.$this->host_token;
     }
 
@@ -135,19 +215,45 @@ class Party extends Model
     }
 
     /**
+     * Link the client opens to record their greeting and collect their guests'
+     * messages. The only place that knows the shape of that link.
+     */
+    public function audiobookUrl(): string
+    {
+        return route('audiobook.show', $this->client_uuid);
+    }
+
+    /**
+     * Whether this party is published on a subdomain of its own. Only the
+     * events sold as a published gallery are; the rest are addressed by uuid.
+     */
+    public function hasSubdomain(): bool
+    {
+        return filled($this->name);
+    }
+
+    /**
      * Host the party's gallery is published under, the name being the
      * subdomain part. This is what gets printed on the party's poster.
      */
-    public function publicHost(): string
+    public function publicHost(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return $this->name.'.'.config('party.domain');
     }
 
     /**
      * Absolute URL of the party's gallery, as encoded in the poster QR code.
      */
-    public function publicUrl(): string
+    public function publicUrl(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return 'https://'.$this->publicHost();
     }
 
@@ -156,8 +262,12 @@ class Party extends Model
      * printed poster apart from a link an invited guest passed on, the two
      * being the only ways into a gallery.
      */
-    public function posterUrl(): string
+    public function posterUrl(): ?string
     {
+        if (! $this->hasSubdomain()) {
+            return null;
+        }
+
         return $this->publicUrl().'/?s=poster';
     }
 

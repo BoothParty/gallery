@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\AudioGreeting;
+use App\Models\AudioMessage;
 use App\Models\Party;
 use App\Models\User;
 use Carbon\Carbon;
@@ -252,4 +254,107 @@ it('frames a banner centred and unzoomed on a party created without framing', fu
     expect($party->banner_position_x)->toBe(50.0)
         ->and($party->banner_position_y)->toBe(50.0)
         ->and($party->banner_zoom)->toBe(1.0);
+});
+
+// ── Modules & adressage ─────────────────────────────────────────────────────
+
+it('mints two distinct uuids when a party is created', function () {
+    $party = Party::factory()->create();
+
+    expect($party->gallery_uuid)->toBeString()->not->toBeEmpty()
+        ->and($party->client_uuid)->toBeString()->not->toBeEmpty()
+        ->and($party->gallery_uuid)->not->toBe($party->client_uuid);
+});
+
+it('keeps the uuids it was given rather than minting new ones', function () {
+    $party = Party::factory()->create([
+        'gallery_uuid' => '11111111-1111-1111-1111-111111111111',
+        'client_uuid' => '22222222-2222-2222-2222-222222222222',
+    ]);
+
+    expect($party->fresh())
+        ->gallery_uuid->toBe('11111111-1111-1111-1111-111111111111')
+        ->client_uuid->toBe('22222222-2222-2222-2222-222222222222');
+});
+
+it('enables the gallery module and nothing else by default', function () {
+    $party = Party::factory()->create();
+
+    expect($party->has_gallery)->toBeTrue()
+        ->and($party->has_audio_guestbook)->toBeFalse();
+});
+
+it('casts the module flags as booleans', function () {
+    $party = Party::factory()->audioOnly()->create();
+
+    expect($party->fresh())
+        ->has_gallery->toBeFalse()
+        ->has_audio_guestbook->toBeTrue();
+});
+
+it('accepts a party without a subdomain name', function () {
+    $party = Party::factory()->withoutSubdomain()->create();
+
+    expect($party->fresh()->name)->toBeNull();
+});
+
+it('casts event_at and both reminder stamps as Carbon instances', function () {
+    $party = Party::factory()->eventAt(now()->addMonth())->create([
+        'greeting_reminder_sent_at' => now(),
+        'expiry_reminder_sent_at' => now(),
+    ]);
+
+    expect($party->fresh())
+        ->event_at->toBeInstanceOf(Carbon::class)
+        ->greeting_reminder_sent_at->toBeInstanceOf(Carbon::class)
+        ->expiry_reminder_sent_at->toBeInstanceOf(Carbon::class);
+});
+
+it('stores the client email', function () {
+    $party = Party::factory()->create(['client_email' => 'camille@example.test']);
+
+    expect($party->fresh()->client_email)->toBe('camille@example.test');
+});
+
+// ── Adressage sans sous-domaine ─────────────────────────────────────────────
+
+it('has no public host without a subdomain', function () {
+    $party = Party::factory()->audioOnly()->create();
+
+    expect($party->hasSubdomain())->toBeFalse()
+        ->and($party->publicHost())->toBeNull()
+        ->and($party->publicUrl())->toBeNull()
+        ->and($party->posterUrl())->toBeNull()
+        ->and($party->hostEditUrl())->toBeNull();
+});
+
+it('still builds its public host when it has a subdomain', function () {
+    $party = Party::factory()->create(['name' => 'camille-antoine']);
+
+    expect($party->hasSubdomain())->toBeTrue()
+        ->and($party->publicHost())->toBe('camille-antoine.'.config('party.domain'));
+});
+
+it('falls back to a generic title when it has neither display name nor subdomain', function () {
+    $party = Party::factory()->audioOnly()->create(['display_name' => null]);
+
+    expect($party->displayTitle())->toBe('Votre événement');
+});
+
+it('deletes the audio files of its greeting and messages when it is deleted', function () {
+    Storage::fake('s3');
+
+    $party = Party::factory()->withAudioGuestbook()->create();
+    $greeting = AudioGreeting::factory()->for($party)->validated()->create();
+    $message = AudioMessage::factory()->for($party)->create();
+
+    Storage::disk('s3')->put($greeting->original_path, 'original');
+    Storage::disk('s3')->put($greeting->mp3_path, 'converted');
+    Storage::disk('s3')->put($message->path, 'audio');
+
+    $party->delete();
+
+    Storage::disk('s3')->assertMissing($greeting->original_path);
+    Storage::disk('s3')->assertMissing($greeting->mp3_path);
+    Storage::disk('s3')->assertMissing($message->path);
 });

@@ -28,7 +28,13 @@ class UpdateAdminPartyRequest extends FormRequest
         $party = $this->route('party');
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('parties', 'name')->ignore($party->id)],
+            'name' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::notIn(Party::RESERVED_NAMES),
+                Rule::unique('parties', 'name')->ignore($party->id),
+            ],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'expire_at' => ['nullable', 'date'],
             'display_name' => ['nullable', 'string', 'max:255'],
@@ -46,9 +52,9 @@ class UpdateAdminPartyRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Please provide a party name.',
             'name.max' => 'The party name must not exceed 255 characters.',
             'name.unique' => 'A party already uses this name.',
+            'name.not_in' => 'This name is reserved by the application.',
             'user_id.exists' => 'The selected owner does not exist.',
             'expire_at.date' => 'The expiry date must be a valid date.',
             'display_name.max' => 'The display name must not exceed 255 characters.',

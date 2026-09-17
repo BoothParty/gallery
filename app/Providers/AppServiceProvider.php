@@ -90,6 +90,17 @@ class AppServiceProvider extends ServiceProvider
          * spend 480 of it. Keyed like its neighbours, by address and party,
          * because the guests of one venue share a single wifi address.
          */
+        /**
+         * Unlike its neighbours, this one is keyed on the address alone. The
+         * uuid is what an enumeration varies, so keying on it as well would
+         * hand the attacker a fresh counter with every guess — the opposite of
+         * what the limiter is for. A client opening their own space a handful
+         * of times a day never comes near the ceiling.
+         */
+        RateLimiter::for('audiobook-entry', function (Request $request): Limit {
+            return Limit::perMinute(30)->by($request->ip());
+        });
+
         RateLimiter::for('party-state', function (Request $request): Limit {
             $party = (string) $request->route('party');
 
