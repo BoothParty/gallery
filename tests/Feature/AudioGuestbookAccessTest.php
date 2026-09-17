@@ -35,3 +35,15 @@ it('builds the client link from the client uuid', function () {
 
     expect($party->audiobookUrl())->toBe(url('/audiobook/'.$party->client_uuid));
 });
+
+it('throttles the entry point per address, not per uuid', function () {
+    $party = Party::factory()->withAudioGuestbook()->create();
+
+    // Une énumération essaie un uuid différent à chaque coup : le compteur ne
+    // doit donc pas être remis à zéro par le changement d'uuid.
+    foreach (range(1, 30) as $attempt) {
+        $this->get('/audiobook/'.fake()->uuid())->assertNotFound();
+    }
+
+    $this->get('/audiobook/'.$party->client_uuid)->assertStatus(429);
+});

@@ -32,7 +32,7 @@ Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
  * those. Declared ahead of the `{party}` group, which is a catch-all prefix.
  */
 Route::get('audiobook/{party:client_uuid}', [AudiobookController::class, 'show'])
-    ->middleware('audiobook')
+    ->middleware(['audiobook', 'throttle:audiobook-entry'])
     ->name('audiobook.show');
 
 Route::prefix('{party}')->name('party.')->group(function () {
