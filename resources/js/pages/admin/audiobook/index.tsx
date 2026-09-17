@@ -34,6 +34,7 @@ type PageProps = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
     party: {
         id: number
         name: string
@@ -82,6 +83,7 @@ export default function AudiobookIndex({
     currentPartyId,
     parties,
     searchableParties,
+    audiobookPending,
     party,
     greeting,
 }: PageProps) {
@@ -91,8 +93,7 @@ export default function AudiobookIndex({
     const approveForm = useForm({})
     const rejectForm = useForm({ rejection_reason: "" })
 
-    const partySegment = encodeURIComponent(searchableParties.find((p) => p.id === party.id)?.name ?? "")
-    const basePath = `/${partySegment}/dashboard/livre-or`
+    const basePath = `/admin/livre-or/${party.id}`
 
     const approve = () => approveForm.post(`${basePath}/annonce/valider`, { preserveScroll: true })
 
@@ -117,7 +118,7 @@ export default function AudiobookIndex({
     return (
         <AdminLayout
             title="Party / Livre d'or"
-            sidebar={{ currentPartyId, parties, searchableParties }}
+            sidebar={{ currentPartyId, parties, searchableParties, audiobookPending }}
         >
             <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">

@@ -8,12 +8,28 @@ use App\Http\Requests\RejectAudioGreetingRequest;
 use App\Models\AudioGreeting;
 use App\Models\Party;
 use App\Services\AdminDashboardDataService;
+use App\Services\AudiobookQueue;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AudiobookController extends Controller
 {
+    /**
+     * What the audio guestbook still asks of the studio, across every party.
+     */
+    public function queue(
+        AdminDashboardDataService $adminDashboardDataService,
+        AudiobookQueue $audiobookQueue,
+    ): Response {
+        return Inertia::render('admin/audiobook/queue', [
+            ...$adminDashboardDataService->sidebarData(),
+            'awaitingValidation' => $audiobookQueue->awaitingValidation(),
+            'awaitingUpload' => $audiobookQueue->awaitingUpload(),
+            'withoutGreeting' => $audiobookQueue->withoutGreeting(),
+        ]);
+    }
+
     /**
      * The studio's view of one party's audio guestbook.
      */

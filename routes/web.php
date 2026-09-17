@@ -71,25 +71,38 @@ Route::prefix('{party}')->name('party.')->group(function () {
     Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
         Route::get('/', [PartyDashboardController::class, 'show'])->name('show');
 
-        Route::get('/livre-or', [AdminAudiobookController::class, 'show'])->name('audiobook');
-        Route::post('/livre-or/annonce/valider', [AdminAudiobookController::class, 'approve'])
-            ->name('audiobook.approve');
-        Route::post('/livre-or/annonce/refuser', [AdminAudiobookController::class, 'reject'])
-            ->name('audiobook.reject');
-
         Route::get('/pictures', [PartyDashboardController::class, 'pictures'])->name('pictures');
         Route::post('/pictures', [AdminGalleryController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminGalleryController::class, 'bulkDelete'])->name('pictures.bulk-delete');
     });
 });
 
+/**
+ * Every administration route binds a party by its identifier rather than by
+ * its name: only the events published on a subdomain of their own carry a
+ * name, and a party sold with the audio guestbook alone has none. Binding on
+ * the name here would make those parties unreachable — unmodifiable and
+ * undeletable — from the administration.
+ */
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+    Route::get('livre-or', [AdminAudiobookController::class, 'queue'])->name('audiobook.queue');
+    Route::get('livre-or/{party:id}', [AdminAudiobookController::class, 'show'])->name('audiobook.show');
+    Route::post('livre-or/{party:id}/annonce/valider', [AdminAudiobookController::class, 'approve'])
+        ->name('audiobook.approve');
+    Route::post('livre-or/{party:id}/annonce/refuser', [AdminAudiobookController::class, 'reject'])
+        ->name('audiobook.reject');
+
     Route::post('parties/bulk', [AdminPartyController::class, 'bulkStore'])->name('parties.bulk-store');
-    Route::get('parties/{party}/poster', [AdminPartyController::class, 'poster'])->name('parties.poster');
-    Route::post('parties/{party}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
+    Route::get('parties/{party:id}/poster', [AdminPartyController::class, 'poster'])->name('parties.poster');
+    Route::post('parties/{party:id}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
         ->name('parties.host-token');
-    Route::patch('parties/{party}/modules', [AdminPartyController::class, 'updateModules'])
+    Route::patch('parties/{party:id}/modules', [AdminPartyController::class, 'updateModules'])
         ->name('parties.modules');
-    Route::resource('parties', AdminPartyController::class)->except(['show', 'create', 'edit']);
+
+    Route::get('parties', [AdminPartyController::class, 'index'])->name('parties.index');
+    Route::post('parties', [AdminPartyController::class, 'store'])->name('parties.store');
+    Route::put('parties/{party:id}', [AdminPartyController::class, 'update'])->name('parties.update');
+    Route::delete('parties/{party:id}', [AdminPartyController::class, 'destroy'])->name('parties.destroy');
+
     Route::resource('users', AdminUserController::class)->except(['show']);
 });

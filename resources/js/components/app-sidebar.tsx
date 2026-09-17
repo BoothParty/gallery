@@ -23,6 +23,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -33,6 +34,8 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   parties: SidebarParty[]
   searchableParties: SidebarParty[]
   currentPartyId: number | null
+  /** Greetings to validate plus events whose messages are still to upload. */
+  audiobookPending: number
 }
 
 /** A module the current party does not have, awaiting confirmation to turn on. */
@@ -41,12 +44,18 @@ type PendingModule = {
   label: string
 }
 
-export function AppSidebar({ parties, searchableParties, currentPartyId, ...props }: AppSidebarProps) {
+export function AppSidebar({
+  parties,
+  searchableParties,
+  currentPartyId,
+  audiobookPending,
+  ...props
+}: AppSidebarProps) {
   const currentParty = searchableParties.find((party) => party.id === currentPartyId) ?? null
   const currentPartyName = currentParty ? encodeURIComponent(currentParty.name) : null
   const dashboardUrl = currentPartyName ? `/${currentPartyName}/dashboard` : "#"
   const galleryUrl = currentPartyName ? `/${currentPartyName}/dashboard/pictures` : "#"
-  const audiobookUrl = currentPartyName ? `/${currentPartyName}/dashboard/livre-or` : "#"
+  const audiobookUrl = currentParty ? `/admin/livre-or/${currentParty.id}` : "#"
 
   const [pendingModule, setPendingModule] = React.useState<PendingModule | null>(null)
   const activateForm = useForm<{ has_gallery?: boolean; has_audio_guestbook?: boolean }>({})
@@ -142,6 +151,17 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
                 <Link href="/admin/parties">
                   <PartyPopperIcon />
                   <span>Parties</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Livre d'or">
+                <Link href="/admin/livre-or">
+                  <MicIcon />
+                  <span>Livre d'or</span>
+                  {audiobookPending > 0 && (
+                    <SidebarMenuBadge data-audiobook-pending>{audiobookPending}</SidebarMenuBadge>
+                  )}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

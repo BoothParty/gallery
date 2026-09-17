@@ -27,6 +27,7 @@ type SidebarData = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
 }
 
 type AdminLayoutProps = React.PropsWithChildren<{
@@ -42,6 +43,7 @@ export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
                     parties={sidebar.parties}
                     searchableParties={sidebar.searchableParties}
                     currentPartyId={sidebar.currentPartyId}
+                    audiobookPending={sidebar.audiobookPending}
                 />
                 <SidebarInset>
                     <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">

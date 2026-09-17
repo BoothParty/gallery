@@ -20,6 +20,7 @@ type PageProps = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
     tableData: CrudTableData
 }
 
@@ -27,6 +28,7 @@ export default function UsersIndex({
     currentPartyId,
     parties,
     searchableParties,
+    audiobookPending,
     tableData,
 }: PageProps) {
     const [isCreateModalOpen, setCreateModalOpen] = useState(false)
@@ -139,7 +141,7 @@ export default function UsersIndex({
     return (
         <AdminLayout
             title="Administration / Users"
-            sidebar={{ currentPartyId, parties, searchableParties }}
+            sidebar={{ currentPartyId, parties, searchableParties, audiobookPending }}
         >
             <DataTable
                 tableData={tableData}

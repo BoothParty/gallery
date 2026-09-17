@@ -44,6 +44,7 @@ type PageProps = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
     party: { id: number; name: string }
     pictures: PaginatedPictures
     perPage: number
@@ -53,6 +54,7 @@ export default function GalleryIndex({
     currentPartyId,
     parties,
     searchableParties,
+    audiobookPending,
     party,
     pictures,
     perPage,
@@ -116,7 +118,7 @@ export default function GalleryIndex({
     return (
         <AdminLayout
             title={`Administration / ${party.name} / Pictures`}
-            sidebar={{ currentPartyId, parties, searchableParties }}
+            sidebar={{ currentPartyId, parties, searchableParties, audiobookPending }}
         >
             <GalleryToolbar
                 totalOnPage={pictures.data.length}
