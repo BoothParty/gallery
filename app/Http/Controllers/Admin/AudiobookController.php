@@ -6,6 +6,7 @@ use App\Enums\GreetingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RejectAudioGreetingRequest;
 use App\Models\AudioGreeting;
+use App\Models\AudioMessage;
 use App\Models\Party;
 use App\Services\AdminDashboardDataService;
 use App\Services\AudiobookQueue;
@@ -55,6 +56,13 @@ class AudiobookController extends Controller
                 'validated_at' => $greeting->validated_at?->toIso8601String(),
                 'awaiting_conversion' => $greeting->mp3_path === null,
             ] : null,
+            'messages' => $party->audioMessages()->get()->map(fn (AudioMessage $message): array => [
+                'id' => $message->id,
+                'display_title' => $message->displayTitle(),
+                'url' => $message->url(),
+                'duration_seconds' => $message->duration_seconds,
+                'recorded_at' => $message->recorded_at?->toIso8601String(),
+            ])->values(),
         ]);
     }
 
