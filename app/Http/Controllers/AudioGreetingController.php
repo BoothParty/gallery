@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\GreetingStatus;
 use App\Http\Requests\StoreAudioGreetingRequest;
 use App\Http\Requests\SubmitAudioGreetingRequest;
+use App\Jobs\ConvertGreetingToMp3;
 use App\Models\AudioGreeting;
 use App\Models\Party;
 use Illuminate\Http\RedirectResponse;
@@ -60,6 +61,13 @@ class AudioGreetingController extends Controller
             'status' => GreetingStatus::Pending,
             'submitted_at' => now(),
         ]);
+
+        /**
+         * Converted on submission rather than on upload: a client who records
+         * four takes before settling on one should not put four conversions
+         * through the queue.
+         */
+        ConvertGreetingToMp3::dispatch($greeting);
 
         return back();
     }
