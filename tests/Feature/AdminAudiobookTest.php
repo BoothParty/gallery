@@ -13,7 +13,7 @@ it('shows the studio the greeting waiting for it', function () {
     $party = Party::factory()->withAudioGuestbook()->create(['display_name' => 'Camille & Antoine']);
     AudioGreeting::factory()->for($party)->pending()->create(['client_note' => 'Prénom : Lo-ic']);
 
-    $this->get("/{$party->name}/dashboard/livre-or")
+    $this->get("/admin/livre-or/{$party->id}")
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('admin/audiobook/index')
@@ -27,7 +27,7 @@ it('shows the studio the greeting waiting for it', function () {
 it('shows an empty state when the client has recorded nothing', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
 
-    $this->get("/{$party->name}/dashboard/livre-or")
+    $this->get("/admin/livre-or/{$party->id}")
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('greeting', null));
 });
@@ -36,7 +36,7 @@ it('validates a greeting in one click', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
     AudioGreeting::factory()->for($party)->pending()->create();
 
-    $this->post("/{$party->name}/dashboard/livre-or/annonce/valider")->assertRedirect();
+    $this->post("/admin/livre-or/{$party->id}/annonce/valider")->assertRedirect();
 
     expect($party->fresh()->greeting)
         ->status->toBe(GreetingStatus::Validated)
@@ -47,7 +47,7 @@ it('clears a previous reason when validating', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
     AudioGreeting::factory()->for($party)->rejected('Son saturé')->create();
 
-    $this->post("/{$party->name}/dashboard/livre-or/annonce/valider")->assertRedirect();
+    $this->post("/admin/livre-or/{$party->id}/annonce/valider")->assertRedirect();
 
     expect($party->fresh()->greeting->rejection_reason)->toBeNull();
 });
@@ -56,7 +56,7 @@ it('refuses a greeting with a reason', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
     AudioGreeting::factory()->for($party)->pending()->create();
 
-    $this->post("/{$party->name}/dashboard/livre-or/annonce/refuser", [
+    $this->post("/admin/livre-or/{$party->id}/annonce/refuser", [
         'rejection_reason' => 'Le son est saturé, reculez du micro.',
     ])->assertRedirect();
 
@@ -70,7 +70,7 @@ it('will not refuse a greeting without a reason', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
     AudioGreeting::factory()->for($party)->pending()->create();
 
-    $this->post("/{$party->name}/dashboard/livre-or/annonce/refuser")
+    $this->post("/admin/livre-or/{$party->id}/annonce/refuser")
         ->assertSessionHasErrors('rejection_reason');
 
     expect($party->fresh()->greeting->status)->toBe(GreetingStatus::Pending);
@@ -80,7 +80,7 @@ it('takes a validated greeting back to refused', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
     AudioGreeting::factory()->for($party)->validated()->create();
 
-    $this->post("/{$party->name}/dashboard/livre-or/annonce/refuser", [
+    $this->post("/admin/livre-or/{$party->id}/annonce/refuser", [
         'rejection_reason' => 'Finalement trop long.',
     ])->assertRedirect();
 
@@ -92,7 +92,7 @@ it('takes a validated greeting back to refused', function () {
 it('404s when there is no greeting to act on', function () {
     $party = Party::factory()->withAudioGuestbook()->create();
 
-    $this->post("/{$party->name}/dashboard/livre-or/annonce/valider")->assertNotFound();
+    $this->post("/admin/livre-or/{$party->id}/annonce/valider")->assertNotFound();
 });
 
 it('keeps the studio page behind authentication', function () {
@@ -100,7 +100,7 @@ it('keeps the studio page behind authentication', function () {
 
     $party = Party::factory()->withAudioGuestbook()->create();
 
-    $this->get("/{$party->name}/dashboard/livre-or")->assertRedirect(route('login'));
+    $this->get("/admin/livre-or/{$party->id}")->assertRedirect(route('login'));
 });
 
 // ── Modules ─────────────────────────────────────────────────────────────────
@@ -135,4 +135,31 @@ it('sends the module flags to the sidebar', function () {
             ->where('searchableParties.0.has_audio_guestbook', true)
             ->where('searchableParties.0.name', 'Sophie & Marc')
         );
+});
+
+/**
+ * The whole point of the module is that a party may be sold without a gallery,
+ * and therefore without a subdomain. Addressing the studio page by name would
+ * leave exactly those parties unreachable.
+ */
+it('reaches the studio page of a party that has no subdomain', function () {
+    $party = Party::factory()->audioOnly()->create(['display_name' => 'Sophie & Marc']);
+    AudioGreeting::factory()->for($party)->pending()->create();
+
+    $this->get("/admin/livre-or/{$party->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('party.name', 'Sophie & Marc'));
+});
+
+it('updates and deletes a party that has no subdomain', function () {
+    $party = Party::factory()->audioOnly()->create();
+
+    $this->put(route('admin.parties.update', $party), ['display_name' => 'Renommée'])
+        ->assertRedirect();
+
+    expect($party->fresh()->display_name)->toBe('Renommée');
+
+    $this->delete(route('admin.parties.destroy', $party))->assertRedirect();
+
+    expect(Party::query()->find($party->id))->toBeNull();
 });

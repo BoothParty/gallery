@@ -15,6 +15,7 @@ class AdminDashboardDataService
 
     public function __construct(
         private readonly CrudDiscoveryService $crudDiscoveryService,
+        private readonly AudiobookQueue $audiobookQueue,
     ) {}
 
     /**
@@ -49,6 +50,12 @@ class AdminDashboardDataService
             'currentPartyId' => $resolvedPartyId,
             'parties' => $parties,
             'searchableParties' => $searchableParties,
+            /**
+             * What the sidebar badge shows: the greetings to validate and the
+             * events whose messages are still to upload. Both ask something of
+             * the studio; a client running late does not.
+             */
+            'audiobookPending' => $this->audiobookQueue->pendingCount(),
         ];
     }
 

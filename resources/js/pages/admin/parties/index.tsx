@@ -34,6 +34,7 @@ type PageProps = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
     users: {
         id: number
         name: string
@@ -58,6 +59,7 @@ export default function PartiesIndex({
     currentPartyId,
     parties,
     searchableParties,
+    audiobookPending,
     users,
     editableParties,
     tableData,
@@ -102,12 +104,15 @@ export default function PartiesIndex({
         })
     }
 
-    const resolvePartyRouteKey = (row: CrudRow): string | null => {
-        if (typeof row.name !== "string" || row.name.trim().length === 0) {
-            return null
-        }
+    /**
+     * Administration routes bind a party by its identifier: a party sold with
+     * the audio guestbook alone has no subdomain, and therefore no name to be
+     * addressed by.
+     */
+    const resolvePartyId = (row: CrudRow): number | null => {
+        const parsed = Number(row.id)
 
-        return encodeURIComponent(row.name)
+        return Number.isFinite(parsed) ? parsed : null
     }
 
     const openPartyDetails = (row: CrudRow) => {
@@ -150,7 +155,7 @@ export default function PartiesIndex({
     const submitEdit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
-        if (!selectedPartyRouteKey || !selectedPartyId) {
+        if (!selectedPartyId) {
             return
         }
 
@@ -161,7 +166,7 @@ export default function PartiesIndex({
         }))
         // Inertia switches to FormData as soon as a file is present, and
         // multipart cannot carry a PUT, hence the spoofed method above.
-        editForm.post(`/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}`, {
+        editForm.post(`/admin/parties/${selectedPartyId}`, {
             onSuccess: () => {
                 setDetailsModalOpen(false)
             },
@@ -173,9 +178,9 @@ export default function PartiesIndex({
     }
 
     const deletePartyFromRow = (row: CrudRow) => {
-        const routeKey = resolvePartyRouteKey(row)
+        const partyId = resolvePartyId(row)
 
-        if (!routeKey) {
+        if (!partyId) {
             return
         }
 
@@ -183,20 +188,19 @@ export default function PartiesIndex({
             return
         }
 
-        quickDeleteForm.delete(`/admin/parties/${routeKey}`)
+        quickDeleteForm.delete(`/admin/parties/${partyId}`)
     }
 
-    const posterHref = (routeKey: string): string =>
-        `/admin/parties/${encodeURIComponent(routeKey)}/poster`
+    const posterHref = (partyId: number): string => `/admin/parties/${partyId}/poster`
 
     const downloadPosterFromRow = (row: CrudRow) => {
-        const routeKey = resolvePartyRouteKey(row)
+        const partyId = resolvePartyId(row)
 
-        if (!routeKey) {
+        if (!partyId) {
             return
         }
 
-        window.location.href = `/admin/parties/${routeKey}/poster`
+        window.location.href = posterHref(partyId)
     }
 
     const rowActions: CrudRowAction[] = [
@@ -218,7 +222,7 @@ export default function PartiesIndex({
     return (
         <AdminLayout
             title="Administration / Parties"
-            sidebar={{ currentPartyId, parties, searchableParties }}
+            sidebar={{ currentPartyId, parties, searchableParties, audiobookPending }}
         >
             <DataTable
                 tableData={tableData}
@@ -503,7 +507,7 @@ export default function PartiesIndex({
                                 className="h-auto px-0 text-xs text-destructive hover:bg-transparent"
                                 disabled={hostTokenForm.processing}
                                 onClick={() => {
-                                    if (!selectedPartyRouteKey) {
+                                    if (!selectedPartyId) {
                                         return
                                     }
 
@@ -511,10 +515,9 @@ export default function PartiesIndex({
                                         return
                                     }
 
-                                    hostTokenForm.post(
-                                        `/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}/host-token`,
-                                        { onSuccess: () => setDetailsModalOpen(false) },
-                                    )
+                                    hostTokenForm.post(`/admin/parties/${selectedPartyId}/host-token`, {
+                                        onSuccess: () => setDetailsModalOpen(false),
+                                    })
                                 }}
                             >
                                 Regenerate the link
@@ -522,9 +525,11 @@ export default function PartiesIndex({
                         </div>
 
                         <DialogFooter>
-                            {selectedPartyRouteKey && (
+                            {/* Le poster porte l'adresse de la galerie : sans sous-domaine,
+                                il n'y a rien à imprimer, et le générateur refuse. */}
+                            {selectedPartyRouteKey && selectedPartyId && (
                                 <Button asChild type="button" variant="outline" className="sm:mr-auto">
-                                    <a id="download-party-poster" href={posterHref(selectedPartyRouteKey)} download>
+                                    <a id="download-party-poster" href={posterHref(selectedPartyId)} download>
                                         <DownloadIcon className="size-4" />
                                         Download poster
                                     </a>
@@ -538,7 +543,7 @@ export default function PartiesIndex({
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={editForm.processing || !selectedPartyId || !selectedPartyRouteKey}>
+                            <Button type="submit" disabled={editForm.processing || !selectedPartyId}>
                                 Update party
                             </Button>
                         </DialogFooter>

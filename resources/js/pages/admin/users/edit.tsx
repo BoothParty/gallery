@@ -10,6 +10,7 @@ type PageProps = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
     user: {
         id: number
         name: string
@@ -21,6 +22,7 @@ export default function UsersEdit({
     currentPartyId,
     parties,
     searchableParties,
+    audiobookPending,
     user,
 }: PageProps) {
     const form = useForm({
@@ -36,7 +38,7 @@ export default function UsersEdit({
     return (
         <AdminLayout
             title={`Administration / Users / #${user.id}`}
-            sidebar={{ currentPartyId, parties, searchableParties }}
+            sidebar={{ currentPartyId, parties, searchableParties, audiobookPending }}
         >
             <form onSubmit={submit} className="max-w-xl space-y-4 rounded-xl border bg-muted/30 p-4">
                 <div className="space-y-2">

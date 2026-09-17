@@ -10,12 +10,14 @@ type PageProps = {
     currentPartyId: number | null
     parties: SidebarParty[]
     searchableParties: SidebarParty[]
+    audiobookPending: number
 }
 
 export default function UsersCreate({
     currentPartyId,
     parties,
     searchableParties,
+    audiobookPending,
 }: PageProps) {
     const form = useForm({
         name: "",
@@ -30,7 +32,7 @@ export default function UsersCreate({
     return (
         <AdminLayout
             title="Administration / Users / Create"
-            sidebar={{ currentPartyId, parties, searchableParties }}
+            sidebar={{ currentPartyId, parties, searchableParties, audiobookPending }}
         >
             <form onSubmit={submit} className="max-w-xl space-y-4 rounded-xl border bg-muted/30 p-4">
                 <div className="space-y-2">
