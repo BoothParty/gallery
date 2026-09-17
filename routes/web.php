@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AudiobookController as AdminAudiobookController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\PartyController as AdminPartyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -70,6 +71,12 @@ Route::prefix('{party}')->name('party.')->group(function () {
     Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
         Route::get('/', [PartyDashboardController::class, 'show'])->name('show');
 
+        Route::get('/livre-or', [AdminAudiobookController::class, 'show'])->name('audiobook');
+        Route::post('/livre-or/annonce/valider', [AdminAudiobookController::class, 'approve'])
+            ->name('audiobook.approve');
+        Route::post('/livre-or/annonce/refuser', [AdminAudiobookController::class, 'reject'])
+            ->name('audiobook.reject');
+
         Route::get('/pictures', [PartyDashboardController::class, 'pictures'])->name('pictures');
         Route::post('/pictures', [AdminGalleryController::class, 'store'])->name('pictures.store');
         Route::delete('/pictures', [AdminGalleryController::class, 'bulkDelete'])->name('pictures.bulk-delete');
@@ -81,6 +88,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('parties/{party}/poster', [AdminPartyController::class, 'poster'])->name('parties.poster');
     Route::post('parties/{party}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
         ->name('parties.host-token');
+    Route::patch('parties/{party}/modules', [AdminPartyController::class, 'updateModules'])
+        ->name('parties.modules');
     Route::resource('parties', AdminPartyController::class)->except(['show', 'create', 'edit']);
     Route::resource('users', AdminUserController::class)->except(['show']);
 });

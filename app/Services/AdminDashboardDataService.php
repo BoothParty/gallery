@@ -27,11 +27,13 @@ class AdminDashboardDataService
     {
         $searchableParties = Party::query()
             ->orderBy('name')
-            ->get(['id', 'name', 'expire_at'])
+            ->get(['id', 'name', 'display_name', 'expire_at', 'has_gallery', 'has_audio_guestbook'])
             ->map(fn (Party $availableParty): array => [
                 'id' => $availableParty->id,
-                'name' => $availableParty->name,
+                'name' => $availableParty->displayTitle(),
                 'expired' => $availableParty->expire_at !== null && $availableParty->expire_at->isPast(),
+                'has_gallery' => $availableParty->has_gallery,
+                'has_audio_guestbook' => $availableParty->has_audio_guestbook,
             ])
             ->values();
 

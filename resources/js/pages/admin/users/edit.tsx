@@ -1,23 +1,15 @@
 import { FormEvent } from "react"
 import { Link, useForm } from "@inertiajs/react"
 
-import { AdminLayout } from "@/components/admin-layout"
+import { AdminLayout, type SidebarParty } from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type PageProps = {
     currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
+    parties: SidebarParty[]
+    searchableParties: SidebarParty[]
     user: {
         id: number
         name: string

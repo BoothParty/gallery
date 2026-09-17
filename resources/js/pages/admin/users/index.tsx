@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react"
 import { useForm } from "@inertiajs/react"
 
-import { AdminLayout } from "@/components/admin-layout"
+import { AdminLayout, type SidebarParty } from "@/components/admin-layout"
 import { DataTable } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,16 +18,8 @@ import type { CrudRow, CrudRowAction, CrudTableData } from "@/components/data-ta
 
 type PageProps = {
     currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
+    parties: SidebarParty[]
+    searchableParties: SidebarParty[]
     tableData: CrudTableData
 }
 

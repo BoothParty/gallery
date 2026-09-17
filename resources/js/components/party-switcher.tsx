@@ -3,6 +3,8 @@
 import * as React from "react"
 import { router, usePage } from "@inertiajs/react"
 
+import type { SidebarParty } from "@/components/admin-layout"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,16 +28,8 @@ export function PartySwitcher({
   searchableParties,
   currentPartyId,
 }: {
-  parties: {
-    id: number
-    name: string
-    expired: boolean
-  }[]
-  searchableParties: {
-    id: number
-    name: string
-    expired: boolean
-  }[]
+  parties: SidebarParty[]
+  searchableParties: SidebarParty[]
   currentPartyId: number | null
 }) {
   const { isMobile } = useSidebar()
