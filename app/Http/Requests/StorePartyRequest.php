@@ -26,7 +26,7 @@ class StorePartyRequest extends FormRequest
     {
         return [
             'name' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
                 Rule::notIn(Party::RESERVED_NAMES),
@@ -45,6 +45,7 @@ class StorePartyRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.required' => 'Please provide a party name.',
             'name.max' => 'The party name must not exceed 255 characters.',
             'name.unique' => 'A party already uses this name.',
             'name.not_in' => 'This name is reserved by the application.',
