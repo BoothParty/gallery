@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\PartyController as AdminPartyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AudiobookController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
@@ -24,6 +25,15 @@ Route::middleware('throttle:10,1')->group(function (): void {
     Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->name('auth.callback');
 });
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
+
+/**
+ * The client's audio space, addressed by the party's private uuid rather than
+ * by a subdomain: only the events sold as a published gallery get one of
+ * those. Declared ahead of the `{party}` group, which is a catch-all prefix.
+ */
+Route::get('audiobook/{party:client_uuid}', [AudiobookController::class, 'show'])
+    ->middleware('audiobook')
+    ->name('audiobook.show');
 
 Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])

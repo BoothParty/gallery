@@ -215,6 +215,15 @@ class Party extends Model
     }
 
     /**
+     * Link the client opens to record their greeting and collect their guests'
+     * messages. The only place that knows the shape of that link.
+     */
+    public function audiobookUrl(): string
+    {
+        return route('audiobook.show', $this->client_uuid);
+    }
+
+    /**
      * Whether this party is published on a subdomain of its own. Only the
      * events sold as a published gallery are; the rest are addressed by uuid.
      */
