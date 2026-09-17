@@ -46,6 +46,14 @@ class Party extends Model
         'expire_at',
         'source_key',
         'source_event_id',
+        'gallery_uuid',
+        'client_uuid',
+        'has_gallery',
+        'has_audio_guestbook',
+        'client_email',
+        'event_at',
+        'greeting_reminder_sent_at',
+        'expiry_reminder_sent_at',
     ];
 
     /**
@@ -53,12 +61,14 @@ class Party extends Model
      * centred and unzoomed rather than reporting nulls to whatever renders it
      * before the row is read back.
      *
-     * @var array<string, int|float>
+     * @var array<string, int|float|bool>
      */
     protected $attributes = [
         'banner_position_x' => 50,
         'banner_position_y' => 50,
         'banner_zoom' => 1,
+        'has_gallery' => true,
+        'has_audio_guestbook' => false,
     ];
 
     protected function casts(): array
@@ -68,6 +78,11 @@ class Party extends Model
             'banner_position_x' => 'float',
             'banner_position_y' => 'float',
             'banner_zoom' => 'float',
+            'event_at' => 'datetime',
+            'greeting_reminder_sent_at' => 'datetime',
+            'expiry_reminder_sent_at' => 'datetime',
+            'has_gallery' => 'boolean',
+            'has_audio_guestbook' => 'boolean',
         ];
     }
 
@@ -75,6 +90,8 @@ class Party extends Model
     {
         static::creating(function (Party $party): void {
             $party->host_token ??= Str::random(48);
+            $party->gallery_uuid ??= (string) Str::uuid();
+            $party->client_uuid ??= (string) Str::uuid();
         });
 
         static::deleted(function (Party $party): void {

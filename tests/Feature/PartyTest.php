@@ -253,3 +253,63 @@ it('frames a banner centred and unzoomed on a party created without framing', fu
         ->and($party->banner_position_y)->toBe(50.0)
         ->and($party->banner_zoom)->toBe(1.0);
 });
+
+// ── Modules & adressage ─────────────────────────────────────────────────────
+
+it('mints two distinct uuids when a party is created', function () {
+    $party = Party::factory()->create();
+
+    expect($party->gallery_uuid)->toBeString()->not->toBeEmpty()
+        ->and($party->client_uuid)->toBeString()->not->toBeEmpty()
+        ->and($party->gallery_uuid)->not->toBe($party->client_uuid);
+});
+
+it('keeps the uuids it was given rather than minting new ones', function () {
+    $party = Party::factory()->create([
+        'gallery_uuid' => '11111111-1111-1111-1111-111111111111',
+        'client_uuid' => '22222222-2222-2222-2222-222222222222',
+    ]);
+
+    expect($party->fresh())
+        ->gallery_uuid->toBe('11111111-1111-1111-1111-111111111111')
+        ->client_uuid->toBe('22222222-2222-2222-2222-222222222222');
+});
+
+it('enables the gallery module and nothing else by default', function () {
+    $party = Party::factory()->create();
+
+    expect($party->has_gallery)->toBeTrue()
+        ->and($party->has_audio_guestbook)->toBeFalse();
+});
+
+it('casts the module flags as booleans', function () {
+    $party = Party::factory()->audioOnly()->create();
+
+    expect($party->fresh())
+        ->has_gallery->toBeFalse()
+        ->has_audio_guestbook->toBeTrue();
+});
+
+it('accepts a party without a subdomain name', function () {
+    $party = Party::factory()->withoutSubdomain()->create();
+
+    expect($party->fresh()->name)->toBeNull();
+});
+
+it('casts event_at and both reminder stamps as Carbon instances', function () {
+    $party = Party::factory()->eventAt(now()->addMonth())->create([
+        'greeting_reminder_sent_at' => now(),
+        'expiry_reminder_sent_at' => now(),
+    ]);
+
+    expect($party->fresh())
+        ->event_at->toBeInstanceOf(Carbon::class)
+        ->greeting_reminder_sent_at->toBeInstanceOf(Carbon::class)
+        ->expiry_reminder_sent_at->toBeInstanceOf(Carbon::class);
+});
+
+it('stores the client email', function () {
+    $party = Party::factory()->create(['client_email' => 'camille@example.test']);
+
+    expect($party->fresh()->client_email)->toBe('camille@example.test');
+});

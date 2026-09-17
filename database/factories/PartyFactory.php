@@ -31,6 +31,12 @@ class PartyFactory extends Factory
             'expire_at' => null,
             'source_key' => null,
             'source_event_id' => null,
+            'has_gallery' => true,
+            'has_audio_guestbook' => false,
+            'client_email' => null,
+            'event_at' => null,
+            'greeting_reminder_sent_at' => null,
+            'expiry_reminder_sent_at' => null,
         ];
     }
 
@@ -67,6 +73,36 @@ class PartyFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'expire_at' => $date,
+        ]);
+    }
+
+    public function withAudioGuestbook(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'has_audio_guestbook' => true,
+        ]);
+    }
+
+    public function audioOnly(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => null,
+            'has_gallery' => false,
+            'has_audio_guestbook' => true,
+        ]);
+    }
+
+    public function withoutSubdomain(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => null,
+        ]);
+    }
+
+    public function eventAt(Carbon $date): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'event_at' => $date,
         ]);
     }
 }
