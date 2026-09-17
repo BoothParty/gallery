@@ -34,6 +34,7 @@ class PartyFactory extends Factory
             'has_gallery' => true,
             'has_audio_guestbook' => false,
             'client_email' => null,
+            'link_sent_at' => null,
             'event_at' => null,
             'greeting_reminder_sent_at' => null,
             'expiry_reminder_sent_at' => null,

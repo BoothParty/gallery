@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAudioMessagesRequest;
+use App\Mail\MessagesAvailable;
 use App\Models\AudioMessage;
 use App\Models\Party;
+use App\Services\AudiobookMailer;
 use App\Services\AudioDuration;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +27,7 @@ class AudioMessageController extends Controller
         StoreAudioMessagesRequest $request,
         Party $party,
         AudioDuration $audioDuration,
+        AudiobookMailer $audiobookMailer,
     ): RedirectResponse {
         /** @var list<UploadedFile> $files */
         $files = $request->file('messages');
@@ -57,6 +60,8 @@ class AudioMessageController extends Controller
                 'position' => ++$position,
             ]);
         }
+
+        $audiobookMailer->toClient($party->fresh(), new MessagesAvailable($party->fresh()));
 
         return back();
     }

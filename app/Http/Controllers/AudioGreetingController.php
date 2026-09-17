@@ -6,8 +6,10 @@ use App\Enums\GreetingStatus;
 use App\Http\Requests\StoreAudioGreetingRequest;
 use App\Http\Requests\SubmitAudioGreetingRequest;
 use App\Jobs\ConvertGreetingToMp3;
+use App\Mail\GreetingSubmitted;
 use App\Models\AudioGreeting;
 use App\Models\Party;
+use App\Services\AudiobookMailer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 
@@ -50,8 +52,11 @@ class AudioGreetingController extends Controller
      * even when left empty, so a second submission never inherits the note of
      * the first.
      */
-    public function submit(SubmitAudioGreetingRequest $request, Party $party): RedirectResponse
-    {
+    public function submit(
+        SubmitAudioGreetingRequest $request,
+        Party $party,
+        AudiobookMailer $audiobookMailer,
+    ): RedirectResponse {
         $greeting = $party->greeting()->first();
 
         abort_unless($greeting instanceof AudioGreeting, 404);
@@ -68,6 +73,8 @@ class AudioGreetingController extends Controller
          * through the queue.
          */
         ConvertGreetingToMp3::dispatch($greeting);
+
+        $audiobookMailer->toStudio(new GreetingSubmitted($party));
 
         return back();
     }

@@ -1,6 +1,6 @@
 import { useForm } from "@inertiajs/react"
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react"
-import { CheckIcon, LinkIcon, Trash2Icon, UploadIcon, XIcon } from "lucide-react"
+import { CheckIcon, LinkIcon, SendIcon, Trash2Icon, UploadIcon, XIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarParty } from "@/components/admin-layout"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +40,7 @@ type PageProps = {
         name: string
         client_email: string | null
         client_url: string
+        link_sent_at: string | null
     }
     greeting: Greeting | null
     messages: GuestMessage[]
@@ -104,6 +105,7 @@ export default function AudiobookIndex({
     const rejectForm = useForm({ rejection_reason: "" })
     const uploadForm = useForm<{ messages: File[]; recorded_at: string[] }>({ messages: [], recorded_at: [] })
     const deleteForm = useForm({})
+    const linkForm = useForm({})
     const fileInput = useRef<HTMLInputElement | null>(null)
 
     const basePath = `/admin/livre-or/${party.id}`
@@ -176,10 +178,31 @@ export default function AudiobookIndex({
                             {party.client_email ?? "Aucune adresse client renseignée"}
                         </p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={copyClientLink}>
-                        <LinkIcon />
-                        {linkCopied ? "Lien copié" : "Copier le lien client"}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {party.link_sent_at && (
+                            <span className="text-sm text-muted-foreground">
+                                Lien envoyé le {formatMoment(party.link_sent_at)}
+                            </span>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!party.client_email || linkForm.processing}
+                            title={party.client_email ? undefined : "Aucune adresse client renseignée"}
+                            onClick={() =>
+                                linkForm.post(`/admin/parties/${party.id}/livre-or/lien`, {
+                                    preserveScroll: true,
+                                })
+                            }
+                        >
+                            <SendIcon />
+                            {party.link_sent_at ? "Renvoyer le lien" : "Envoyer le lien"}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={copyClientLink}>
+                            <LinkIcon />
+                            {linkCopied ? "Lien copié" : "Copier le lien"}
+                        </Button>
+                    </div>
                 </div>
 
                 {greeting === null ? (
