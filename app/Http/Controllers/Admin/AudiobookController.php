@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\GreetingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RejectAudioGreetingRequest;
+use App\Mail\GreetingRejected;
+use App\Mail\GreetingValidated;
 use App\Models\AudioGreeting;
 use App\Models\AudioMessage;
 use App\Models\Party;
 use App\Services\AdminDashboardDataService;
+use App\Services\AudiobookMailer;
 use App\Services\AudiobookQueue;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -45,6 +48,7 @@ class AudiobookController extends Controller
                 'name' => $party->displayTitle(),
                 'client_email' => $party->client_email,
                 'client_url' => $party->audiobookUrl(),
+                'link_sent_at' => $party->link_sent_at?->toIso8601String(),
             ],
             'greeting' => $greeting instanceof AudioGreeting ? [
                 'status' => $greeting->status->value,
@@ -72,7 +76,7 @@ class AudiobookController extends Controller
      * No confirmation guards this: the studio can send a greeting back to
      * `rejected` afterwards, so the gesture is reversible.
      */
-    public function approve(Party $party): RedirectResponse
+    public function approve(Party $party, AudiobookMailer $audiobookMailer): RedirectResponse
     {
         $greeting = $party->greeting()->first();
 
@@ -84,6 +88,8 @@ class AudiobookController extends Controller
             'validated_at' => now(),
         ]);
 
+        $audiobookMailer->toClient($party, new GreetingValidated($party));
+
         return back();
     }
 
@@ -93,8 +99,11 @@ class AudiobookController extends Controller
      * The reason is mandatory and travels verbatim to the client: it is the
      * only thing telling them what to do differently.
      */
-    public function reject(RejectAudioGreetingRequest $request, Party $party): RedirectResponse
-    {
+    public function reject(
+        RejectAudioGreetingRequest $request,
+        Party $party,
+        AudiobookMailer $audiobookMailer,
+    ): RedirectResponse {
         $greeting = $party->greeting()->first();
 
         abort_unless($greeting instanceof AudioGreeting, 404);
@@ -104,6 +113,8 @@ class AudiobookController extends Controller
             'rejection_reason' => $request->validated('rejection_reason'),
             'validated_at' => null,
         ]);
+
+        $audiobookMailer->toClient($party, new GreetingRejected($party, $request->validated('rejection_reason')));
 
         return back();
     }

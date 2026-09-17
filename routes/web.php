@@ -112,6 +112,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         ->name('parties.host-token');
     Route::patch('parties/{party:id}/modules', [AdminPartyController::class, 'updateModules'])
         ->name('parties.modules');
+    Route::post('parties/{party:id}/livre-or/lien', [AdminPartyController::class, 'sendAudiobookLink'])
+        ->name('parties.audiobook-link');
 
     Route::get('parties', [AdminPartyController::class, 'index'])->name('parties.index');
     Route::post('parties', [AdminPartyController::class, 'store'])->name('parties.store');

@@ -7,9 +7,11 @@ use App\Http\Requests\BulkStorePartiesRequest;
 use App\Http\Requests\StoreAdminPartyRequest;
 use App\Http\Requests\UpdateAdminPartyRequest;
 use App\Http\Requests\UpdatePartyModulesRequest;
+use App\Mail\AudiobookReady;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
+use App\Services\AudiobookMailer;
 use App\Services\PartyBannerStorage;
 use App\Services\PartyPosterGenerator;
 use App\Services\PartySources\PartySourceManager;
@@ -129,6 +131,21 @@ class PartyController extends Controller
     public function updateModules(UpdatePartyModulesRequest $request, Party $party): RedirectResponse
     {
         $party->update($request->validated());
+
+        return back();
+    }
+
+    /**
+     * Hand the client the link to their audio space.
+     *
+     * Always a deliberate gesture: the studio decides when a client is ready
+     * to receive it, so nothing here fires on creation.
+     */
+    public function sendAudiobookLink(Party $party, AudiobookMailer $audiobookMailer): RedirectResponse
+    {
+        if ($audiobookMailer->toClient($party, new AudiobookReady($party))) {
+            $party->forceFill(['link_sent_at' => now()])->save();
+        }
 
         return back();
     }
