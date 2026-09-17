@@ -22,6 +22,15 @@ class AudiobookController extends Controller
                 'title' => $party->displayTitle(),
                 'event_line' => $party->event_at?->locale('fr')->isoFormat('D MMMM YYYY'),
             ],
+            /**
+             * Built here rather than in the page: the party is bound by its
+             * private uuid, which `route()` would otherwise replace with the
+             * model's default route key.
+             */
+            'routes' => [
+                'store' => route('audiobook.greeting.store', $party->client_uuid),
+                'submit' => route('audiobook.greeting.submit', $party->client_uuid),
+            ],
             'greeting' => $greeting instanceof AudioGreeting ? [
                 'status' => $greeting->status->value,
                 'url' => $greeting->playbackUrl(),
