@@ -114,6 +114,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         ->name('parties.modules');
     Route::post('parties/{party:id}/livre-or/lien', [AdminPartyController::class, 'sendAudiobookLink'])
         ->name('parties.audiobook-link');
+    Route::post('parties/{party:id}/livre-or/revoquer', [AdminPartyController::class, 'regenerateClientUuid'])
+        ->name('parties.audiobook-revoke');
 
     Route::get('parties', [AdminPartyController::class, 'index'])->name('parties.index');
     Route::post('parties', [AdminPartyController::class, 'store'])->name('parties.store');

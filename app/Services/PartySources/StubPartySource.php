@@ -32,6 +32,9 @@ class StubPartySource implements PartySource
                 name: 'Mariage Domaine des Tilleuls',
                 startsAt: $today->addDays(12)->setTime(18, 0),
                 galleryName: 'domaine-des-tilleuls-2026',
+                clientEmail: 'camille@example.test',
+                hasGallery: true,
+                hasAudioGuestbook: true,
             ),
             new PartySourceEvent(
                 id: 'stub-chateau-de-la-motte',
@@ -42,6 +45,9 @@ class StubPartySource implements PartySource
                 id: 'stub-soiree-teclib',
                 name: 'Soirée Teclib',
                 startsAt: $today->addDays(45)->setTime(20, 0),
+                clientEmail: 'sophie@example.test',
+                hasGallery: false,
+                hasAudioGuestbook: true,
             ),
             new PartySourceEvent(
                 id: 'stub-anniversaire-lucie',

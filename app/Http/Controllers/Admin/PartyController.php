@@ -15,6 +15,7 @@ use App\Services\AudiobookMailer;
 use App\Services\PartyBannerStorage;
 use App\Services\PartyPosterGenerator;
 use App\Services\PartySources\PartySourceManager;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -26,6 +27,11 @@ use Inertia\Response;
 
 class PartyController extends Controller
 {
+    /**
+     * Days an event's content stays online after it happened.
+     */
+    public const RETENTION_DAYS = 90;
+
     public function index(
         Request $request,
         AdminDashboardDataService $adminDashboardDataService,
@@ -42,7 +48,10 @@ class PartyController extends Controller
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
             'editableParties' => Party::query()
-                ->get(['id', 'name', 'host_token', 'user_id', 'expire_at', 'display_name', 'description', 'banner_path'])
+                ->get([
+                    'id', 'name', 'host_token', 'user_id', 'expire_at', 'display_name', 'description',
+                    'banner_path', 'client_email', 'has_gallery', 'has_audio_guestbook', 'event_at', 'client_uuid',
+                ])
                 ->map(fn (Party $party): array => [
                     'id' => $party->id,
                     'name' => $party->name,
@@ -51,6 +60,10 @@ class PartyController extends Controller
                     'display_name' => $party->display_name,
                     'description' => $party->description,
                     'banner_url' => $party->bannerUrl(),
+                    'client_email' => $party->client_email,
+                    'has_gallery' => $party->has_gallery,
+                    'has_audio_guestbook' => $party->has_audio_guestbook,
+                    'audiobook_url' => $party->audiobookUrl(),
                     'host_edit_url' => $party->hostEditUrl(),
                     'route_key' => $party->name,
                 ])
@@ -73,8 +86,21 @@ class PartyController extends Controller
             foreach ($parties as $party) {
                 $sourceEventId = $party['source_event_id'] ?? null;
 
+                $eventAt = filled($party['event_at'] ?? null)
+                    ? CarbonImmutable::parse($party['event_at'])
+                    : null;
+
                 Party::query()->create([
-                    'name' => $party['name'],
+                    'name' => $party['name'] ?: null,
+                    'client_email' => $party['client_email'] ?? null,
+                    'has_gallery' => $party['has_gallery'] ?? true,
+                    'has_audio_guestbook' => $party['has_audio_guestbook'] ?? false,
+                    'event_at' => $eventAt,
+                    /*
+                     * Les enregistrements comme les photos vivent quatre-vingt-dix
+                     * jours après l'événement : une seule fin de vie par party.
+                     */
+                    'expire_at' => $eventAt?->addDays(self::RETENTION_DAYS),
                     'source_key' => $sourceEventId === null ? null : Str::before($sourceEventId, ':'),
                     'source_event_id' => $sourceEventId,
                 ]);
@@ -109,7 +135,7 @@ class PartyController extends Controller
     ): RedirectResponse {
         $party->update(Arr::only(
             $request->validated(),
-            ['name', 'user_id', 'expire_at', 'display_name', 'description'],
+            ['name', 'user_id', 'expire_at', 'display_name', 'description', 'client_email', 'event_at'],
         ));
 
         if ($request->boolean('remove_banner')) {
@@ -146,6 +172,23 @@ class PartyController extends Controller
         if ($audiobookMailer->toClient($party, new AudiobookReady($party))) {
             $party->forceFill(['link_sent_at' => now()])->save();
         }
+
+        return back();
+    }
+
+    /**
+     * Cut the client's audio link and mint a new one.
+     *
+     * The uuid is the access, so regenerating it is the only way to revoke a
+     * link that leaked. The client is not told: sending them the new one is a
+     * separate, deliberate gesture.
+     */
+    public function regenerateClientUuid(Party $party): RedirectResponse
+    {
+        $party->forceFill([
+            'client_uuid' => (string) Str::uuid(),
+            'link_sent_at' => null,
+        ])->save();
 
         return back();
     }

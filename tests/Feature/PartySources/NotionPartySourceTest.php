@@ -166,7 +166,11 @@ it('only asks notion for this week confirmed events with an online gallery, olde
     expect($query['filter'])->toBe([
         'and' => [
             ['property' => 'Status', 'status' => ['equals' => 'Confirmé']],
-            ['property' => 'Options', 'multi_select' => ['contains' => 'Galerie en ligne']],
+            // Les deux produits sont proposés : la galerie, le livre d'or, ou les deux.
+            ['or' => [
+                ['property' => 'Options', 'multi_select' => ['contains' => 'Galerie en ligne']],
+                ['property' => 'Options', 'multi_select' => ['contains' => "Livre d'or audio"]],
+            ]],
             ['property' => 'Date', 'date' => ['this_week' => []]],
         ],
     ]);

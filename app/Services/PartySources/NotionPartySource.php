@@ -4,6 +4,7 @@ namespace App\Services\PartySources;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
+use Notion\Databases\Properties\SelectOption;
 use Notion\Databases\Query;
 use Notion\Databases\Query\CompoundFilter;
 use Notion\Databases\Query\DateFilter;
@@ -13,6 +14,8 @@ use Notion\Databases\Query\StatusFilter;
 use Notion\Notion;
 use Notion\Pages\Page;
 use Notion\Pages\Properties\Date;
+use Notion\Pages\Properties\Email;
+use Notion\Pages\Properties\MultiSelect;
 use Notion\Pages\Properties\RichTextProperty;
 use Notion\Pages\Properties\Title;
 use RuntimeException;
@@ -55,7 +58,10 @@ class NotionPartySource implements PartySource
             ->changeFilter(
                 CompoundFilter::and(
                     StatusFilter::property($statusProperty)->equals('Confirmé'),
-                    MultiSelectFilter::property($optionsProperty)->contains('Galerie en ligne'),
+                    CompoundFilter::or(
+                        MultiSelectFilter::property($optionsProperty)->contains($this->galleryOption()),
+                        MultiSelectFilter::property($optionsProperty)->contains($this->audiobookOption()),
+                    ),
                     DateFilter::property($dateProperty)->thisWeek(),
                 )
             )
@@ -105,11 +111,16 @@ class NotionPartySource implements PartySource
             return null;
         }
 
+        $options = $this->options($page);
+
         return new PartySourceEvent(
             id: $page->id,
             name: trim($name),
             startsAt: $this->startsAt($page),
             galleryName: $this->galleryName($page),
+            clientEmail: $this->clientEmail($page),
+            hasGallery: in_array($this->galleryOption(), $options, true),
+            hasAudioGuestbook: in_array($this->audiobookOption(), $options, true),
         );
     }
 
@@ -139,6 +150,42 @@ class NotionPartySource implements PartySource
         $galleryName = trim($property->toString());
 
         return $galleryName === '' ? null : $galleryName;
+    }
+
+    /**
+     * Options ticked on the row, which is what the products sold are read from.
+     *
+     * @return list<string>
+     */
+    private function options(Page $page): array
+    {
+        $property = $this->property($page, $this->optionsProperty());
+
+        if (! $property instanceof MultiSelect) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            fn (SelectOption $option): ?string => $option->name,
+            $property->options,
+        )));
+    }
+
+    /**
+     * Address the client is written to. Optional: the admin fills it in by
+     * hand when the row has none, and the mails simply wait until it does.
+     */
+    private function clientEmail(Page $page): ?string
+    {
+        $property = $this->property($page, $this->clientEmailProperty());
+
+        if (! $property instanceof Email) {
+            return null;
+        }
+
+        $email = trim((string) $property->email);
+
+        return $email === '' ? null : $email;
     }
 
     private function startsAt(Page $page): ?CarbonImmutable
@@ -193,5 +240,20 @@ class NotionPartySource implements PartySource
     private function galleryNameProperty(): string
     {
         return (string) config('services.notion.properties.gallery_name');
+    }
+
+    private function clientEmailProperty(): string
+    {
+        return (string) config('services.notion.properties.client_email');
+    }
+
+    private function galleryOption(): string
+    {
+        return (string) config('services.notion.options.gallery');
+    }
+
+    private function audiobookOption(): string
+    {
+        return (string) config('services.notion.options.audiobook');
     }
 }
