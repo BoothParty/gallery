@@ -37,6 +37,16 @@ return [
             'status' => env('NOTION_PROPERTY_STATUS', 'Status'),
             'options' => env('NOTION_PROPERTY_OPTIONS', 'Options'),
             'gallery_name' => env('NOTION_PROPERTY_GALLERY_NAME', 'Nom de la galerie'),
+            'client_email' => env('NOTION_PROPERTY_CLIENT_EMAIL', 'E-mail client'),
+        ],
+
+        /*
+         * Libellés exacts des options multi-select qui disent ce qui a été
+         * vendu. Ils déterminent les modules activés à la création.
+         */
+        'options' => [
+            'gallery' => env('NOTION_OPTION_GALLERY', 'Galerie en ligne'),
+            'audiobook' => env('NOTION_OPTION_AUDIOBOOK', "Livre d'or audio"),
         ],
         'timeout' => (int) env('NOTION_TIMEOUT', 5),
     ],

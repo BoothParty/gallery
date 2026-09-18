@@ -47,8 +47,12 @@ type PageProps = {
         display_name: string | null
         description: string | null
         banner_url: string | null
-        host_edit_url: string
+        host_edit_url: string | null
         route_key: string
+        client_email: string | null
+        has_gallery: boolean
+        has_audio_guestbook: boolean
+        audiobook_url: string
     }[]
     tableData: CrudTableData
     partyDomain: string
@@ -82,6 +86,7 @@ export default function PartiesIndex({
     })
     const editForm = useForm({
         name: "",
+        client_email: "",
         user_id: null as number | null,
         expire_at: "",
         display_name: "",
@@ -91,6 +96,12 @@ export default function PartiesIndex({
     })
     const quickDeleteForm = useForm({})
     const hostTokenForm = useForm({})
+    const modulesForm = useForm<{ has_gallery: boolean; has_audio_guestbook: boolean }>({
+        has_gallery: true,
+        has_audio_guestbook: false,
+    })
+    const revokeForm = useForm({})
+    const [selectedParty, setSelectedParty] = useState<PageProps["editableParties"][number] | null>(null)
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -135,12 +146,18 @@ export default function PartiesIndex({
         }
 
         setSelectedPartyId(parsedId)
+        setSelectedParty(editableParty)
+        modulesForm.setData({
+            has_gallery: editableParty.has_gallery,
+            has_audio_guestbook: editableParty.has_audio_guestbook,
+        })
         setSelectedPartyRouteKey(editableParty.route_key)
         setSelectedPartyBannerUrl(editableParty.banner_url)
         setSelectedPartyHostEditUrl(editableParty.host_edit_url)
         setHostLinkCopied(false)
         setBannerPreview(null)
         editForm.setData({
+            client_email: editableParty.client_email ?? "",
             name: editableParty.name,
             user_id: editableParty.user_id,
             expire_at: toDateTimeLocalValue(editableParty.expire_at),
@@ -522,6 +539,107 @@ export default function PartiesIndex({
                             >
                                 Regenerate the link
                             </Button>
+                        </div>
+
+                        {/* Modules, adresse client et lien du livre d'or. */}
+                        <div className="flex flex-col gap-3 rounded-lg border p-3">
+                            <div className="flex flex-wrap items-center gap-4">
+                                <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                    Modules
+                                </span>
+                                {(
+                                    [
+                                        ["has_gallery", "Galerie"],
+                                        ["has_audio_guestbook", "Livre d'or"],
+                                    ] as const
+                                ).map(([field, label]) => (
+                                    <label key={field} className="flex items-center gap-1.5 text-sm">
+                                        <Checkbox
+                                            checked={modulesForm.data[field]}
+                                            disabled={modulesForm.processing || !selectedPartyId}
+                                            onCheckedChange={(checked) => {
+                                                if (!selectedPartyId) {
+                                                    return
+                                                }
+
+                                                modulesForm.setData(field, checked === true)
+                                                modulesForm.transform(() => ({
+                                                    [field]: checked === true,
+                                                }))
+                                                modulesForm.patch(
+                                                    `/admin/parties/${selectedPartyId}/modules`,
+                                                    { preserveScroll: true },
+                                                )
+                                            }}
+                                        />
+                                        {label}
+                                    </label>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label htmlFor="edit-party-client-email">Client email</Label>
+                                <Input
+                                    id="edit-party-client-email"
+                                    type="email"
+                                    value={editForm.data.client_email}
+                                    onChange={(event) =>
+                                        editForm.setData("client_email", event.target.value)
+                                    }
+                                    placeholder="camille@example.com"
+                                />
+                                {editForm.errors.client_email && (
+                                    <p className="text-sm text-destructive">
+                                        {editForm.errors.client_email}
+                                    </p>
+                                )}
+                            </div>
+
+                            {modulesForm.data.has_audio_guestbook && selectedParty && (
+                                <div className="flex flex-col gap-1.5">
+                                    <Label>Audiobook link</Label>
+                                    <div className="flex gap-2">
+                                        <Input readOnly value={selectedParty.audiobook_url} />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                void navigator.clipboard.writeText(
+                                                    selectedParty.audiobook_url,
+                                                )
+                                            }
+                                        >
+                                            Copy
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-auto self-start px-0 text-xs text-destructive hover:bg-transparent"
+                                        disabled={revokeForm.processing}
+                                        onClick={() => {
+                                            if (!selectedPartyId) {
+                                                return
+                                            }
+
+                                            if (
+                                                !window.confirm(
+                                                    "Revoke the link? The one already sent will stop working.",
+                                                )
+                                            ) {
+                                                return
+                                            }
+
+                                            revokeForm.post(
+                                                `/admin/parties/${selectedPartyId}/livre-or/revoquer`,
+                                                { onSuccess: () => setDetailsModalOpen(false) },
+                                            )
+                                        }}
+                                    >
+                                        Revoke the link
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         <DialogFooter>

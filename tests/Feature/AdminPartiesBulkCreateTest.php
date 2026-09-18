@@ -37,6 +37,9 @@ it('exposes the party domain and defers the upcoming source events', function ()
                     ->has('name')
                     ->has('starts_at')
                     ->has('gallery_name')
+                    ->has('client_email')
+                    ->has('has_gallery')
+                    ->has('has_audio_guestbook')
                     ->has('party_name')
                     ->has('already_imported')
                     ->where('source_key', 'stub')
@@ -157,12 +160,28 @@ it('rejects a party name already taken and creates nothing', function () {
     expect(Party::query()->where('name', 'brand-new')->exists())->toBeFalse();
 });
 
-it('requires a name for every selected event', function () {
+/**
+ * The name is the subdomain the gallery is published under, so it is required
+ * exactly when the gallery is sold.
+ */
+it('requires a name for every event sold with a gallery', function () {
     $this->post('/admin/parties/bulk', [
         'parties' => [
-            ['name' => ''],
+            ['name' => '', 'has_gallery' => true],
         ],
     ])->assertSessionHasErrors('parties.0.name');
 
     expect(Party::query()->count())->toBe(0);
+});
+
+it('needs no name for an event sold with the audio guestbook alone', function () {
+    $this->post('/admin/parties/bulk', [
+        'parties' => [
+            ['name' => '', 'has_gallery' => false, 'has_audio_guestbook' => true],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    expect(Party::query()->firstOrFail())
+        ->name->toBeNull()
+        ->has_audio_guestbook->toBeTrue();
 });

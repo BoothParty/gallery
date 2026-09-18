@@ -19,6 +19,7 @@ import {
     InputGroupInput,
     InputGroupText,
 } from "@/components/ui/input-group"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
     Table,
@@ -35,6 +36,9 @@ export type PartySourceEvent = {
     starts_at: string | null
     gallery_name: string | null
     party_name: string | null
+    client_email: string | null
+    has_gallery: boolean
+    has_audio_guestbook: boolean
     source_key: string
     source_label: string
     already_imported: boolean
@@ -50,6 +54,9 @@ interface PartyBulkCreateDialogProps {
 type EventSelection = {
     selected: boolean
     name: string
+    clientEmail: string
+    hasGallery: boolean
+    hasAudioGuestbook: boolean
 }
 
 /**
@@ -100,7 +107,16 @@ export function PartyBulkCreateDialog({
     const [selections, setSelections] = useState<Record<string, EventSelection>>({})
     const [submittedEventIds, setSubmittedEventIds] = useState<string[]>([])
     const [isRefreshing, setRefreshing] = useState(false)
-    const form = useForm<{ parties: { name: string; source_event_id: string }[] }>({
+    const form = useForm<{
+        parties: {
+            name: string | null
+            source_event_id: string
+            client_email: string | null
+            event_at: string | null
+            has_gallery: boolean
+            has_audio_guestbook: boolean
+        }[]
+    }>({
         parties: [],
     })
 
@@ -109,7 +125,13 @@ export function PartyBulkCreateDialog({
             Object.fromEntries(
                 events.map((event) => [
                     event.id,
-                    current[event.id] ?? { selected: false, name: initialPartyName(event) },
+                    current[event.id] ?? {
+                        selected: false,
+                        name: initialPartyName(event),
+                        clientEmail: event.client_email ?? "",
+                        hasGallery: event.has_gallery,
+                        hasAudioGuestbook: event.has_audio_guestbook,
+                    },
                 ]),
             ),
         )
@@ -130,6 +152,10 @@ export function PartyBulkCreateDialog({
                     {
                         selected: !allSelected && !event.already_imported,
                         name: current[event.id]?.name ?? initialPartyName(event),
+                        clientEmail: current[event.id]?.clientEmail ?? event.client_email ?? "",
+                        hasGallery: current[event.id]?.hasGallery ?? event.has_gallery,
+                        hasAudioGuestbook:
+                            current[event.id]?.hasAudioGuestbook ?? event.has_audio_guestbook,
                     },
                 ]),
             ),
@@ -177,10 +203,19 @@ export function PartyBulkCreateDialog({
     const submit = (submitEvent: FormEvent<HTMLFormElement>) => {
         submitEvent.preventDefault()
 
-        const parties = selectedEvents.map((event) => ({
-            name: selections[event.id]?.name ?? "",
-            source_event_id: event.id,
-        }))
+        const parties = selectedEvents.map((event) => {
+            const selection = selections[event.id]
+
+            return {
+                // Sans galerie, pas de sous-domaine : la party est adressée par uuid.
+                name: selection?.hasGallery ? (selection.name ?? "") : null,
+                source_event_id: event.id,
+                client_email: selection?.clientEmail || null,
+                event_at: event.starts_at,
+                has_gallery: selection?.hasGallery ?? true,
+                has_audio_guestbook: selection?.hasAudioGuestbook ?? false,
+            }
+        })
 
         setSubmittedEventIds(selectedEvents.map((event) => event.id))
         form.transform(() => ({ parties }))
@@ -302,7 +337,10 @@ export function PartyBulkCreateDialog({
                                                                 aria-invalid={
                                                                     error ? true : undefined
                                                                 }
-                                                                disabled={event.already_imported}
+                                                                disabled={
+                                                                    event.already_imported ||
+                                                                    !selections[event.id]?.hasGallery
+                                                                }
                                                             />
                                                             <InputGroupAddon align="inline-end">
                                                                 <InputGroupText>
@@ -310,6 +348,59 @@ export function PartyBulkCreateDialog({
                                                                 </InputGroupText>
                                                             </InputGroupAddon>
                                                         </InputGroup>
+
+                                                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                                                            <label className="flex items-center gap-1.5 text-xs">
+                                                                <Checkbox
+                                                                    checked={
+                                                                        selections[event.id]
+                                                                            ?.hasGallery ?? true
+                                                                    }
+                                                                    disabled={event.already_imported}
+                                                                    onCheckedChange={(checked) =>
+                                                                        updateSelection(event.id, {
+                                                                            hasGallery:
+                                                                                checked === true,
+                                                                        })
+                                                                    }
+                                                                />
+                                                                Galerie
+                                                            </label>
+                                                            <label className="flex items-center gap-1.5 text-xs">
+                                                                <Checkbox
+                                                                    checked={
+                                                                        selections[event.id]
+                                                                            ?.hasAudioGuestbook ??
+                                                                        false
+                                                                    }
+                                                                    disabled={event.already_imported}
+                                                                    onCheckedChange={(checked) =>
+                                                                        updateSelection(event.id, {
+                                                                            hasAudioGuestbook:
+                                                                                checked === true,
+                                                                        })
+                                                                    }
+                                                                />
+                                                                Livre d'or
+                                                            </label>
+                                                        </div>
+
+                                                        <Input
+                                                            type="email"
+                                                            className="mt-2 h-8 text-xs"
+                                                            placeholder="E-mail du client"
+                                                            value={
+                                                                selections[event.id]?.clientEmail ??
+                                                                ""
+                                                            }
+                                                            disabled={event.already_imported}
+                                                            onChange={(changeEvent) =>
+                                                                updateSelection(event.id, {
+                                                                    clientEmail:
+                                                                        changeEvent.target.value,
+                                                                })
+                                                            }
+                                                        />
                                                         {error && (
                                                             <p className="mt-1 text-xs text-red-500">
                                                                 {error}
