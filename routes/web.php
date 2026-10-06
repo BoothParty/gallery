@@ -63,5 +63,5 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('parties/{party}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
         ->name('parties.host-token');
     Route::resource('parties', AdminPartyController::class)->except(['show', 'create', 'edit']);
-    Route::resource('users', AdminUserController::class)->except(['show']);
+    Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
 });

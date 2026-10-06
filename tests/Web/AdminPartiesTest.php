@@ -189,7 +189,7 @@ it('links to the poster download from the details dialog', function () {
 
     openFirstPartyDetails($page)
         ->assertVisible('#download-party-poster')
-        ->assertAttribute('#download-party-poster', 'href', route('admin.parties.poster', $party, absolute: false))
+        ->assertAttributeContains('#download-party-poster', 'href', route('admin.parties.poster', $party, absolute: false))
         ->assertNoJavaScriptErrors();
 });
 

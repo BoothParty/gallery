@@ -7,7 +7,7 @@ beforeEach(function () {
     $this->actingAs(User::factory()->create());
 });
 
-it('renders administration users index with datatable data', function () {
+it('renders administration users index with one row per user', function () {
     $user = User::factory()->create(['name' => 'Alice']);
     Party::factory()->count(2)->create(['user_id' => $user->id]);
 
@@ -15,9 +15,8 @@ it('renders administration users index with datatable data', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('admin/users/index')
-            ->has('tableData.columns')
-            ->has('tableData.rows', 2)
-            ->where('tableData.rows', fn ($rows) => collect($rows)
+            ->has('rows', 2)
+            ->where('rows', fn ($rows) => collect($rows)
                 ->contains(fn (array $row) => $row['name'] === 'Alice' && $row['parties_count'] === 2)
             )
         );
@@ -74,30 +73,4 @@ it('deletes a user from administration', function () {
         ->assertRedirect('/admin/users');
 
     $this->assertModelMissing($user);
-});
-
-it('renders administration create user page', function () {
-    $this->get('/admin/users/create')
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('admin/users/create')
-            ->has('parties')
-            ->has('searchableParties')
-        );
-});
-
-it('renders administration edit user page', function () {
-    $user = User::factory()->create([
-        'name' => 'Edit Me',
-        'email' => 'edit@example.com',
-    ]);
-
-    $this->get("/admin/users/{$user->id}/edit")
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('admin/users/edit')
-            ->where('user.id', $user->id)
-            ->where('user.name', 'Edit Me')
-            ->where('user.email', 'edit@example.com')
-        );
 });

@@ -1,7 +1,7 @@
 import { type Row } from "@tanstack/react-table"
 import { MoreHorizontal } from "lucide-react"
 
-import type { CrudRow, CrudRowAction } from "@/components/data-table/types"
+import type { RowAction } from "@/components/data-table/types"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -10,7 +10,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function DataTableRowActions({ row, actions }: { row: Row<CrudRow>, actions: CrudRowAction[] }) {
+export function DataTableRowActions<TRow>({ row, actions }: { row: Row<TRow>, actions: RowAction<TRow>[] }) {
     if (actions.length === 0) {
         return null
     }

@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -23,6 +24,11 @@ use Inertia\Response;
 
 class PartyController extends Controller
 {
+    /**
+     * One row per party feeds both the table and the edit dialog. Dates go out
+     * as absolute instants; the admin forms convert them to and from the
+     * browser's local time for their datetime-local input.
+     */
     public function index(
         Request $request,
         AdminDashboardDataService $adminDashboardDataService,
@@ -32,26 +38,29 @@ class PartyController extends Controller
 
         return Inertia::render('admin/parties/index', [
             ...$adminDashboardDataService->sidebarData(),
-            'tableData' => $adminDashboardDataService->tableDataForResource('parties'),
             'users' => $this->userOptions(),
             'partyDomain' => config('party.domain'),
             'upcomingSourceEvents' => Inertia::defer(
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
-            'editableParties' => Party::query()
-                ->get(['id', 'name', 'host_token', 'user_id', 'expire_at', 'display_name', 'description', 'banner_path'])
+            'rows' => Party::query()
+                ->with('user:id,name')
+                ->withCount('pictures')
+                ->oldest('id')
+                ->get()
                 ->map(fn (Party $party): array => [
                     'id' => $party->id,
                     'name' => $party->name,
-                    'user_id' => $party->user_id,
-                    'expire_at' => $this->expiryForInput($party),
                     'display_name' => $party->display_name,
                     'description' => $party->description,
+                    'user_id' => $party->user_id,
+                    'owner' => $party->user?->name,
+                    'pictures_count' => $party->pictures_count,
+                    'expire_at' => $party->expire_at?->toIso8601String(),
+                    'created_at' => $party->created_at?->toIso8601String(),
                     'banner_url' => $party->bannerUrl(),
                     'host_edit_url' => $party->hostEditUrl(),
-                    'route_key' => $party->name,
-                ])
-                ->values(),
+                ]),
         ]);
     }
 
@@ -140,15 +149,9 @@ class PartyController extends Controller
     }
 
     /**
-     * Expose the expiry date as an absolute instant; the admin forms convert it
-     * to and from the browser's local time for their datetime-local input.
+     * @return Collection<int, array{id: int, name: string}>
      */
-    private function expiryForInput(Party $party): ?string
-    {
-        return $party->expire_at?->toIso8601String();
-    }
-
-    private function userOptions()
+    private function userOptions(): Collection
     {
         return User::query()
             ->orderBy('name')

@@ -15,18 +15,19 @@ import {
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-type SidebarData = {
+type SidebarParty = {
+    id: number
+    name: string
+    expired: boolean
+}
+
+/**
+ * Shared by every admin page: the controllers spread it into their props.
+ */
+export type SidebarData = {
     currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
+    parties: SidebarParty[]
+    searchableParties: SidebarParty[]
 }
 
 type AdminLayoutProps = React.PropsWithChildren<{

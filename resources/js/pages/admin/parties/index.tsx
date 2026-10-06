@@ -1,13 +1,15 @@
 import { FormEvent, useState } from "react"
-import { useForm } from "@inertiajs/react"
-import { DownloadIcon, WandSparklesIcon } from "lucide-react"
+import { Link, router, useForm } from "@inertiajs/react"
+import { ArrowUpRightIcon, DownloadIcon, WandSparklesIcon } from "lucide-react"
 
-import { AdminLayout } from "@/components/admin-layout"
-import { DataTable } from "@/components/data-table"
+import { AdminLayout, type SidebarData } from "@/components/admin-layout"
+import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
+import { FormField } from "@/components/form-field"
 import {
     PartyBulkCreateDialog,
     type PartySourceEvent,
 } from "@/components/parties/bulk-create-dialog"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -27,66 +29,66 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import type { CrudRow, CrudRowAction, CrudTableData } from "@/components/data-table/types"
 import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime"
 
-type PageProps = {
-    currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    users: {
-        id: number
-        name: string
-    }[]
-    editableParties: {
-        id: number
-        name: string
-        user_id: number | null
-        expire_at: string | null
-        display_name: string | null
-        description: string | null
-        banner_url: string | null
-        host_edit_url: string
-        route_key: string
-    }[]
-    tableData: CrudTableData
+type PartyRow = {
+    id: number
+    name: string
+    display_name: string | null
+    description: string | null
+    user_id: number | null
+    owner: string | null
+    pictures_count: number
+    expire_at: string | null
+    created_at: string | null
+    banner_url: string | null
+    host_edit_url: string
+}
+
+type PageProps = SidebarData & {
+    rows: PartyRow[]
+    users: { id: number, name: string }[]
     partyDomain: string
     upcomingSourceEvents?: PartySourceEvent[]
 }
 
+const columns = [
+    dataColumn<PartyRow>("name", "Name"),
+    dataColumn<PartyRow>("display_name", "Display name"),
+    dataColumn<PartyRow>("owner", "Owner"),
+    dataColumn<PartyRow>("pictures_count", "Pictures", {
+        cell: (party) => (
+            <Badge asChild variant="secondary">
+                <Link
+                    href={route("party.dashboard.pictures", party.name)}
+                    className="flex items-center gap-1"
+                >
+                    {party.pictures_count} <ArrowUpRightIcon data-icon="inline-end" />
+                </Link>
+            </Badge>
+        ),
+    }),
+    dataColumn<PartyRow>("expire_at", "Expires", { type: "datetime" }),
+    dataColumn<PartyRow>("created_at", "Created", { type: "datetime" }),
+]
+
+/**
+ * Null opens the dialog in creation mode, a row opens it on that party.
+ */
+type DialogState = { party: PartyRow | null } | null
+
 export default function PartiesIndex({
-    currentPartyId,
-    parties,
-    searchableParties,
+    rows,
     users,
-    editableParties,
-    tableData,
     partyDomain,
     upcomingSourceEvents,
+    ...sidebar
 }: PageProps) {
-    const [isCreateModalOpen, setCreateModalOpen] = useState(false)
+    const [dialog, setDialog] = useState<DialogState>(null)
     const [isBulkCreateModalOpen, setBulkCreateModalOpen] = useState(false)
-    const [isDetailsModalOpen, setDetailsModalOpen] = useState(false)
-    const [selectedPartyId, setSelectedPartyId] = useState<number | null>(null)
-    const [selectedPartyRouteKey, setSelectedPartyRouteKey] = useState<string | null>(null)
-    const [selectedPartyBannerUrl, setSelectedPartyBannerUrl] = useState<string | null>(null)
     const [bannerPreview, setBannerPreview] = useState<string | null>(null)
-    const [selectedPartyHostEditUrl, setSelectedPartyHostEditUrl] = useState<string | null>(null)
     const [hostLinkCopied, setHostLinkCopied] = useState(false)
     const form = useForm({
-        name: "",
-        user_id: null as number | null,
-        expire_at: "",
-    })
-    const editForm = useForm({
         name: "",
         user_id: null as number | null,
         expire_at: "",
@@ -95,142 +97,84 @@ export default function PartiesIndex({
         banner: null as File | null,
         remove_banner: false,
     })
-    const quickDeleteForm = useForm({})
     const hostTokenForm = useForm({})
+    const editedParty = dialog?.party ?? null
+    const idPrefix = editedParty ? "edit-party" : "create-party"
+
+    const openDialog = (party: PartyRow | null) => {
+        form.clearErrors()
+        form.setData({
+            name: party?.name ?? "",
+            user_id: party?.user_id ?? null,
+            expire_at: toDateTimeLocalValue(party?.expire_at),
+            display_name: party?.display_name ?? "",
+            description: party?.description ?? "",
+            banner: null,
+            remove_banner: false,
+        })
+        setBannerPreview(null)
+        setHostLinkCopied(false)
+        setDialog({ party })
+    }
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
-        form.transform((data) => ({ ...data, expire_at: fromDateTimeLocalValue(data.expire_at) }))
-        form.post("/admin/parties", {
-            onSuccess: () => {
-                form.reset()
-                setCreateModalOpen(false)
-            },
-        })
-    }
+        const options = { onSuccess: () => setDialog(null) }
 
-    const resolvePartyRouteKey = (row: CrudRow): string | null => {
-        if (typeof row.name !== "string" || row.name.trim().length === 0) {
-            return null
-        }
+        if (!editedParty) {
+            form.transform(({ name, user_id, expire_at }) => ({
+                name,
+                user_id,
+                expire_at: fromDateTimeLocalValue(expire_at),
+            }))
+            form.post(route("admin.parties.store"), options)
 
-        return encodeURIComponent(row.name)
-    }
-
-    const openPartyDetails = (row: CrudRow) => {
-        const rowId = row.id
-
-        if (typeof rowId !== "number" && typeof rowId !== "string") {
             return
         }
 
-        const parsedId = Number(rowId)
-
-        if (!Number.isFinite(parsedId)) {
-            return
-        }
-
-        const editableParty = editableParties.find((party) => party.id === parsedId)
-
-        if (!editableParty) {
-            return
-        }
-
-        setSelectedPartyId(parsedId)
-        setSelectedPartyRouteKey(editableParty.route_key)
-        setSelectedPartyBannerUrl(editableParty.banner_url)
-        setSelectedPartyHostEditUrl(editableParty.host_edit_url)
-        setHostLinkCopied(false)
-        setBannerPreview(null)
-        editForm.setData({
-            name: editableParty.name,
-            user_id: editableParty.user_id,
-            expire_at: toDateTimeLocalValue(editableParty.expire_at),
-            display_name: editableParty.display_name ?? "",
-            description: editableParty.description ?? "",
-            banner: null,
-            remove_banner: false,
-        })
-        setDetailsModalOpen(true)
-    }
-
-    const submitEdit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
-
-        if (!selectedPartyRouteKey || !selectedPartyId) {
-            return
-        }
-
-        editForm.transform((data) => ({
+        // Inertia switches to FormData as soon as a file is present, and
+        // multipart cannot carry a PUT, hence the spoofed method.
+        form.transform((data) => ({
             ...data,
             _method: "put",
             expire_at: fromDateTimeLocalValue(data.expire_at),
         }))
-        // Inertia switches to FormData as soon as a file is present, and
-        // multipart cannot carry a PUT, hence the spoofed method above.
-        editForm.post(`/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}`, {
-            onSuccess: () => {
-                setDetailsModalOpen(false)
-            },
-        })
+        form.post(route("admin.parties.update", editedParty.name), options)
     }
 
-    const openPartyEdit = (row: CrudRow) => {
-        openPartyDetails(row)
-    }
-
-    const deletePartyFromRow = (row: CrudRow) => {
-        const routeKey = resolvePartyRouteKey(row)
-
-        if (!routeKey) {
-            return
+    const deleteParty = (party: PartyRow) => {
+        if (window.confirm("Delete this party?")) {
+            router.delete(route("admin.parties.destroy", party.name))
         }
-
-        if (!window.confirm("Delete this party?")) {
-            return
-        }
-
-        quickDeleteForm.delete(`/admin/parties/${routeKey}`)
     }
 
-    const posterHref = (routeKey: string): string =>
-        `/admin/parties/${encodeURIComponent(routeKey)}/poster`
-
-    const downloadPosterFromRow = (row: CrudRow) => {
-        const routeKey = resolvePartyRouteKey(row)
-
-        if (!routeKey) {
-            return
+    const regenerateHostLink = (party: PartyRow) => {
+        if (window.confirm("Regenerate the link? The one already sent will stop working.")) {
+            hostTokenForm.post(route("admin.parties.host-token", party.name), { onSuccess: () => setDialog(null) })
         }
-
-        window.location.href = `/admin/parties/${routeKey}/poster`
     }
 
-    const rowActions: CrudRowAction[] = [
-        {
-            label: "Edit",
-            onClick: openPartyEdit,
-        },
+    const rowActions: RowAction<PartyRow>[] = [
+        { label: "Edit", onClick: openDialog },
         {
             label: "Download poster",
-            onClick: downloadPosterFromRow,
+            onClick: (party) => {
+                window.location.href = route("admin.parties.poster", party.name)
+            },
         },
-        {
-            label: "Delete",
-            variant: "destructive",
-            onClick: deletePartyFromRow,
-        },
+        { label: "Delete", variant: "destructive", onClick: deleteParty },
     ]
 
+    const bannerUrl = bannerPreview ?? editedParty?.banner_url
+
     return (
-        <AdminLayout
-            title="Administration / Parties"
-            sidebar={{ currentPartyId, parties, searchableParties }}
-        >
+        <AdminLayout title="Administration / Parties" sidebar={sidebar}>
             <DataTable
-                tableData={tableData}
-                onRowClick={openPartyDetails}
+                data={rows}
+                columns={columns}
+                emptyMessage="No parties found."
+                onRowClick={openDialog}
                 rowActions={rowActions}
                 toolbarAction={
                     <>
@@ -242,7 +186,7 @@ export default function PartiesIndex({
                             <WandSparklesIcon className="size-4" />
                             Create from events
                         </Button>
-                        <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+                        <Button size="sm" onClick={() => openDialog(null)}>
                             Create party
                         </Button>
                     </>
@@ -256,36 +200,100 @@ export default function PartiesIndex({
                 upcomingSourceEvents={upcomingSourceEvents}
             />
 
-            <Dialog open={isCreateModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogContent className="max-w-xl">
+            <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
+                <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Create party</DialogTitle>
+                        <DialogTitle>{editedParty ? "Party details" : "Create party"}</DialogTitle>
                         <DialogDescription>
-                            Add a new party to the administration.
+                            {editedParty ? "Update this party." : "Add a new party to the administration."}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={submit} className="mt-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="create-party-name">Name</Label>
+                        <FormField id={`${idPrefix}-name`} label="Name" error={form.errors.name}>
                             <Input
-                                id="create-party-name"
+                                id={`${idPrefix}-name`}
                                 value={form.data.name}
                                 onChange={(event) => form.setData("name", event.target.value)}
                                 required
                             />
-                            {form.errors.name && <p className="text-xs text-red-500">{form.errors.name}</p>}
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="create-party-owner">Owner (optional)</Label>
+                        {editedParty && (
+                            <>
+                                <FormField
+                                    id="edit-party-display-name"
+                                    label="Display name (optional)"
+                                    hint="Title shown on the public gallery. Defaults to the party name."
+                                    error={form.errors.display_name}
+                                >
+                                    <Input
+                                        id="edit-party-display-name"
+                                        value={form.data.display_name}
+                                        onChange={(event) => form.setData("display_name", event.target.value)}
+                                    />
+                                </FormField>
+
+                                <FormField
+                                    id="edit-party-description"
+                                    label="Description (optional)"
+                                    hint="One line below the title, such as the date and the venue."
+                                    error={form.errors.description}
+                                >
+                                    <Input
+                                        id="edit-party-description"
+                                        value={form.data.description}
+                                        onChange={(event) => form.setData("description", event.target.value)}
+                                    />
+                                </FormField>
+
+                                <FormField
+                                    id="edit-party-banner"
+                                    label="Banner (optional)"
+                                    hint="Leave empty to keep the current banner. Without one, the gallery shows its striped placeholder."
+                                    error={form.errors.banner}
+                                >
+                                    {bannerUrl && (
+                                        <img
+                                            id="edit-party-banner-preview"
+                                            src={bannerUrl}
+                                            alt="Current banner"
+                                            className="h-32 w-full rounded-lg border object-cover"
+                                        />
+                                    )}
+                                    <Input
+                                        id="edit-party-banner"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(event) => {
+                                            const file = event.target.files?.[0] ?? null
+                                            form.setData("banner", file)
+                                            setBannerPreview(file === null ? null : URL.createObjectURL(file))
+                                        }}
+                                    />
+                                </FormField>
+
+                                {editedParty.banner_url && (
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id="edit-party-remove-banner"
+                                            checked={form.data.remove_banner}
+                                            onCheckedChange={(checked) => form.setData("remove_banner", checked === true)}
+                                        />
+                                        <Label htmlFor="edit-party-remove-banner" className="text-sm font-normal">
+                                            Remove the current banner
+                                        </Label>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        <FormField id={`${idPrefix}-owner`} label="Owner (optional)" error={form.errors.user_id}>
                             <Select
                                 value={form.data.user_id === null ? "none" : String(form.data.user_id)}
-                                onValueChange={(value) => {
-                                    form.setData("user_id", value === "none" ? null : Number(value))
-                                }}
+                                onValueChange={(value) => form.setData("user_id", value === "none" ? null : Number(value))}
                             >
-                                <SelectTrigger id="create-party-owner" className="h-10 w-full">
+                                <SelectTrigger id={`${idPrefix}-owner`} className="h-10 w-full">
                                     <SelectValue placeholder="No owner" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -297,242 +305,62 @@ export default function PartiesIndex({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {form.errors.user_id && <p className="text-xs text-red-500">{form.errors.user_id}</p>}
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="create-party-expire-at">Expiry date (optional)</Label>
+                        <FormField
+                            id={`${idPrefix}-expire-at`}
+                            label="Expiry date (optional)"
+                            hint="Leave empty to keep the gallery available indefinitely."
+                            error={form.errors.expire_at}
+                        >
                             <Input
-                                id="create-party-expire-at"
+                                id={`${idPrefix}-expire-at`}
                                 type="datetime-local"
                                 value={form.data.expire_at}
                                 onChange={(event) => form.setData("expire_at", event.target.value)}
                             />
-                            <p className="text-xs text-muted-foreground">
-                                Leave empty to keep the gallery available indefinitely.
-                            </p>
-                            {form.errors.expire_at && <p className="text-xs text-red-500">{form.errors.expire_at}</p>}
-                        </div>
+                        </FormField>
 
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setCreateModalOpen(false)}
-                                disabled={form.processing}
+                        {editedParty && (
+                            <FormField
+                                id="edit-party-host-link"
+                                label="Host edit link"
+                                hint="Send this to the host so they can edit the gallery title, description and cover without an account."
                             >
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={form.processing}>
-                                Save party
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog
-                open={isDetailsModalOpen}
-                onOpenChange={(open) => {
-                    setDetailsModalOpen(open)
-
-                    if (!open) {
-                        setSelectedPartyId(null)
-                        setSelectedPartyRouteKey(null)
-                        setSelectedPartyBannerUrl(null)
-                        setSelectedPartyHostEditUrl(null)
-                        setHostLinkCopied(false)
-                        setBannerPreview(null)
-                    }
-                }}
-            >
-                <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Party details</DialogTitle>
-                        <DialogDescription>
-                            Update this party.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={submitEdit} className="mt-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-name">Name</Label>
-                            <Input
-                                id="edit-party-name"
-                                value={editForm.data.name}
-                                onChange={(event) => editForm.setData("name", event.target.value)}
-                                required
-                            />
-                            {editForm.errors.name && <p className="text-xs text-red-500">{editForm.errors.name}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-display-name">Display name (optional)</Label>
-                            <Input
-                                id="edit-party-display-name"
-                                value={editForm.data.display_name}
-                                onChange={(event) => editForm.setData("display_name", event.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Title shown on the public gallery. Defaults to the party name.
-                            </p>
-                            {editForm.errors.display_name && (
-                                <p className="text-xs text-red-500">{editForm.errors.display_name}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-description">Description (optional)</Label>
-                            <Input
-                                id="edit-party-description"
-                                value={editForm.data.description}
-                                onChange={(event) => editForm.setData("description", event.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                One line below the title, such as the date and the venue.
-                            </p>
-                            {editForm.errors.description && (
-                                <p className="text-xs text-red-500">{editForm.errors.description}</p>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-banner">Banner (optional)</Label>
-
-                            {(bannerPreview ?? selectedPartyBannerUrl) && (
-                                <img
-                                    id="edit-party-banner-preview"
-                                    src={bannerPreview ?? selectedPartyBannerUrl ?? undefined}
-                                    alt="Current banner"
-                                    className="h-32 w-full rounded-lg border object-cover"
-                                />
-                            )}
-
-                            <Input
-                                id="edit-party-banner"
-                                type="file"
-                                accept="image/*"
-                                onChange={(event) => {
-                                    const file = event.target.files?.[0] ?? null
-                                    editForm.setData("banner", file)
-                                    setBannerPreview(file === null ? null : URL.createObjectURL(file))
-                                }}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Leave empty to keep the current banner. Without one, the gallery shows
-                                its striped placeholder.
-                            </p>
-                            {editForm.errors.banner && (
-                                <p className="text-xs text-red-500">{editForm.errors.banner}</p>
-                            )}
-
-                            {selectedPartyBannerUrl && (
-                                <div className="flex items-center gap-2 pt-1">
-                                    <Checkbox
-                                        id="edit-party-remove-banner"
-                                        checked={editForm.data.remove_banner}
-                                        onCheckedChange={(checked) =>
-                                            editForm.setData("remove_banner", checked === true)
-                                        }
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="edit-party-host-link"
+                                        readOnly
+                                        value={editedParty.host_edit_url}
+                                        onFocus={(event) => event.target.select()}
                                     />
-                                    <Label htmlFor="edit-party-remove-banner" className="text-sm font-normal">
-                                        Remove the current banner
-                                    </Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            void navigator.clipboard.writeText(editedParty.host_edit_url)
+                                            setHostLinkCopied(true)
+                                        }}
+                                    >
+                                        {hostLinkCopied ? "Copied" : "Copy"}
+                                    </Button>
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-owner">Owner (optional)</Label>
-                            <Select
-                                value={editForm.data.user_id === null ? "none" : String(editForm.data.user_id)}
-                                onValueChange={(value) => {
-                                    editForm.setData("user_id", value === "none" ? null : Number(value))
-                                }}
-                            >
-                                <SelectTrigger id="edit-party-owner" className="h-10 w-full">
-                                    <SelectValue placeholder="No owner" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">No owner</SelectItem>
-                                    {users.map((user) => (
-                                        <SelectItem key={user.id} value={String(user.id)}>
-                                            {user.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {editForm.errors.user_id && <p className="text-xs text-red-500">{editForm.errors.user_id}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-expire-at">Expiry date (optional)</Label>
-                            <Input
-                                id="edit-party-expire-at"
-                                type="datetime-local"
-                                value={editForm.data.expire_at}
-                                onChange={(event) => editForm.setData("expire_at", event.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Leave empty to keep the gallery available indefinitely.
-                            </p>
-                            {editForm.errors.expire_at && <p className="text-xs text-red-500">{editForm.errors.expire_at}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-party-host-link">Host edit link</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="edit-party-host-link"
-                                    readOnly
-                                    value={selectedPartyHostEditUrl ?? ""}
-                                    onFocus={(event) => event.target.select()}
-                                />
                                 <Button
                                     type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        if (selectedPartyHostEditUrl) {
-                                            void navigator.clipboard.writeText(selectedPartyHostEditUrl)
-                                            setHostLinkCopied(true)
-                                        }
-                                    }}
+                                    variant="ghost"
+                                    className="h-auto px-0 text-xs text-destructive hover:bg-transparent"
+                                    disabled={hostTokenForm.processing}
+                                    onClick={() => regenerateHostLink(editedParty)}
                                 >
-                                    {hostLinkCopied ? "Copied" : "Copy"}
+                                    Regenerate the link
                                 </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Send this to the host so they can edit the gallery title, description and
-                                cover without an account.
-                            </p>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-auto px-0 text-xs text-destructive hover:bg-transparent"
-                                disabled={hostTokenForm.processing}
-                                onClick={() => {
-                                    if (!selectedPartyRouteKey) {
-                                        return
-                                    }
-
-                                    if (!window.confirm("Regenerate the link? The one already sent will stop working.")) {
-                                        return
-                                    }
-
-                                    hostTokenForm.post(
-                                        `/admin/parties/${encodeURIComponent(selectedPartyRouteKey)}/host-token`,
-                                        { onSuccess: () => setDetailsModalOpen(false) },
-                                    )
-                                }}
-                            >
-                                Regenerate the link
-                            </Button>
-                        </div>
+                            </FormField>
+                        )}
 
                         <DialogFooter>
-                            {selectedPartyRouteKey && (
+                            {editedParty && (
                                 <Button asChild type="button" variant="outline" className="sm:mr-auto">
-                                    <a id="download-party-poster" href={posterHref(selectedPartyRouteKey)} download>
+                                    <a id="download-party-poster" href={route("admin.parties.poster", editedParty.name)} download>
                                         <DownloadIcon className="size-4" />
                                         Download poster
                                     </a>
@@ -541,13 +369,13 @@ export default function PartiesIndex({
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setDetailsModalOpen(false)}
-                                disabled={editForm.processing}
+                                onClick={() => setDialog(null)}
+                                disabled={form.processing}
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={editForm.processing || !selectedPartyId || !selectedPartyRouteKey}>
-                                Update party
+                            <Button type="submit" disabled={form.processing}>
+                                {editedParty ? "Update party" : "Save party"}
                             </Button>
                         </DialogFooter>
                     </form>

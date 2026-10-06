@@ -47,7 +47,7 @@ export function GalleryPagination({
     perPage,
     partyName,
 }: GalleryPaginationProps) {
-    const url = `/${encodeURIComponent(partyName)}/dashboard/pictures`
+    const url = route("party.dashboard.pictures", partyName)
 
     const visitOptions = (page: number, newPerPage: number) => ({
         ...PAGE_VISIT_OPTIONS,

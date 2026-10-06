@@ -35,9 +35,8 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 
 export function AppSidebar({ parties, searchableParties, currentPartyId, ...props }: AppSidebarProps) {
   const currentParty = searchableParties.find((party) => party.id === currentPartyId) ?? null
-  const currentPartyName = currentParty ? encodeURIComponent(currentParty.name) : null
-  const dashboardUrl = currentPartyName ? `/${currentPartyName}/dashboard` : "#"
-  const galleryUrl = currentPartyName ? `/${currentPartyName}/dashboard/pictures` : "#"
+  const dashboardUrl = currentParty ? route("party.dashboard.show", currentParty.name) : "#"
+  const galleryUrl = currentParty ? route("party.dashboard.pictures", currentParty.name) : "#"
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -75,7 +74,7 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Parties">
-                <Link href="/admin/parties">
+                <Link href={route("admin.parties.index")}>
                   <PartyPopperIcon />
                   <span>Parties</span>
                 </Link>
@@ -83,7 +82,7 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Users">
-                <Link href="/admin/users">
+                <Link href={route("admin.users.index")}>
                   <UsersIcon />
                   <span>Users</span>
                 </Link>

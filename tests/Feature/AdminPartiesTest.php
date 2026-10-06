@@ -9,7 +9,7 @@ beforeEach(function () {
     $this->actingAs(User::factory()->create());
 });
 
-it('renders administration parties index with datatable data', function () {
+it('renders administration parties index with one row per party', function () {
     $party = Party::factory()->create(['name' => 'My Party']);
     $owner = User::factory()->create(['name' => 'Owner User']);
 
@@ -17,17 +17,21 @@ it('renders administration parties index with datatable data', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('admin/parties/index')
-            ->has('tableData.columns')
-            ->has('tableData.rows', 1)
-            ->has('editableParties', 1)
+            ->has('rows', 1)
             ->where('users', fn ($users) => collect($users)
                 ->contains(fn (array $user) => $user['id'] === $owner->id && $user['name'] === $owner->name)
             )
-            ->where('editableParties.0.id', $party->id)
-            ->where('editableParties.0.name', $party->name)
-            ->where('editableParties.0.route_key', $party->name)
-            ->where('tableData.rows.0.name', $party->name)
+            ->where('rows.0.id', $party->id)
+            ->where('rows.0.name', $party->name)
         );
+});
+
+it('lists every party, not only the first fifty', function () {
+    Party::factory()->count(60)->create();
+
+    $this->get('/admin/parties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('rows', 60));
 });
 
 it('stores a new party from administration create modal', function () {
@@ -44,47 +48,20 @@ it('stores a new party from administration create modal', function () {
     expect($party?->user_id)->toBe($owner->id);
 });
 
-it('maps relation labels and exposes count-link metadata in parties datatable', function () {
+it('exposes the owner and the picture count of each party', function () {
     $owner = User::factory()->create(['name' => 'Owner Label']);
     $party = Party::factory()->create([
         'name' => 'Linked Party',
         'user_id' => $owner->id,
     ]);
 
-    $this->get('/admin/parties')
-        ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->where('tableData.rows.0.name', $party->name)
-            ->where('tableData.rows.0.user_id', 'Owner Label')
-            ->where('tableData.rows.0.pictures_count', 0)
-            ->where('tableData.columns', fn ($columns) => collect($columns)
-                ->contains(fn (array $column) => ($column['name'] ?? null) === 'pictures_count'
-                    && ($column['type'] ?? null) === 'count_link'
-                    && ($column['linkHref'] ?? null) === '/admin/parties'
-                    && ! array_key_exists('countRelation', $column)
-                )
-            )
-        );
-});
-
-it('exposes the editable parties to the administration index', function () {
-    $owner = User::factory()->create(['name' => 'Current Owner']);
-    $party = Party::factory()->create([
-        'name' => 'Editable Party',
-        'user_id' => $owner->id,
-    ]);
-
     $this->get(route('admin.parties.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('admin/parties/index')
-            ->where('editableParties.0.id', $party->id)
-            ->where('editableParties.0.name', 'Editable Party')
-            ->where('editableParties.0.user_id', $owner->id)
-            ->where('editableParties.0.route_key', 'Editable Party')
-            ->where('users', fn ($users) => collect($users)
-                ->contains(fn (array $user) => $user['id'] === $owner->id)
-            )
+            ->where('rows.0.name', $party->name)
+            ->where('rows.0.user_id', $owner->id)
+            ->where('rows.0.owner', 'Owner Label')
+            ->where('rows.0.pictures_count', 0)
         );
 });
 
@@ -148,7 +125,7 @@ it('exposes the expiry date to the administration forms as an absolute instant',
 
     $this->get('/admin/parties')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('editableParties.0.expire_at', '2030-06-15T18:00:00+00:00'));
+        ->assertInertia(fn ($page) => $page->where('rows.0.expire_at', '2030-06-15T18:00:00+00:00'));
 });
 
 it('exposes a null expiry date when the party never expires', function () {
@@ -156,7 +133,7 @@ it('exposes a null expiry date when the party never expires', function () {
 
     $this->get('/admin/parties')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('editableParties.0.expire_at', null));
+        ->assertInertia(fn ($page) => $page->where('rows.0.expire_at', null));
 });
 
 it('rejects an invalid expiry date from administration', function () {
@@ -334,9 +311,9 @@ it('exposes the metadata to the party edit dialog', function () {
     $this->get('/admin/parties')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('editableParties.0.display_name', 'Edited Title')
-            ->where('editableParties.0.description', 'Edited description')
-            ->where('editableParties.0.banner_url', fn (string $url) => str_contains($url, 'banners/cover.jpg')
+            ->where('rows.0.display_name', 'Edited Title')
+            ->where('rows.0.description', 'Edited description')
+            ->where('rows.0.banner_url', fn (string $url) => str_contains($url, 'banners/cover.jpg')
                 && str_contains($url, 'X-Amz-Signature='))
         );
 });
@@ -346,7 +323,7 @@ it('exposes a null banner url when the party has no banner', function () {
 
     $this->get('/admin/parties')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->where('editableParties.0.banner_url', null));
+        ->assertInertia(fn ($page) => $page->where('rows.0.banner_url', null));
 });
 
 // ── Host edit link ──────────────────────────────────────────────────────────
@@ -357,7 +334,7 @@ it('exposes the host edit link to the parties index', function () {
     $this->get(route('admin.parties.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('editableParties.0.host_edit_url', $party->hostEditUrl())
+            ->where('rows.0.host_edit_url', $party->hostEditUrl())
         );
 });
 

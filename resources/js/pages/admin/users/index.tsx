@@ -1,8 +1,9 @@
 import { FormEvent, useState } from "react"
-import { useForm } from "@inertiajs/react"
+import { router, useForm } from "@inertiajs/react"
 
-import { AdminLayout } from "@/components/admin-layout"
-import { DataTable } from "@/components/data-table"
+import { AdminLayout, type SidebarData } from "@/components/admin-layout"
+import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
+import { FormField } from "@/components/form-field"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -13,256 +14,122 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import type { CrudRow, CrudRowAction, CrudTableData } from "@/components/data-table/types"
 
-type PageProps = {
-    currentPartyId: number | null
-    parties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    searchableParties: {
-        id: number
-        name: string
-        expired: boolean
-    }[]
-    tableData: CrudTableData
+type UserRow = {
+    id: number
+    name: string
+    email: string
+    parties_count: number
+    created_at: string | null
 }
 
-export default function UsersIndex({
-    currentPartyId,
-    parties,
-    searchableParties,
-    tableData,
-}: PageProps) {
-    const [isCreateModalOpen, setCreateModalOpen] = useState(false)
-    const [isDetailsModalOpen, setDetailsModalOpen] = useState(false)
-    const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+type PageProps = SidebarData & {
+    rows: UserRow[]
+}
 
-    const form = useForm({
-        name: "",
-        email: "",
-    })
+const columns = [
+    dataColumn<UserRow>("name", "Name"),
+    dataColumn<UserRow>("email", "Email"),
+    dataColumn<UserRow>("parties_count", "Parties"),
+    dataColumn<UserRow>("created_at", "Created", { type: "datetime" }),
+]
 
-    const editForm = useForm({
-        name: "",
-        email: "",
-    })
+/**
+ * Null opens the dialog in creation mode, a row opens it on that user.
+ */
+type DialogState = { user: UserRow | null } | null
 
-    const quickDeleteForm = useForm({})
+export default function UsersIndex({ rows, ...sidebar }: PageProps) {
+    const [dialog, setDialog] = useState<DialogState>(null)
+    const form = useForm({ name: "", email: "" })
+    const editedUser = dialog?.user ?? null
+
+    const openDialog = (user: UserRow | null) => {
+        form.clearErrors()
+        form.setData({ name: user?.name ?? "", email: user?.email ?? "" })
+        setDialog({ user })
+    }
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        form.post("/admin/users", {
-            onSuccess: () => {
-                form.reset()
-                setCreateModalOpen(false)
-            },
-        })
+
+        const options = { onSuccess: () => setDialog(null) }
+
+        if (editedUser) {
+            form.put(route("admin.users.update", editedUser.id), options)
+        } else {
+            form.post(route("admin.users.store"), options)
+        }
     }
 
-    const openUserDetails = (row: CrudRow) => {
-        const rowId = row.id
-
-        if (typeof rowId !== "number" && typeof rowId !== "string") {
-            return
+    const deleteUser = (user: UserRow) => {
+        if (window.confirm("Delete this user?")) {
+            router.delete(route("admin.users.destroy", user.id))
         }
-
-        const parsedId = Number(rowId)
-
-        if (!Number.isFinite(parsedId)) {
-            return
-        }
-
-        setSelectedUserId(parsedId)
-        editForm.setData({
-            name: typeof row.name === "string" ? row.name : "",
-            email: typeof row.email === "string" ? row.email : "",
-        })
-        setDetailsModalOpen(true)
     }
 
-    const submitEdit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
-
-        if (!selectedUserId) {
-            return
-        }
-
-        editForm.put(`/admin/users/${selectedUserId}`, {
-            onSuccess: () => {
-                editForm.reset()
-                setDetailsModalOpen(false)
-            },
-        })
-    }
-
-    const deleteSelectedUser = () => {
-        if (!selectedUserId) {
-            return
-        }
-
-        editForm.delete(`/admin/users/${selectedUserId}`, {
-            onSuccess: () => {
-                setDetailsModalOpen(false)
-                setSelectedUserId(null)
-            },
-        })
-    }
-
-    const deleteUserFromRow = (row: CrudRow) => {
-        const rowId = row.id
-
-        if (typeof rowId !== "number" && typeof rowId !== "string") {
-            return
-        }
-
-        const parsedId = Number(rowId)
-
-        if (!Number.isFinite(parsedId)) {
-            return
-        }
-
-        if (!window.confirm("Delete this user?")) {
-            return
-        }
-
-        quickDeleteForm.delete(`/admin/users/${parsedId}`)
-    }
-
-    const rowActions: CrudRowAction[] = [
-        {
-            label: "Edit",
-            onClick: openUserDetails,
-        },
-        {
-            label: "Delete",
-            variant: "destructive",
-            onClick: deleteUserFromRow,
-        },
+    const rowActions: RowAction<UserRow>[] = [
+        { label: "Edit", onClick: openDialog },
+        { label: "Delete", variant: "destructive", onClick: deleteUser },
     ]
 
+    const idPrefix = editedUser ? "edit-user" : "create-user"
+
     return (
-        <AdminLayout
-            title="Administration / Users"
-            sidebar={{ currentPartyId, parties, searchableParties }}
-        >
+        <AdminLayout title="Administration / Users" sidebar={sidebar}>
             <DataTable
-                tableData={tableData}
-                onRowClick={openUserDetails}
+                data={rows}
+                columns={columns}
+                emptyMessage="No users found."
+                onRowClick={openDialog}
                 rowActions={rowActions}
                 toolbarAction={
-                    <Button size="sm" onClick={() => setCreateModalOpen(true)}>
+                    <Button size="sm" onClick={() => openDialog(null)}>
                         Create user
                     </Button>
                 }
             />
 
-            <Dialog open={isCreateModalOpen} onOpenChange={setCreateModalOpen}>
+            <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
                 <DialogContent className="max-w-xl">
                     <DialogHeader>
-                        <DialogTitle>Create user</DialogTitle>
+                        <DialogTitle>{editedUser ? "User details" : "Create user"}</DialogTitle>
                         <DialogDescription>
-                            Add a new user to the administration.
+                            {editedUser ? "Update this user." : "Add a new user to the administration."}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={submit} className="mt-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="create-user-name">Name</Label>
+                        <FormField id={`${idPrefix}-name`} label="Name" error={form.errors.name}>
                             <Input
-                                id="create-user-name"
+                                id={`${idPrefix}-name`}
                                 value={form.data.name}
                                 onChange={(event) => form.setData("name", event.target.value)}
                                 required
                             />
-                            {form.errors.name && <p className="text-xs text-red-500">{form.errors.name}</p>}
-                        </div>
+                        </FormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="create-user-email">Email</Label>
+                        <FormField id={`${idPrefix}-email`} label="Email" error={form.errors.email}>
                             <Input
-                                id="create-user-email"
+                                id={`${idPrefix}-email`}
                                 type="email"
                                 value={form.data.email}
                                 onChange={(event) => form.setData("email", event.target.value)}
                                 required
                             />
-                            {form.errors.email && <p className="text-xs text-red-500">{form.errors.email}</p>}
-                        </div>
+                        </FormField>
 
                         <DialogFooter>
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setCreateModalOpen(false)}
+                                onClick={() => setDialog(null)}
                                 disabled={form.processing}
                             >
                                 Cancel
                             </Button>
                             <Button type="submit" disabled={form.processing}>
-                                Save user
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog
-                open={isDetailsModalOpen}
-                onOpenChange={(open) => {
-                    setDetailsModalOpen(open)
-
-                    if (!open) {
-                        setSelectedUserId(null)
-                    }
-                }}
-            >
-                <DialogContent className="max-w-xl">
-                    <DialogHeader>
-                        <DialogTitle>User details</DialogTitle>
-                        <DialogDescription>
-                            Update or delete this user.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={submitEdit} className="mt-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-user-name">Name</Label>
-                            <Input
-                                id="edit-user-name"
-                                value={editForm.data.name}
-                                onChange={(event) => editForm.setData("name", event.target.value)}
-                                required
-                            />
-                            {editForm.errors.name && <p className="text-xs text-red-500">{editForm.errors.name}</p>}
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-user-email">Email</Label>
-                            <Input
-                                id="edit-user-email"
-                                type="email"
-                                value={editForm.data.email}
-                                onChange={(event) => editForm.setData("email", event.target.value)}
-                                required
-                            />
-                            {editForm.errors.email && <p className="text-xs text-red-500">{editForm.errors.email}</p>}
-                        </div>
-
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setDetailsModalOpen(false)}
-                                disabled={editForm.processing}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={editForm.processing || !selectedUserId}>
-                                Update user
+                                {editedUser ? "Update user" : "Save user"}
                             </Button>
                         </DialogFooter>
                     </form>

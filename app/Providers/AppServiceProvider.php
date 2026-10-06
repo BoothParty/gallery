@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\CrudDiscoveryService;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -21,8 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(CrudDiscoveryService::class);
-
         $this->app->singleton(Notion::class, fn (): Notion => Notion::createWithPsrImplementations(
             new GuzzleClient([
                 'timeout' => (int) config('services.notion.timeout'),
