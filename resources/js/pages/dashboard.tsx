@@ -1,24 +1,10 @@
-import { AdminLayout } from "@/components/admin-layout"
+import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 
-type DashboardProps = {
-  currentPartyId: number | null
-  parties: {
-    id: number
-    name: string
-    expired: boolean
-  }[]
-  searchableParties: {
-    id: number
-    name: string
-    expired: boolean
-  }[]
-}
-
-export default function Page({ currentPartyId, parties, searchableParties }: DashboardProps) {
+export default function Page(sidebar: SidebarData) {
   return (
     <AdminLayout
       title="Party / Dashboard"
-      sidebar={{ currentPartyId, parties, searchableParties }}
+      sidebar={sidebar}
     >
       <div className="rounded-xl border border-dashed bg-muted/30 p-8 text-center">
         <h2 className="text-xl font-semibold">Party dashboard</h2>

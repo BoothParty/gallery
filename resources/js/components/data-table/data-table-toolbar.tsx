@@ -2,28 +2,15 @@ import * as React from "react"
 import { type Table } from "@tanstack/react-table"
 import { X } from "lucide-react"
 
+import { normalizeFacetValue } from "@/components/data-table/columns"
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter"
-import type { CrudColumn } from "@/components/data-table/types"
 import { DataTableViewOptions } from "@/components/data-table/data-table-view-options"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
-    columnsMeta: CrudColumn[]
     toolbarAction?: React.ReactNode
-}
-
-function normalizeFacetValue(value: unknown): string {
-    if (value === null || value === undefined || value === "") {
-        return "__empty__"
-    }
-
-    if (typeof value === "boolean") {
-        return value ? "true" : "false"
-    }
-
-    return String(value)
 }
 
 function facetLabel(value: unknown): string {
@@ -31,23 +18,17 @@ function facetLabel(value: unknown): string {
         return "No value"
     }
 
-    if (typeof value === "boolean") {
-        return value ? "Yes" : "No"
-    }
-
     return String(value)
 }
 
-export function DataTableToolbar<TData>({ table, columnsMeta, toolbarAction }: DataTableToolbarProps<TData>) {
+export function DataTableToolbar<TData>({ table, toolbarAction }: DataTableToolbarProps<TData>) {
     const [showAllFacets, setShowAllFacets] = React.useState(false)
     const isFiltered = table.getState().columnFilters.length > 0 || Boolean(table.getState().globalFilter)
     const maxVisibleFacets = 3
-    const facetedColumns = columnsMeta
-        .filter((columnMeta) => columnMeta.name !== "id")
-        .map((columnMeta) => {
-            const column = table.getColumn(columnMeta.name)
-
-            if (!column || !column.getCanFilter()) {
+    const facetedColumns = table
+        .getAllLeafColumns()
+        .map((column) => {
+            if (!column.getCanFilter() || !column.columnDef.meta?.label) {
                 return null
             }
 
@@ -78,8 +59,8 @@ export function DataTableToolbar<TData>({ table, columnsMeta, toolbarAction }: D
             }
 
             return {
-                key: columnMeta.name,
-                title: columnMeta.label,
+                key: column.id,
+                title: column.columnDef.meta.label,
                 column,
                 options,
             }

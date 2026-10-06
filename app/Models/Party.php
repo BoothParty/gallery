@@ -2,9 +2,6 @@
 
 namespace App\Models;
 
-use App\Attributes\CrudCountColumn;
-use App\Attributes\CrudRelationColumn;
-use App\Attributes\CrudResource;
 use App\Services\SignedStorageUrl;
 use Database\Factories\PartyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,21 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-#[CrudResource(
-    label: 'Party',
-    labelPlural: 'Parties',
-)]
-#[CrudRelationColumn(
-    column: 'user_id',
-    model: User::class,
-    labelColumn: 'name',
-)]
-#[CrudCountColumn(
-    name: 'pictures_count',
-    label: 'Pictures',
-    relation: 'pictures',
-    linkHref: '/admin/parties',
-)]
 class Party extends Model
 {
     /** @use HasFactory<PartyFactory> */

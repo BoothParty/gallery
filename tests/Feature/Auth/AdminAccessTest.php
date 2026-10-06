@@ -9,7 +9,6 @@ it('redirects a guest away from the administration', function (string $url) {
 })->with([
     '/admin/parties',
     '/admin/users',
-    '/admin/users/create',
 ]);
 
 it('redirects a guest away from the party dashboard', function () {

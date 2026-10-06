@@ -7,71 +7,45 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\AdminDashboardDataService;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(AdminDashboardDataService $adminDashboardDataService): Response
     {
         return Inertia::render('admin/users/index', [
             ...$adminDashboardDataService->sidebarData(),
-            'tableData' => $adminDashboardDataService->tableDataForResource('users'),
+            'rows' => User::query()
+                ->withCount('parties')
+                ->oldest('id')
+                ->get()
+                ->map(fn (User $user): array => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'parties_count' => $user->parties_count,
+                    'created_at' => $user->created_at?->toIso8601String(),
+                ]),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(AdminDashboardDataService $adminDashboardDataService): Response
-    {
-        return Inertia::render('admin/users/create', [
-            ...$adminDashboardDataService->sidebarData(),
-        ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreUserRequest $request)
+    public function store(StoreUserRequest $request): RedirectResponse
     {
         User::query()->create($request->validated());
 
         return to_route('admin.users.index');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function edit(User $user, AdminDashboardDataService $adminDashboardDataService): Response
-    {
-        return Inertia::render('admin/users/edit', [
-            ...$adminDashboardDataService->sidebarData(),
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $user->update($request->validated());
 
         return to_route('admin.users.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
         $user->delete();
 

@@ -1,7 +1,4 @@
-"use client"
-
 import * as React from "react"
-import { router } from "@inertiajs/react"
 import {
     type ColumnDef,
     flexRender,
@@ -17,11 +14,11 @@ import {
     type VisibilityState,
 } from "@tanstack/react-table"
 
-import { buildColumns } from "@/components/data-table/columns"
+import { selectColumn } from "@/components/data-table/columns"
 import { DataTablePagination } from "@/components/data-table/data-table-pagination"
 import { DataTableRowActions } from "@/components/data-table/data-table-row-actions"
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar"
-import type { CrudRow, CrudRowAction, CrudTableData } from "@/components/data-table/types"
+import type { RowAction } from "@/components/data-table/types"
 import {
     Table,
     TableBody,
@@ -31,30 +28,30 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-interface DataTableMainProps {
-    tableData: CrudTableData
-    rowEditHrefBase?: string
+interface DataTableProps<TRow> {
+    data: TRow[]
+    columns: ColumnDef<TRow>[]
+    emptyMessage: string
     toolbarAction?: React.ReactNode
-    onRowClick?: (row: CrudRow) => void
-    rowActions?: CrudRowAction[]
+    onRowClick?: (row: TRow) => void
+    rowActions?: RowAction<TRow>[]
 }
 
-export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRowClick, rowActions = [] }: DataTableMainProps) {
-    const defaultColumnVisibility = React.useMemo<VisibilityState>(() => {
-        return tableData.columns.reduce<VisibilityState>((visibility, column) => {
-            visibility[column.name] = column.visible
-
-            return visibility
-        }, {})
-    }, [tableData.columns])
-
+export function DataTable<TRow>({
+    data,
+    columns: dataColumns,
+    emptyMessage,
+    toolbarAction,
+    onRowClick,
+    rowActions = [],
+}: DataTableProps<TRow>) {
     const [rowSelection, setRowSelection] = React.useState({})
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(defaultColumnVisibility)
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
-    const columns = React.useMemo<ColumnDef<CrudRow>[]>(() => {
-        const baseColumns = buildColumns(tableData.columns)
+    const columns = React.useMemo<ColumnDef<TRow>[]>(() => {
+        const baseColumns = [selectColumn<TRow>(), ...dataColumns]
 
         if (rowActions.length === 0) {
             return baseColumns
@@ -74,14 +71,10 @@ export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRow
                 ),
             },
         ]
-    }, [tableData.columns, rowActions])
-
-    React.useEffect(() => {
-        setColumnVisibility(defaultColumnVisibility)
-    }, [defaultColumnVisibility])
+    }, [dataColumns, rowActions])
 
     const table = useReactTable({
-        data: tableData.rows,
+        data,
         columns,
         state: {
             sorting,
@@ -112,7 +105,7 @@ export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRow
 
     return (
         <div className="flex flex-col gap-4 p-4">
-            <DataTableToolbar table={table} columnsMeta={tableData.columns} toolbarAction={toolbarAction} />
+            <DataTableToolbar table={table} toolbarAction={toolbarAction} />
             <div className="overflow-hidden rounded-md border">
                 <Table>
                     <TableHeader>
@@ -138,29 +131,15 @@ export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRow
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
-                                    className={rowEditHrefBase || onRowClick ? "cursor-pointer" : undefined}
+                                    className={onRowClick ? "cursor-pointer" : undefined}
                                     onClick={(event) => {
-                                        if (!rowEditHrefBase && !onRowClick) {
-                                            return
-                                        }
-
                                         const target = event.target as HTMLElement
 
-                                        if (target.closest("button, a, input, [role='menuitem'], [data-slot='checkbox']")) {
+                                        if (!onRowClick || target.closest("button, a, input, [role='menuitem'], [data-slot='checkbox']")) {
                                             return
                                         }
 
-                                        if (onRowClick) {
-                                            onRowClick(row.original)
-
-                                            return
-                                        }
-
-                                        const rowId = row.original.id
-
-                                        if (typeof rowId === "number" || typeof rowId === "string") {
-                                            router.visit(`${rowEditHrefBase}/${rowId}/edit`)
-                                        }
+                                        onRowClick(row.original)
                                     }}
                                 >
                                     {row.getVisibleCells().map((cell) => (
@@ -176,7 +155,7 @@ export function DataTableMain({ tableData, rowEditHrefBase, toolbarAction, onRow
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No parties found.
+                                    {emptyMessage}
                                 </TableCell>
                             </TableRow>
                         )}

@@ -1,27 +1,10 @@
-import { Link } from "@inertiajs/react"
+import * as React from "react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowUpRightIcon } from "lucide-react"
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
-import type { CrudColumn, CrudRow } from "@/components/data-table/types"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 
-function badgeVariantFromMeta(meta: CrudColumn["badge"]): "default" | "secondary" | "destructive" | "outline" {
-    if (meta === "danger") {
-        return "destructive"
-    }
-
-    if (meta === "warning" || meta === "info") {
-        return "secondary"
-    }
-
-    if (meta === "success") {
-        return "default"
-    }
-
-    return "outline"
-}
+type ValueType = "text" | "datetime"
 
 function EmptyCellState() {
     return (
@@ -31,24 +14,16 @@ function EmptyCellState() {
     )
 }
 
-function renderValue(column: CrudColumn, value: unknown): string | null {
+function renderValue(type: ValueType, value: unknown): string | null {
     if (value === null || value === undefined || value === "") {
         return null
     }
 
-    if (column.type === "boolean") {
-        return value ? "Yes" : "No"
-    }
-
-    if (column.type === "date" || column.type === "datetime") {
+    if (type === "datetime") {
         const date = new Date(String(value))
 
         if (Number.isNaN(date.getTime())) {
             return String(value)
-        }
-
-        if (column.type === "date") {
-            return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date)
         }
 
         return new Intl.DateTimeFormat(undefined, {
@@ -57,27 +32,57 @@ function renderValue(column: CrudColumn, value: unknown): string | null {
         }).format(date)
     }
 
-    if (typeof value === "object") {
-        return JSON.stringify(value)
-    }
-
     return String(value)
 }
 
-function normalizeFacetValue(value: unknown): string {
+export function normalizeFacetValue(value: unknown): string {
     if (value === null || value === undefined || value === "") {
         return "__empty__"
     }
 
-    if (typeof value === "boolean") {
-        return value ? "true" : "false"
-    }
-
     return String(value)
 }
 
-export function buildColumns(columnsMeta: CrudColumn[]): ColumnDef<CrudRow>[] {
-    const selectableColumn: ColumnDef<CrudRow> = {
+/**
+ * A sortable, filterable column bound to one key of the row. The cell shows the
+ * formatted value unless the page renders its own.
+ */
+export function dataColumn<TRow>(
+    key: keyof TRow & string,
+    label: string,
+    options: { type?: ValueType, cell?: (row: TRow) => React.ReactNode } = {},
+): ColumnDef<TRow> {
+    const type = options.type ?? "text"
+
+    return {
+        accessorKey: key,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={label} />,
+        meta: { label },
+        filterFn: (row, columnId, filterValues) => {
+            if (!Array.isArray(filterValues) || filterValues.length === 0) {
+                return true
+            }
+
+            return filterValues.includes(normalizeFacetValue(row.getValue(columnId)))
+        },
+        cell: ({ row }) => {
+            if (options.cell) {
+                return options.cell(row.original)
+            }
+
+            const displayValue = renderValue(type, row.original[key])
+
+            if (displayValue === null) {
+                return <EmptyCellState />
+            }
+
+            return <span className="max-w-[320px] truncate" title={displayValue}>{displayValue}</span>
+        },
+    }
+}
+
+export function selectColumn<TRow>(): ColumnDef<TRow> {
+    return {
         id: "select",
         header: ({ table }) => (
             <Checkbox
@@ -98,58 +103,4 @@ export function buildColumns(columnsMeta: CrudColumn[]): ColumnDef<CrudRow>[] {
         enableSorting: false,
         enableHiding: false,
     }
-
-    const dataColumns: ColumnDef<CrudRow>[] = columnsMeta
-        .map((columnMeta) => ({
-            accessorKey: columnMeta.name,
-            header: ({ column }) => <DataTableColumnHeader column={column} title={columnMeta.label} />,
-            enableSorting: columnMeta.sortable,
-            enableColumnFilter: columnMeta.name !== "id",
-            meta: {
-                label: columnMeta.label,
-                type: columnMeta.type,
-            },
-            filterFn: (row, columnId, filterValues) => {
-                if (!Array.isArray(filterValues) || filterValues.length === 0) {
-                    return true
-                }
-
-                return filterValues.includes(normalizeFacetValue(row.getValue(columnId)))
-            },
-            cell: ({ row }) => {
-                const rawValue = row.original[columnMeta.name]
-                const displayValue = renderValue(columnMeta, rawValue)
-
-                if (displayValue === null) {
-                    return <EmptyCellState />
-                }
-
-                if (columnMeta.type === "badge") {
-                    return <Badge variant={badgeVariantFromMeta(columnMeta.badge)}>{displayValue}</Badge>
-                }
-
-                if (columnMeta.type === "count_link") {
-                    const count = typeof rawValue === "number" ? rawValue : parseInt(String(rawValue), 10)
-
-                    return (
-                        <div className="flex items-center gap-1.5">
-                            {columnMeta.linkHref && (
-                                <Badge asChild variant="secondary">
-                                    <Link
-                                        href={columnMeta.linkHref}
-                                        className="flex items-center gap-1"
-                                    >
-                                        {Number.isNaN(count) ? 0 : count} <ArrowUpRightIcon data-icon="inline-end" />
-                                    </Link>
-                                </Badge>
-                            )}
-                        </div>
-                    )
-                }
-
-                return <span className="max-w-[320px] truncate" title={displayValue}>{displayValue}</span>
-            },
-        }))
-
-    return [selectableColumn, ...dataColumns]
 }

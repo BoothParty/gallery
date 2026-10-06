@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react"
 import { useForm } from "@inertiajs/react"
 import { UploadIcon } from "lucide-react"
 
-import { AdminLayout } from "@/components/admin-layout"
+import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { GalleryDeleteDialog } from "@/components/gallery/gallery-delete-dialog"
 import { GalleryGrid } from "@/components/gallery/gallery-grid"
 import type { GalleryPicture } from "@/components/gallery/gallery-grid"
@@ -40,10 +40,7 @@ type PaginatedPictures = {
     total: number
 }
 
-type PageProps = {
-    currentPartyId: number | null
-    parties: { id: number; name: string; expired: boolean }[]
-    searchableParties: { id: number; name: string; expired: boolean }[]
+type PageProps = SidebarData & {
     party: { id: number; name: string }
     pictures: PaginatedPictures
     perPage: number

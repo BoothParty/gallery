@@ -1,3 +1,3 @@
-export { DataTableMain } from "./data-table-main"
-export { buildColumns } from "./columns"
-export type { CrudColumn, CrudRow, CrudTableData, PartyTableData } from "./types"
+export { DataTable } from "./data-table-main"
+export { dataColumn } from "./columns"
+export type { RowAction } from "./types"

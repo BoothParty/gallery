@@ -1,30 +1,14 @@
-export type CrudColumn = {
-    name: string
-    label: string
-    type: string
-    sortable: boolean
-    searchable: boolean
-    visible: boolean
-    format: string | null
-    badge: string | null
-    relation?: {
-        model: string
-        labelColumn: string
-    } | null
-    linkHref?: string | null
+import type { RowData } from "@tanstack/react-table"
+
+declare module "@tanstack/react-table" {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface ColumnMeta<TData extends RowData, TValue> {
+        label?: string
+    }
 }
 
-export type CrudRow = Record<string, unknown>
-
-export type CrudRowAction = {
+export type RowAction<TRow> = {
     label: string
     variant?: "default" | "destructive"
-    onClick: (row: CrudRow) => void
+    onClick: (row: TRow) => void
 }
-
-export type CrudTableData = {
-    columns: CrudColumn[]
-    rows: CrudRow[]
-}
-
-export type PartyTableData = CrudTableData
