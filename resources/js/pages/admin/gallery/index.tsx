@@ -86,7 +86,7 @@ export default function GalleryIndex({
          * runs at submit time instead, with the selection as it is right now.
          */
         deleteForm.transform(() => ({ ids: Array.from(selected) }))
-        deleteForm.delete(`/${encodeURIComponent(party.name)}/dashboard/pictures`, {
+        deleteForm.delete(route("party.dashboard.pictures.bulk-delete", party.name), {
             onSuccess: () => {
                 setSelected(new Set())
                 setDeleteDialogOpen(false)
@@ -104,7 +104,7 @@ export default function GalleryIndex({
     }, [uploadForm])
 
     const handleUpload = useCallback(() => {
-        uploadForm.post(`/${encodeURIComponent(party.name)}/dashboard/pictures`, {
+        uploadForm.post(route("party.dashboard.pictures.store", party.name), {
             forceFormData: true,
             onSuccess: closeUploadDialog,
         })

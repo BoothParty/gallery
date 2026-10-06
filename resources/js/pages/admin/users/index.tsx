@@ -56,15 +56,15 @@ export default function UsersIndex({ rows, ...sidebar }: PageProps) {
         const options = { onSuccess: () => setDialog(null) }
 
         if (editedUser) {
-            form.put(`/admin/users/${editedUser.id}`, options)
+            form.put(route("admin.users.update", editedUser.id), options)
         } else {
-            form.post("/admin/users", options)
+            form.post(route("admin.users.store"), options)
         }
     }
 
     const deleteUser = (user: UserRow) => {
         if (window.confirm("Delete this user?")) {
-            router.delete(`/admin/users/${user.id}`)
+            router.delete(route("admin.users.destroy", user.id))
         }
     }
 

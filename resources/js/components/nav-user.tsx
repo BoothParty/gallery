@@ -80,7 +80,7 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => router.post("/logout")}>
+            <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>

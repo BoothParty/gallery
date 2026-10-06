@@ -184,7 +184,7 @@ export function PartyBulkCreateDialog({
 
         setSubmittedEventIds(selectedEvents.map((event) => event.id))
         form.transform(() => ({ parties }))
-        form.post("/admin/parties/bulk", {
+        form.post(route("admin.parties.bulk-store"), {
             preserveScroll: true,
             onSuccess: () => {
                 setSelections({})

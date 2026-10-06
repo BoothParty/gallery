@@ -18,6 +18,10 @@
             && filled(config('services.umami.script_url'))
             && filled(config('services.umami.website_id'));
     @endphp
+    {{-- Admin only: the guests' gallery has no use for the route list. --}}
+    @unless ($isPartyPage)
+        @routes
+    @endunless
     @vite([$stylesheet, 'resources/js/app.tsx'])
     @if ($tracksVisit)
         <script defer src="{{ config('services.umami.script_url') }}"

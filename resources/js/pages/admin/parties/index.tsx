@@ -52,8 +52,6 @@ type PageProps = SidebarData & {
     upcomingSourceEvents?: PartySourceEvent[]
 }
 
-const partyPath = (party: PartyRow): string => `/admin/parties/${encodeURIComponent(party.name)}`
-
 const columns = [
     dataColumn<PartyRow>("name", "Name"),
     dataColumn<PartyRow>("display_name", "Display name"),
@@ -62,7 +60,7 @@ const columns = [
         cell: (party) => (
             <Badge asChild variant="secondary">
                 <Link
-                    href={`/${encodeURIComponent(party.name)}/dashboard/pictures`}
+                    href={route("party.dashboard.pictures", party.name)}
                     className="flex items-center gap-1"
                 >
                     {party.pictures_count} <ArrowUpRightIcon data-icon="inline-end" />
@@ -130,7 +128,7 @@ export default function PartiesIndex({
                 user_id,
                 expire_at: fromDateTimeLocalValue(expire_at),
             }))
-            form.post("/admin/parties", options)
+            form.post(route("admin.parties.store"), options)
 
             return
         }
@@ -142,18 +140,18 @@ export default function PartiesIndex({
             _method: "put",
             expire_at: fromDateTimeLocalValue(data.expire_at),
         }))
-        form.post(partyPath(editedParty), options)
+        form.post(route("admin.parties.update", editedParty.name), options)
     }
 
     const deleteParty = (party: PartyRow) => {
         if (window.confirm("Delete this party?")) {
-            router.delete(partyPath(party))
+            router.delete(route("admin.parties.destroy", party.name))
         }
     }
 
     const regenerateHostLink = (party: PartyRow) => {
         if (window.confirm("Regenerate the link? The one already sent will stop working.")) {
-            hostTokenForm.post(`${partyPath(party)}/host-token`, { onSuccess: () => setDialog(null) })
+            hostTokenForm.post(route("admin.parties.host-token", party.name), { onSuccess: () => setDialog(null) })
         }
     }
 
@@ -162,7 +160,7 @@ export default function PartiesIndex({
         {
             label: "Download poster",
             onClick: (party) => {
-                window.location.href = `${partyPath(party)}/poster`
+                window.location.href = route("admin.parties.poster", party.name)
             },
         },
         { label: "Delete", variant: "destructive", onClick: deleteParty },
@@ -362,7 +360,7 @@ export default function PartiesIndex({
                         <DialogFooter>
                             {editedParty && (
                                 <Button asChild type="button" variant="outline" className="sm:mr-auto">
-                                    <a id="download-party-poster" href={`${partyPath(editedParty)}/poster`} download>
+                                    <a id="download-party-poster" href={route("admin.parties.poster", editedParty.name)} download>
                                         <DownloadIcon className="size-4" />
                                         Download poster
                                     </a>

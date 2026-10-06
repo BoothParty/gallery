@@ -2,6 +2,7 @@
 
 use App\Models\Party;
 use App\Models\User;
+use Tighten\Ziggy\BladeRouteGenerator;
 
 /**
  * Matches a stylesheet entry in the rendered head, in both Vite dev mode
@@ -55,4 +56,22 @@ it('keeps shadcn out of the javascript entry chunk shared with the gallery', fun
     expect($entry)
         ->not->toContain('SidebarProvider')
         ->not->toContain('radix');
+});
+
+/*
+ * Ziggy prints the full route list once per process, then only a merge script.
+ * Each request is a fresh process in production, but not in this suite.
+ */
+it('hands the route list to the admin but not to the guests', function () {
+    BladeRouteGenerator::$generated = false;
+    $party = Party::factory()->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertDontSee('const Ziggy=', escape: false);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('admin.parties.index'))
+        ->assertOk()
+        ->assertSee('const Ziggy=', escape: false);
 });

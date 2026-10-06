@@ -143,11 +143,9 @@ export function PartySwitcher({
                   key={party.id}
                   onClick={() => {
                     setActiveParty(party)
-                    const partyName = encodeURIComponent(party.name)
-                    const destination = component === 'admin/gallery/index'
-                      ? `/${partyName}/dashboard/pictures`
-                      : `/${partyName}/dashboard`
-                    router.visit(destination)
+                    router.visit(component === 'admin/gallery/index'
+                      ? route('party.dashboard.pictures', party.name)
+                      : route('party.dashboard.show', party.name))
                   }}
                   className="gap-2 rounded-md px-2 py-2"
                 >
