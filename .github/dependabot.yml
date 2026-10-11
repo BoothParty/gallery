@@ -19,6 +19,11 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Above 1.58, Playwright rejects the local file paths that Pest's browser
+      # plugin sends for attach(); lift this once the plugin supports it.
+      - dependency-name: playwright
+        versions: [">=1.59.0"]
 
   - package-ecosystem: docker
     directory: /
