@@ -101,7 +101,7 @@ class CreateParty extends Command
             options: fn (string $value) => collect([0 => '— No owner —'])
                 ->when(
                     strlen($value) > 0,
-                    fn ($items) => $items->merge(
+                    fn ($items) => $items->union(
                         User::query()
                             ->where('name', 'like', "%{$value}%")
                             ->orWhere('email', 'like', "%{$value}%")
