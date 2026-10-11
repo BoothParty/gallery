@@ -67,7 +67,7 @@ it('prefills party names from the upcoming events in the bulk create dialog', fu
 });
 
 it('prefills the party name from the gallery name of the source event', function () {
-    $page = visit(route('admin.parties.index'));
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Create from events')
         ->assertVisible('#bulk-create-party-name-0')
