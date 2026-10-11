@@ -56,7 +56,7 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
 # Les configs Tailwind scannent aussi les vues de vendor/laravel/framework,
 # on récupère donc ce dossier depuis l'étape vendor.
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS assets
+FROM node:25-alpine AS assets
 
 WORKDIR /app
 
