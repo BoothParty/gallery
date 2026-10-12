@@ -12,7 +12,7 @@
         "php": "^8.2",
         "endroid/qr-code": "^6.1",
         "guzzlehttp/guzzle": "^7.10",
-        "inertiajs/inertia-laravel": "^2.0",
+        "inertiajs/inertia-laravel": "^3.0",
         "intervention/image": "^3.11",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
