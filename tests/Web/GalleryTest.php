@@ -252,9 +252,19 @@ it('shows the loading skeletons while the next batch is fetched', function () {
 
     $page = browserPage(fn () => visit(route('party.gallery', $party)));
 
+    // The skeletons only live while the request is in flight: delay Inertia's XHR
+    // so the assertion cannot lose the race against a fast local response.
     $page->assertCount('#gallery img', 24)
         ->assertNotPresent('[data-gallery-skeletons]')
-        ->script('window.scrollTo(0, document.body.scrollHeight)');
+        ->script(<<<'JS'
+            (() => {
+                const send = XMLHttpRequest.prototype.send;
+                XMLHttpRequest.prototype.send = function (...args) {
+                    setTimeout(() => send.apply(this, args), 800);
+                };
+                window.scrollTo(0, document.body.scrollHeight);
+            })()
+            JS);
 
     $page->assertPresent('[data-gallery-skeletons]');
 
