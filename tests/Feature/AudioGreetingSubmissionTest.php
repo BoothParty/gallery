@@ -1,9 +1,11 @@
 <?php
 
 use App\Enums\GreetingStatus;
+use App\Jobs\ConvertGreetingToMp3;
 use App\Models\AudioGreeting;
 use App\Models\Party;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 function audiobookParty(): Party
@@ -130,4 +132,31 @@ it('does not accept a recording for a party without the module', function () {
     $this->post('/audiobook/'.$party->client_uuid.'/annonce', [
         'recording' => UploadedFile::fake()->create('take.webm', 400, 'audio/webm'),
     ])->assertNotFound();
+});
+
+it('queues the mp3 conversion when the client submits', function () {
+    Queue::fake();
+
+    $party = audiobookParty();
+    $greeting = AudioGreeting::factory()->for($party)->create();
+
+    $this->post('/audiobook/'.$party->client_uuid.'/annonce/soumettre')->assertRedirect();
+
+    Queue::assertPushed(
+        ConvertGreetingToMp3::class,
+        fn (ConvertGreetingToMp3 $job): bool => $job->greeting->is($greeting)
+    );
+});
+
+it('does not queue a conversion merely for storing a take', function () {
+    Queue::fake();
+    Storage::fake('s3');
+
+    $party = audiobookParty();
+
+    $this->post('/audiobook/'.$party->client_uuid.'/annonce', [
+        'recording' => UploadedFile::fake()->create('take.webm', 400, 'audio/webm'),
+    ])->assertRedirect();
+
+    Queue::assertNothingPushed();
 });
