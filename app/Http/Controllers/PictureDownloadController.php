@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PartyActivityType;
 use App\Http\Requests\DownloadPicturesRequest;
 use App\Models\Party;
 use App\Models\Picture;
@@ -32,6 +33,8 @@ class PictureDownloadController extends Controller
             ->get();
 
         $filename = Str::slug($party->name).'-photos.zip';
+
+        $party->recordActivity(PartyActivityType::PicturesDownloaded, ['count' => $pictures->count()]);
 
         return response()->stream(
             function () use ($pictures, $filename): void {

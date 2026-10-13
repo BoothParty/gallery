@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PartyActivityType;
 use App\Services\SignedStorageUrl;
 use Database\Factories\PartyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -74,6 +75,44 @@ class Party extends Model
     public function pictures(): HasMany
     {
         return $this->hasMany(Picture::class);
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(PartyActivity::class);
+    }
+
+    /**
+     * Log what happened to the party for its dashboard feed. A repeat of the
+     * latest entry of the same type within its fold window adds its count to
+     * that entry instead of starting a new one.
+     *
+     * ponytail: read-then-write, two concurrent booth uploads can lose one
+     * count. Fine for a feed; lock the row if the counts ever feed billing.
+     *
+     * @param  array{count?: int}  $properties
+     */
+    public function recordActivity(PartyActivityType $type, array $properties = []): PartyActivity
+    {
+        $window = $type->foldWithin();
+
+        $latest = $window === null ? null : $this->activities()
+            ->where('type', $type)
+            ->where('updated_at', '>=', now()->sub($window))
+            ->latest('updated_at')
+            ->first();
+
+        if ($latest === null) {
+            return $this->activities()->create(['type' => $type, 'properties' => $properties]);
+        }
+
+        if (isset($properties['count'])) {
+            $latest->properties = ['count' => ($latest->properties['count'] ?? 0) + $properties['count']];
+        }
+
+        $latest->touch();
+
+        return $latest;
     }
 
     /**

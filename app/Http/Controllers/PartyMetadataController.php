@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PartyActivityType;
 use App\Http\Requests\UpdatePartyMetadataRequest;
 use App\Models\Party;
 use App\Services\PartyBannerStorage;
@@ -42,6 +43,8 @@ class PartyMetadataController extends Controller
         } elseif ($request->hasFile('banner')) {
             $partyBannerStorage->store($party, $request->file('banner'));
         }
+
+        $party->recordActivity(PartyActivityType::MetadataUpdated);
 
         return back();
     }

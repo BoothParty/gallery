@@ -23,3 +23,37 @@ it('can search parties in the switcher including expired ones', function () {
         ->assertDontSee('Beta Party')
         ->assertNoJavaScriptErrors();
 });
+
+it('shows the party overview with stats, latest pictures and activity', function () {
+    $party = Party::factory()->create([
+        'name' => 'alpha-party',
+        'description' => 'Domaine des Oliviers',
+        'expire_at' => '2099-09-10 12:00:00',
+    ]);
+
+    $page = browserPage(fn () => visit(route('party.dashboard.show', $party)));
+
+    $page->assertSeeIn('main > div > h1', 'alpha-party')
+        ->assertSee("Domaine des Oliviers · galerie en ligne jusqu'au 10 septembre 2099")
+        ->assertSee('+0 dans la dernière heure')
+        ->assertSee('Aucune photo pour le moment.')
+        ->assertSee('Aucune activité pour le moment.')
+        ->assertSee('0 photo téléchargée')
+        ->assertSee('Visiteurs')
+        ->assertSee('Téléchargements')
+        ->assertDontSee('Messages audio')
+        ->assertSee('Dernières photos')
+        ->assertSee('Activité')
+        ->click('Tout voir')
+        ->assertPathIs('/alpha-party/dashboard/pictures')
+        ->assertNoJavaScriptErrors();
+});
+
+it('links to the public gallery of the current party', function () {
+    $party = Party::factory()->create(['name' => 'alpha-party']);
+
+    $page = browserPage(fn () => visit(route('party.dashboard.show', $party)));
+
+    $page->assertAttribute('a[target="_blank"]', 'href', route('party.gallery', $party))
+        ->assertNoJavaScriptErrors();
+});

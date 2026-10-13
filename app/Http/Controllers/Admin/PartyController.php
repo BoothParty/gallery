@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PartyActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkStorePartiesRequest;
 use App\Http\Requests\StorePartyRequest;
@@ -118,10 +119,16 @@ class PartyController extends Controller
             ['name', 'user_id', 'expire_at', 'display_name', 'description'],
         ));
 
+        $bannerChanged = $request->boolean('remove_banner') || $request->hasFile('banner');
+
         if ($request->boolean('remove_banner')) {
             $partyBannerStorage->remove($party);
         } elseif ($request->hasFile('banner')) {
             $partyBannerStorage->store($party, $request->file('banner'));
+        }
+
+        if ($bannerChanged || $party->wasChanged(['display_name', 'description'])) {
+            $party->recordActivity(PartyActivityType::MetadataUpdated);
         }
 
         return to_route('admin.parties.index');

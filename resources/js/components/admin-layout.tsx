@@ -1,4 +1,5 @@
 import * as React from "react"
+import { ArrowUpRightIcon } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -6,6 +7,7 @@ import {
     BreadcrumbItem,
     BreadcrumbList,
     BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -36,6 +38,11 @@ type AdminLayoutProps = React.PropsWithChildren<{
 }>
 
 export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
+    const crumbs = title.split(" / ")
+    const heading = crumbs[crumbs.length - 1]
+    const currentParty = [...sidebar.parties, ...sidebar.searchableParties]
+        .find((party) => party.id === sidebar.currentPartyId)
+
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -45,7 +52,7 @@ export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
                     currentPartyId={sidebar.currentPartyId}
                 />
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                    <header className="flex h-15 shrink-0 items-center gap-2 border-b bg-card transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                         <div className="flex items-center gap-2 px-4">
                             <SidebarTrigger className="-ml-1" />
                             <Separator
@@ -54,14 +61,36 @@ export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
                             />
                             <Breadcrumb>
                                 <BreadcrumbList>
+                                    {crumbs.slice(0, -1).map((crumb, index) => (
+                                        <React.Fragment key={index}>
+                                            <BreadcrumbItem>{crumb}</BreadcrumbItem>
+                                            <BreadcrumbSeparator />
+                                        </React.Fragment>
+                                    ))}
                                     <BreadcrumbItem>
-                                        <BreadcrumbPage>{title}</BreadcrumbPage>
+                                        <BreadcrumbPage>{heading}</BreadcrumbPage>
                                     </BreadcrumbItem>
                                 </BreadcrumbList>
                             </Breadcrumb>
                         </div>
+                        {currentParty && (
+                            <a
+                                href={route("party.gallery", currentParty.name)}
+                                target="_blank"
+                                rel="noopener"
+                                className="ml-auto flex items-center gap-1.5 px-4 text-[13px] whitespace-nowrap text-[#6b5a44] hover:text-foreground"
+                            >
+                                Voir la galerie publique
+                                <ArrowUpRightIcon className="size-3.5" />
+                            </a>
+                        )}
                     </header>
-                    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+                    <div className="flex flex-1 flex-col gap-5 p-[clamp(18px,2.5vw,28px)]">
+                        <h1 className="font-heading text-[clamp(25px,3vw,32px)] leading-tight">
+                            {heading}
+                        </h1>
+                        {children}
+                    </div>
                 </SidebarInset>
             </SidebarProvider>
         </TooltipProvider>

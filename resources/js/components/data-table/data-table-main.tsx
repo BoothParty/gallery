@@ -104,9 +104,9 @@ export function DataTable<TRow>({
     })
 
     return (
-        <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-4">
             <DataTableToolbar table={table} toolbarAction={toolbarAction} />
-            <div className="overflow-hidden rounded-md border">
+            <div className="overflow-hidden rounded-md border bg-card">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (

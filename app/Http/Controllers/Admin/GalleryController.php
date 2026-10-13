@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PartyActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAdminPicturesRequest;
 use App\Jobs\CreatePictureThumbnail;
@@ -35,6 +36,8 @@ class GalleryController extends Controller
 
             CreatePictureThumbnail::dispatch($picture);
         }
+
+        $party->recordActivity(PartyActivityType::PicturesUploaded, ['count' => count($photos)]);
 
         return redirect()->route('party.dashboard.pictures', $party);
     }
