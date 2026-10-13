@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\PartyActivityType;
+use App\Enums\PartyKind;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkStorePartiesRequest;
 use App\Http\Requests\StorePartyRequest;
@@ -45,6 +46,7 @@ class PartyController extends Controller
                 fn (): array => $partySourceManager->upcomingEvents($refreshSources)
             ),
             'rows' => Party::query()
+                ->where('kind', PartyKind::Event)
                 ->with('user:id,name')
                 ->withCount('pictures')
                 ->oldest('id')

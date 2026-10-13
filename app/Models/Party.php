@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PartyActivityType;
+use App\Enums\PartyKind;
 use App\Services\SignedStorageUrl;
 use Database\Factories\PartyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,7 @@ class Party extends Model
     /** @var list<string> */
     protected $fillable = [
         'name',
+        'kind',
         'display_name',
         'description',
         'banner_position_x',
@@ -39,6 +41,7 @@ class Party extends Model
      * @var array<string, int|float>
      */
     protected $attributes = [
+        'kind' => 'event',
         'banner_position_x' => 50,
         'banner_position_y' => 50,
         'banner_zoom' => 1,
@@ -47,6 +50,7 @@ class Party extends Model
     protected function casts(): array
     {
         return [
+            'kind' => PartyKind::class,
             'expire_at' => 'datetime',
             'banner_position_x' => 'float',
             'banner_position_y' => 'float',
@@ -155,6 +159,11 @@ class Party extends Model
         return $this->expire_at !== null && $this->expire_at->isPast();
     }
 
+    public function isTransfer(): bool
+    {
+        return $this->kind === PartyKind::Transfer;
+    }
+
     /**
      * Host the party's gallery is published under, the name being the
      * subdomain part. This is what gets printed on the party's poster.
@@ -166,9 +175,15 @@ class Party extends Model
 
     /**
      * Absolute URL of the party's gallery, as encoded in the poster QR code.
+     * A transfer has no subdomain: its gallery lives under the app's own
+     * domain, behind the uuid it is named by.
      */
     public function publicUrl(): string
     {
+        if ($this->isTransfer()) {
+            return route('transfers.show', $this);
+        }
+
         return 'https://'.$this->publicHost();
     }
 
