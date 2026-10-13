@@ -17,7 +17,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { AlbumIcon, LayoutDashboardIcon, PartyPopperIcon, UsersIcon } from "lucide-react"
+import { AlbumIcon, LayoutDashboardIcon, PartyPopperIcon, SendIcon, UsersIcon } from "lucide-react"
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   parties: {
@@ -77,6 +77,14 @@ export function AppSidebar({ parties, searchableParties, currentPartyId, ...prop
                 <Link href={route("admin.parties.index")}>
                   <PartyPopperIcon />
                   <span>Parties</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Transfers">
+                <Link href={route("admin.transfers.index")}>
+                  <SendIcon />
+                  <span>Transfers</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
