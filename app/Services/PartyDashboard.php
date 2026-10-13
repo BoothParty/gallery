@@ -26,6 +26,7 @@ class PartyDashboard
      * @return array{
      *     party: array{description: string|null, expire_at: string|null},
      *     pictureStats: array{total: int, lastHour: int},
+     *     downloadStats: array{total: int, pictures: int},
      *     latestPictures: list<array<string, mixed>>,
      *     activity: list<array{description: string, at: string}>,
      * }
@@ -41,6 +42,7 @@ class PartyDashboard
                 'total' => $party->pictures()->count(),
                 'lastHour' => $party->pictures()->where('created_at', '>=', now()->subHour())->count(),
             ],
+            'downloadStats' => $this->downloadStats($party),
             'latestPictures' => PictureResource::collection(
                 $party->pictures()->latest()->latest('id')->limit(self::LATEST_PICTURES)->get()
             )->resolve(),
@@ -55,6 +57,22 @@ class PartyDashboard
                     'at' => $activity->updated_at->toIso8601String(),
                 ])
                 ->all(),
+        ];
+    }
+
+    /**
+     * Every download is a ZIP, whatever its size: the card counts the
+     * downloads and, below, the pictures they carried.
+     *
+     * @return array{total: int, pictures: int}
+     */
+    private function downloadStats(Party $party): array
+    {
+        $downloads = $party->activities()->where('type', PartyActivityType::PicturesDownloaded);
+
+        return [
+            'total' => $downloads->clone()->count(),
+            'pictures' => (int) $downloads->sum('properties->count'),
         ];
     }
 }

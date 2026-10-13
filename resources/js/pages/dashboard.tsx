@@ -11,6 +11,7 @@ type DashboardPicture = {
 type PageProps = SidebarData & {
   party: { description: string | null, expire_at: string | null }
   pictureStats: { total: number, lastHour: number }
+  downloadStats: { total: number, pictures: number }
   latestPictures: DashboardPicture[]
   activity: { description: string, at: string }[]
 }
@@ -18,7 +19,6 @@ type PageProps = SidebarData & {
 // ponytail: placeholder data from the Claude Design mockup, replace with real party stats once they exist server-side.
 const placeholderStats = [
   { label: "Visiteurs", value: "86", delta: "+12 cette semaine", up: true },
-  { label: "Téléchargements", value: "41", delta: "18 en ZIP", up: false },
 ]
 
 const relativeTime = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" })
@@ -50,7 +50,7 @@ function expiryLabel(expireAt: string | null): string {
     : `galerie en ligne jusqu'au ${formatDate(expireAt)}`
 }
 
-export default function Page({ party: details, pictureStats, latestPictures, activity, ...sidebar }: PageProps) {
+export default function Page({ party: details, pictureStats, downloadStats, latestPictures, activity, ...sidebar }: PageProps) {
   const party = [...sidebar.parties, ...sidebar.searchableParties].find((p) => p.id === sidebar.currentPartyId)
   const stats = [
     {
@@ -60,6 +60,12 @@ export default function Page({ party: details, pictureStats, latestPictures, act
       up: pictureStats.lastHour > 0,
     },
     ...placeholderStats,
+    {
+      label: "Téléchargements",
+      value: String(downloadStats.total),
+      delta: `${downloadStats.pictures} ${downloadStats.pictures > 1 ? "photos téléchargées" : "photo téléchargée"}`,
+      up: false,
+    },
   ]
 
   return (

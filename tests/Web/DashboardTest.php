@@ -38,6 +38,7 @@ it('shows the party overview with stats, latest pictures and activity', function
         ->assertSee('+0 dans la dernière heure')
         ->assertSee('Aucune photo pour le moment.')
         ->assertSee('Aucune activité pour le moment.')
+        ->assertSee('0 photo téléchargée')
         ->assertSee('Visiteurs')
         ->assertSee('Téléchargements')
         ->assertDontSee('Messages audio')

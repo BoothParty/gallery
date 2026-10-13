@@ -120,3 +120,17 @@ it('lists the 5 latest feed activities, newest first and without downloads', fun
             ])
         );
 });
+
+it('counts the downloads and the pictures they carried', function () {
+    $party = Party::factory()->create();
+    $downloaded = ['type' => PartyActivityType::PicturesDownloaded];
+    PartyActivity::factory()->for($party)->create([...$downloaded, 'properties' => ['count' => 1]]);
+    PartyActivity::factory()->for($party)->create([...$downloaded, 'properties' => ['count' => 12]]);
+    PartyActivity::factory()->for($party)->create(['type' => PartyActivityType::PicturesImported, 'properties' => ['count' => 30]]);
+    PartyActivity::factory()->create([...$downloaded, 'properties' => ['count' => 5]]);
+
+    $this->get(route('party.dashboard.show', $party))
+        ->assertInertia(fn ($page) => $page
+            ->where('downloadStats', ['total' => 2, 'pictures' => 13])
+        );
+});
