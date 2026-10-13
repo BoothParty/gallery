@@ -148,3 +148,71 @@ it('supports allowed per_page values and falls back to default for invalid value
             ->has('pictures.data', 24)
         );
 });
+
+it('records the relative path of a picture sent with paths and answers in json', function () {
+    Storage::fake('s3');
+    Queue::fake();
+    $party = Party::factory()->transfer()->create();
+
+    $this->postJson(route('party.dashboard.pictures.store', $party), [
+        'photos' => [UploadedFile::fake()->image('IMG_0042.jpg', 1200, 800)],
+        'paths' => ['raw/IMG_0042.jpg'],
+    ])->assertOk()->assertExactJson(['created' => 1, 'skipped' => 0]);
+
+    expect($party->pictures()->sole()->original_name)->toBe('raw/IMG_0042.jpg');
+    Queue::assertPushed(CreatePictureThumbnail::class, 1);
+});
+
+it('skips a picture already sent under the same path without touching storage', function () {
+    Storage::fake('s3');
+    Queue::fake();
+    $party = Party::factory()->transfer()->create();
+    Picture::factory()->for($party)->create(['original_name' => 'IMG_0042.jpg']);
+
+    $this->postJson(route('party.dashboard.pictures.store', $party), [
+        'photos' => [UploadedFile::fake()->image('IMG_0042.jpg')],
+        'paths' => ['IMG_0042.jpg'],
+    ])->assertOk()->assertExactJson(['created' => 0, 'skipped' => 1]);
+
+    expect($party->pictures()->count())->toBe(1);
+    expect(Storage::disk('s3')->allFiles())->toBe([]);
+    Queue::assertNothingPushed();
+    expect($party->activities()->exists())->toBeFalse();
+});
+
+it('accepts the same path in two different parties', function () {
+    Storage::fake('s3');
+    Queue::fake();
+    $other = Party::factory()->transfer()->create();
+    Picture::factory()->for($other)->create(['original_name' => 'IMG_0042.jpg']);
+    $party = Party::factory()->transfer()->create();
+
+    $this->postJson(route('party.dashboard.pictures.store', $party), [
+        'photos' => [UploadedFile::fake()->image('IMG_0042.jpg')],
+        'paths' => ['IMG_0042.jpg'],
+    ])->assertOk()->assertExactJson(['created' => 1, 'skipped' => 0]);
+});
+
+it('stores homonymous pictures sent from the dashboard form without paths', function () {
+    Storage::fake('s3');
+    Queue::fake();
+    $party = Party::factory()->create();
+
+    foreach ([1, 2] as $attempt) {
+        $this->post(route('party.dashboard.pictures.store', $party), [
+            'photos' => [UploadedFile::fake()->image('IMG_1234.jpg')],
+        ])->assertRedirect(route('party.dashboard.pictures', $party));
+    }
+
+    expect($party->pictures()->count())->toBe(2)
+        ->and($party->pictures()->whereNull('original_name')->count())->toBe(2);
+});
+
+it('rejects a path longer than 255 characters', function () {
+    $party = Party::factory()->transfer()->create();
+
+    $this->postJson(route('party.dashboard.pictures.store', $party), [
+        'photos' => [UploadedFile::fake()->image('a.jpg')],
+        'paths' => [str_repeat('a', 256).'.jpg'],
+    ])->assertUnprocessable()->assertJsonValidationErrors('paths.0');
+});

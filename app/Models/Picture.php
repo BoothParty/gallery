@@ -21,6 +21,7 @@ class Picture extends Model
     protected $fillable = [
         'party_id',
         'path',
+        'original_name',
         'thumbnail_path',
         'width',
         'height',

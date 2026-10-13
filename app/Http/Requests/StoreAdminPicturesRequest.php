@@ -25,6 +25,8 @@ class StoreAdminPicturesRequest extends FormRequest
         return [
             'photos' => ['required', 'array', 'min:1'],
             'photos.*' => ['required', 'image', 'max:10240'],
+            'paths' => ['sometimes', 'array'],
+            'paths.*' => ['required', 'string', 'max:255'],
         ];
     }
 }
