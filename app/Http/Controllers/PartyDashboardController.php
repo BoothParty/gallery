@@ -5,16 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Party;
 use App\Models\Picture;
 use App\Services\AdminDashboardDataService;
+use App\Services\PartyDashboard;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PartyDashboardController extends Controller
 {
-    public function show(Party $party, AdminDashboardDataService $adminDashboardDataService): Response
+    public function show(Party $party, AdminDashboardDataService $adminDashboardDataService, PartyDashboard $partyDashboard): Response
     {
         return Inertia::render('dashboard', [
             ...$adminDashboardDataService->sidebarData($party->id),
+            ...$partyDashboard->for($party),
         ]);
     }
 

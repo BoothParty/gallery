@@ -1,4 +1,5 @@
 import * as React from "react"
+import { ArrowUpRightIcon } from "lucide-react"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -39,6 +40,8 @@ type AdminLayoutProps = React.PropsWithChildren<{
 export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
     const crumbs = title.split(" / ")
     const heading = crumbs[crumbs.length - 1]
+    const currentParty = [...sidebar.parties, ...sidebar.searchableParties]
+        .find((party) => party.id === sidebar.currentPartyId)
 
     return (
         <TooltipProvider>
@@ -70,6 +73,17 @@ export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
                                 </BreadcrumbList>
                             </Breadcrumb>
                         </div>
+                        {currentParty && (
+                            <a
+                                href={route("party.gallery", currentParty.name)}
+                                target="_blank"
+                                rel="noopener"
+                                className="ml-auto flex items-center gap-1.5 px-4 text-[13px] whitespace-nowrap text-[#6b5a44] hover:text-foreground"
+                            >
+                                Voir la galerie publique
+                                <ArrowUpRightIcon className="size-3.5" />
+                            </a>
+                        )}
                     </header>
                     <div className="flex flex-1 flex-col gap-5 p-[clamp(18px,2.5vw,28px)]">
                         <h1 className="font-heading text-[clamp(25px,3vw,32px)] leading-tight">

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Party;
+use App\Models\Picture;
 use App\Models\User;
 
 beforeEach(function () {
@@ -55,5 +56,46 @@ it('excludes expired parties from dashboard parties', function () {
             ->where('searchableParties', fn ($parties) => collect($parties)
                 ->contains(fn (array $party) => $party['id'] === $expiredParty->id && $party['expired'] === true)
             )
+        );
+});
+
+it('exposes the party description and expiry date', function () {
+    $party = Party::factory()->create([
+        'description' => 'Domaine des Oliviers',
+        'expire_at' => '2026-12-31 23:00:00',
+    ]);
+
+    $this->get(route('party.dashboard.show', $party))
+        ->assertInertia(fn ($page) => $page
+            ->where('party.description', 'Domaine des Oliviers')
+            ->where('party.expire_at', $party->expire_at->toIso8601String())
+        );
+});
+
+it('counts all pictures and those added within the last hour', function () {
+    $this->freezeTime();
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->count(3)->create(['created_at' => now()->subHours(2)]);
+    Picture::factory()->for($party)->count(2)->create(['created_at' => now()->subMinutes(30)]);
+    Picture::factory()->for($party)->create(['created_at' => now()->subMinutes(10), 'hidden_at' => now()]);
+    Picture::factory()->create();
+
+    $this->get(route('party.dashboard.show', $party))
+        ->assertInertia(fn ($page) => $page
+            ->where('pictureStats', ['total' => 6, 'lastHour' => 3])
+        );
+});
+
+it('lists the 24 latest pictures, newest first', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->count(25)->sequence(
+        fn ($sequence) => ['created_at' => now()->subMinutes(25 - $sequence->index)],
+    )->create();
+    $newest = $party->pictures()->latest()->first();
+
+    $this->get(route('party.dashboard.show', $party))
+        ->assertInertia(fn ($page) => $page
+            ->has('latestPictures', 24)
+            ->where('latestPictures.0.id', $newest->id)
         );
 });
