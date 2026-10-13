@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAudioGuestbook;
 use App\Http\Middleware\EnsurePartyHost;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'party.host' => EnsurePartyHost::class,
+            'audiobook' => EnsureAudioGuestbook::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
