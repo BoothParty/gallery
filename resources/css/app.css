@@ -30,6 +30,11 @@
     --color-line: rgba(23, 21, 18, 0.09);
     --color-placeholder: #e8e5df;
     --color-shade: #14120f;
+
+    /* The recording red and the studio's validation green, from the audio
+       guestbook design; the gallery theme had no use for either. */
+    --color-accent: #a8452c;
+    --color-valid: #4f6b4a;
 }
 
 body {

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\PartyController as AdminPartyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AudiobookController;
+use App\Http\Controllers\AudioGreetingController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PartyDashboardController;
@@ -34,6 +35,14 @@ Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
 Route::get('audiobook/{party:client_uuid}', [AudiobookController::class, 'show'])
     ->middleware(['audiobook', 'throttle:audiobook-entry'])
     ->name('audiobook.show');
+
+Route::post('audiobook/{party:client_uuid}/annonce', [AudioGreetingController::class, 'store'])
+    ->middleware(['audiobook', 'throttle:audiobook-write'])
+    ->name('audiobook.greeting.store');
+
+Route::post('audiobook/{party:client_uuid}/annonce/soumettre', [AudioGreetingController::class, 'submit'])
+    ->middleware(['audiobook', 'throttle:audiobook-write'])
+    ->name('audiobook.greeting.submit');
 
 Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])
