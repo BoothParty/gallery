@@ -17,6 +17,15 @@ servers:
       # L'image FrankenPHP embarque un HEALTHCHECK sur le port admin de Caddy,
       # que le worker ne démarre pas : le conteneur serait "unhealthy" en boucle.
       no-healthcheck: true
+  scheduler:
+    hosts:
+      - 10.117.19.66
+    # Les relances du livre d'or partent d'une commande quotidienne : sans ce
+    # rôle, rien ne déclenche le planificateur et les rappels ne sortent jamais.
+    cmd: php artisan schedule:work
+    options:
+      # Même raison que le worker : pas de serveur HTTP dans ce conteneur.
+      no-healthcheck: true
 
 proxy:
   app_port: 80
@@ -78,6 +87,13 @@ env:
 
     PARTY_DOMAIN: boothparty.fr
 
+    # Les mails du livre d'or partent d'ici ; les identifiants sont en secrets.
+    MAIL_MAILER: smtp
+    MAIL_SCHEME: smtps
+    MAIL_PORT: "465"
+    MAIL_FROM_ADDRESS: bonjour@boothparty.fr
+    MAIL_FROM_NAME: BoothParty
+
     # Identifiant du site créé dans Umami, dont le domaine doit être
     # *.boothparty.fr : le hostname sert de dimension « party ».
     UMAMI_SCRIPT_URL: https://umami.boothparty.fr/script.js
@@ -92,6 +108,10 @@ env:
     - AWS_ACCESS_KEY_ID
     - AWS_SECRET_ACCESS_KEY
     - NOTION_API_TOKEN
+    - MAIL_HOST
+    - MAIL_USERNAME
+    - MAIL_PASSWORD
+    - PARTY_STUDIO_EMAIL
     - ZOHO_CLIENT_ID
     - ZOHO_CLIENT_SECRET
 

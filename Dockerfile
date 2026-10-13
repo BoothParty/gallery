@@ -6,6 +6,12 @@
 FROM dunglas/frankenphp:1-php8.4 AS base
 
 # install-php-extensions est fourni par l'image FrankenPHP
+# ffmpeg convertit l'annonce du livre d'or en MP3 (le format attendu par le
+# combiné) et ffprobe, livré avec lui, lit la durée des enregistrements.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN install-php-extensions \
       pdo_mysql \
       gd \
