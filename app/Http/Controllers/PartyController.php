@@ -25,6 +25,8 @@ class PartyController extends Controller
      */
     public function show(Request $request, Party $party, PartyPicturesState $partyPicturesState): Response
     {
+        abort_if($request->routeIs('transfers.show') && ! $party->isTransfer(), 404);
+
         $isHost = ResolvePartyHost::isHost($request, $party);
         $hidePictures = $party->hidePictures();
         $picturesPage = $this->pictures($party, $hidePictures, $isHost);

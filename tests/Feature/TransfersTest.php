@@ -49,3 +49,26 @@ it('keeps transfers out of the sidebar party switcher', function () {
             ->where('searchableParties', fn ($parties) => collect($parties)->pluck('id')->all() === [$event->id])
         );
 });
+
+it('serves a transfer gallery under /transfers', function () {
+    $transfer = Party::factory()->transfer()->create();
+
+    $this->get('/transfers/'.$transfer->name)
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('party/gallery')
+            ->where('party.id', $transfer->id)
+        );
+});
+
+it('does not serve an event under /transfers', function () {
+    Party::factory()->create(['name' => 'mariage-julie']);
+
+    $this->get('/transfers/mariage-julie')->assertNotFound();
+});
+
+it('points the public url of a transfer at /transfers', function () {
+    $transfer = Party::factory()->transfer()->create();
+
+    expect($transfer->publicUrl())->toBe(url('/transfers/'.$transfer->name));
+});

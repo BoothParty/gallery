@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\PartyController as AdminPartyController;
+use App\Http\Controllers\Admin\TransferController as AdminTransferController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\PartyController;
@@ -24,6 +25,14 @@ Route::middleware('throttle:10,1')->group(function (): void {
     Route::get('auth/{provider}/callback', [OAuthController::class, 'callback'])->name('auth.callback');
 });
 Route::post('logout', [OAuthController::class, 'destroy'])->name('logout');
+
+/**
+ * Declared ahead of the `{party}` group, which would otherwise read
+ * `transfers` as a party name and capture `/transfers/dashboard`.
+ */
+Route::get('transfers/{party}', [PartyController::class, 'show'])
+    ->middleware(ResolvePartyHost::class)
+    ->name('transfers.show');
 
 Route::prefix('{party}')->name('party.')->group(function () {
     Route::get('/', [PartyController::class, 'show'])
@@ -63,5 +72,6 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('parties/{party}/host-token', [AdminPartyController::class, 'regenerateHostToken'])
         ->name('parties.host-token');
     Route::resource('parties', AdminPartyController::class)->except(['show', 'create', 'edit']);
+    Route::resource('transfers', AdminTransferController::class)->only(['index', 'store', 'destroy']);
     Route::resource('users', AdminUserController::class)->only(['index', 'store', 'update', 'destroy']);
 });
