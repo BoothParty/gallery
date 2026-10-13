@@ -37,6 +37,7 @@ it('shows the party overview with stats, latest pictures and activity', function
         ->assertSee("Domaine des Oliviers · galerie en ligne jusqu'au 10 septembre 2099")
         ->assertSee('+0 dans la dernière heure')
         ->assertSee('Aucune photo pour le moment.')
+        ->assertSee('Aucune activité pour le moment.')
         ->assertSee('Visiteurs')
         ->assertSee('Téléchargements')
         ->assertDontSee('Messages audio')

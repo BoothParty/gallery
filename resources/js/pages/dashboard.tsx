@@ -12,6 +12,7 @@ type PageProps = SidebarData & {
   party: { description: string | null, expire_at: string | null }
   pictureStats: { total: number, lastHour: number }
   latestPictures: DashboardPicture[]
+  activity: { description: string, at: string }[]
 }
 
 // ponytail: placeholder data from the Claude Design mockup, replace with real party stats once they exist server-side.
@@ -20,12 +21,21 @@ const placeholderStats = [
   { label: "Téléchargements", value: "41", delta: "18 en ZIP", up: false },
 ]
 
-const activity = [
-  { text: "18 photos importées depuis la borne", when: "il y a 12 min" },
-  { text: "3 photos masquées par l'hôte", when: "hier" },
-  { text: "Métadonnées de la galerie modifiées", when: "hier" },
-  { text: "Galerie publiée, lien envoyé aux invités", when: "14 sept." },
-]
+const relativeTime = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" })
+
+function timeAgo(iso: string): string {
+  const minutes = Math.round((new Date(iso).getTime() - Date.now()) / 60_000)
+
+  if (minutes > -60) {
+    return relativeTime.format(minutes, "minute")
+  }
+
+  if (minutes > -24 * 60) {
+    return relativeTime.format(Math.round(minutes / 60), "hour")
+  }
+
+  return relativeTime.format(Math.round(minutes / (24 * 60)), "day")
+}
 
 const formatDate = (iso: string) =>
   new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" }).format(new Date(iso))
@@ -40,7 +50,7 @@ function expiryLabel(expireAt: string | null): string {
     : `galerie en ligne jusqu'au ${formatDate(expireAt)}`
 }
 
-export default function Page({ party: details, pictureStats, latestPictures, ...sidebar }: PageProps) {
+export default function Page({ party: details, pictureStats, latestPictures, activity, ...sidebar }: PageProps) {
   const party = [...sidebar.parties, ...sidebar.searchableParties].find((p) => p.id === sidebar.currentPartyId)
   const stats = [
     {
@@ -102,14 +112,18 @@ export default function Page({ party: details, pictureStats, latestPictures, ...
           <div className="border-b px-4.5 py-3.5">
             <h2 className="font-heading text-[19px]">Activité</h2>
           </div>
-          <ul>
-            {activity.map((item) => (
-              <li key={item.text} className="flex items-baseline gap-3 border-b px-4.5 py-3 last:border-b-0">
-                <span className="min-w-0 flex-1 text-[13px] leading-normal text-pretty">{item.text}</span>
-                <span className="text-xs whitespace-nowrap text-muted-foreground">{item.when}</span>
-              </li>
-            ))}
-          </ul>
+          {activity.length > 0 ? (
+            <ul>
+              {activity.map((item) => (
+                <li key={item.at + item.description} className="flex items-baseline gap-3 border-b px-4.5 py-3 last:border-b-0">
+                  <span className="min-w-0 flex-1 text-[13px] leading-normal text-pretty">{item.description}</span>
+                  <time dateTime={item.at} className="text-xs whitespace-nowrap text-muted-foreground">{timeAgo(item.at)}</time>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-4.5 py-6 text-sm text-muted-foreground">Aucune activité pour le moment.</p>
+          )}
         </section>
       </div>
     </AdminLayout>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PartyActivityType;
 use App\Models\Party;
 use App\Models\Picture;
 use Illuminate\Http\RedirectResponse;
@@ -27,9 +28,20 @@ class PictureVisibilityController extends Controller
             'hidden' => ['required', 'boolean'],
         ]);
 
+        $hidden = $request->boolean('hidden');
+
+        if ($picture->isHidden() === $hidden) {
+            return back();
+        }
+
         $picture->update([
-            'hidden_at' => $request->boolean('hidden') ? now() : null,
+            'hidden_at' => $hidden ? now() : null,
         ]);
+
+        $party->recordActivity(
+            $hidden ? PartyActivityType::PicturesHidden : PartyActivityType::PicturesShown,
+            ['count' => 1],
+        );
 
         return back();
     }

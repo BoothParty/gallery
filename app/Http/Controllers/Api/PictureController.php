@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\PartyActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePictureRequest;
 use App\Http\Resources\PictureResource;
@@ -39,6 +40,8 @@ class PictureController extends Controller
         ]);
 
         CreatePictureThumbnail::dispatch($picture);
+
+        $party->recordActivity(PartyActivityType::PicturesImported, ['count' => 1]);
 
         return new PictureResource($picture);
     }

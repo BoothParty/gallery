@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\PartyActivityType;
 use App\Models\Party;
+use App\Models\PartyActivity;
 use App\Models\Picture;
 use App\Models\User;
 
@@ -97,5 +99,24 @@ it('lists the 24 latest pictures, newest first', function () {
         ->assertInertia(fn ($page) => $page
             ->has('latestPictures', 24)
             ->where('latestPictures.0.id', $newest->id)
+        );
+});
+
+it('lists the 5 latest feed activities, newest first and without downloads', function () {
+    $this->freezeTime();
+    $party = Party::factory()->create();
+    PartyActivity::factory()->for($party)->count(6)->sequence(
+        fn ($sequence) => ['updated_at' => now()->subHours(6 - $sequence->index)],
+    )->create(['type' => PartyActivityType::PicturesHidden, 'properties' => ['count' => 3]]);
+    PartyActivity::factory()->for($party)->create(['type' => PartyActivityType::PicturesDownloaded]);
+    PartyActivity::factory()->create();
+
+    $this->get(route('party.dashboard.show', $party))
+        ->assertInertia(fn ($page) => $page
+            ->has('activity', 5)
+            ->where('activity.0', [
+                'description' => '3 photos masquées',
+                'at' => now()->subHour()->toIso8601String(),
+            ])
         );
 });
