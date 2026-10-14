@@ -167,13 +167,12 @@ export default function PartiesIndex({
     ]
 
     const bannerUrl = bannerPreview ?? editedParty?.banner_url
-    const onlineCount = rows.filter((party) => !party.expire_at || new Date(party.expire_at) > new Date()).length
 
     return (
         <AdminLayout
             title="Administration / Parties"
             sidebar={sidebar}
-            description={`${rows.length} ${rows.length === 1 ? "party" : "parties"}, ${onlineCount} still online`}
+            description="Events with an online gallery. Guests browse and download the photobooth pictures from the party link."
             actions={
                 <>
                     <Button variant="outline" onClick={() => setBulkCreateModalOpen(true)}>

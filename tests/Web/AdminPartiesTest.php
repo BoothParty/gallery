@@ -26,13 +26,10 @@ function openFirstPartyDetails(object $page): object
 
 // ── Page header ───────────────────────────────────────────────────────────────
 
-it('counts the parties still online under the heading', function () {
-    Party::factory()->create(['expire_at' => null]);
-    Party::factory()->expired()->create();
-
+it('explains the page under the heading', function () {
     $page = browserPage(fn () => visit(route('admin.parties.index')));
 
-    $page->assertSeeIn('main > div h1 + p', '2 parties, 1 still online')
+    $page->assertSeeIn('main > div h1 + p', 'Events with an online gallery.')
         ->assertNoJavaScriptErrors();
 });
 

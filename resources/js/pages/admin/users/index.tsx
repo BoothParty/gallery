@@ -79,6 +79,7 @@ export default function UsersIndex({ rows, ...sidebar }: PageProps) {
         <AdminLayout
             title="Administration / Users"
             sidebar={sidebar}
+            description="People who can sign in to the administration. Parties are assigned to them from the Parties screen."
             actions={<Button onClick={() => openDialog(null)}>Create user</Button>}
         >
             <DataTable
