@@ -17,6 +17,19 @@ it('lists transfers with their link', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('shows the state and the expiry date of each transfer', function () {
+    Party::factory()->transfer()->create(['display_name' => 'Soirée Kerdal', 'expire_at' => now()->addDays(3)]);
+    Party::factory()->transfer()->expired()->create(['display_name' => 'Mariage Lemoine']);
+
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->assertSeeIn('table tbody tr:has([data-expiry=soon])', 'Soirée Kerdal')
+        ->assertSeeIn('table tbody tr:has([data-expiry=soon])', 'Online')
+        ->assertSeeIn('table tbody tr:has([data-expiry=expired])', 'Mariage Lemoine')
+        ->assertSeeIn('table tbody tr:has([data-expiry=expired])', 'Expired')
+        ->assertNoJavaScriptErrors();
+});
+
 it('offers a folder picker in the new transfer dialog', function () {
     $page = browserPage(fn () => visit(route('admin.transfers.index')));
 

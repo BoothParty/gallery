@@ -4,6 +4,7 @@ import { ArrowUpRightIcon, DownloadIcon, WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
+import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
 import { FormField } from "@/components/form-field"
 import {
     PartyBulkCreateDialog,
@@ -29,7 +30,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime"
+import { fromDateTimeLocalValue, toDateTimeLocalValue, withOnlineState } from "@/lib/datetime"
 
 type PartyRow = {
     id: number
@@ -58,11 +59,7 @@ const columns = [
     dataColumn<PartyRow>("name", "Name"),
     dataColumn<PartyRow>("display_name", "Display name"),
     dataColumn<PartyRow>("owner", "Owner"),
-    dataColumn<PartyRow>("state", "State", {
-        cell: (party) => (
-            <Badge variant={party.state === "Online" ? "success" : "neutral"}>{party.state}</Badge>
-        ),
-    }),
+    dataColumn<PartyRow>("state", "State", { cell: (party) => <StateBadge state={party.state} /> }),
     dataColumn<PartyRow>("pictures_count", "Pictures", {
         cell: (party) => (
             <Badge asChild variant="secondary">
@@ -75,7 +72,7 @@ const columns = [
             </Badge>
         ),
     }),
-    dataColumn<PartyRow>("expire_at", "Expires", { type: "datetime" }),
+    dataColumn<PartyRow>("expire_at", "Expires", { cell: (party) => <ExpiryBadge expireAt={party.expire_at} /> }),
     dataColumn<PartyRow>("created_at", "Created", { type: "datetime" }),
 ]
 
@@ -174,10 +171,7 @@ export default function PartiesIndex({
     ]
 
     const bannerUrl = bannerPreview ?? editedParty?.banner_url
-    const tableRows = useMemo(() => rows.map((row): PartyRow => ({
-        ...row,
-        state: row.expire_at && new Date(row.expire_at) <= new Date() ? "Expired" : "Online",
-    })), [rows])
+    const tableRows = useMemo((): PartyRow[] => withOnlineState(rows), [rows])
 
     return (
         <AdminLayout

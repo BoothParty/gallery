@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { router } from "@inertiajs/react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { FormField } from "@/components/form-field"
+import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
 import { FolderUpload } from "@/components/transfers/folder-upload"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,7 +15,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { fromDateTimeLocalValue } from "@/lib/datetime"
+import { fromDateTimeLocalValue, withOnlineState } from "@/lib/datetime"
 import { xsrfHeaders } from "@/lib/upload-queue"
 
 type TransferRow = {
@@ -25,9 +26,11 @@ type TransferRow = {
     expire_at: string | null
     created_at: string | null
     public_url: string
+    /** Derived from expire_at on the page, so the table can filter on it. */
+    state: "Online" | "Expired"
 }
 
-type PageProps = SidebarData & { rows: TransferRow[] }
+type PageProps = SidebarData & { rows: Omit<TransferRow, "state">[] }
 
 function CopyLinkButton({ url }: { url: string }) {
     const [copied, setCopied] = useState(false)
@@ -49,9 +52,10 @@ function CopyLinkButton({ url }: { url: string }) {
 
 const columns = [
     dataColumn<TransferRow>("display_name", "Name"),
+    dataColumn<TransferRow>("state", "State", { cell: (transfer) => <StateBadge state={transfer.state} /> }),
     dataColumn<TransferRow>("pictures_count", "Pictures"),
     dataColumn<TransferRow>("created_at", "Created", { type: "datetime" }),
-    dataColumn<TransferRow>("expire_at", "Expires", { type: "datetime" }),
+    dataColumn<TransferRow>("expire_at", "Expires", { cell: (transfer) => <ExpiryBadge expireAt={transfer.expire_at} /> }),
     dataColumn<TransferRow>("public_url", "Link", { cell: (transfer) => <CopyLinkButton url={transfer.public_url} /> }),
 ]
 
@@ -65,6 +69,7 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
     const [expireAt, setExpireAt] = useState("")
     const [createdUrl, setCreatedUrl] = useState<string | null>(null)
     const transfer = dialog?.transfer ?? null
+    const tableRows = useMemo((): TransferRow[] => withOnlineState(rows), [rows])
 
     const open = (state: DialogState) => {
         setName("")
@@ -114,7 +119,7 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
             actions={<Button onClick={() => open({ transfer: null })}>New transfer</Button>}
         >
             <DataTable
-                data={rows}
+                data={tableRows}
                 columns={columns}
                 emptyMessage="No transfers yet."
                 rowActions={rowActions}

@@ -33,14 +33,21 @@ it('explains the page under the heading', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('shows whether each party is online or expired', function () {
-    Party::factory()->create(['expire_at' => null]);
+it('shows the state and a tinted expiry date for each party', function () {
+    Party::factory()->create(['expire_at' => null, 'created_at' => '2026-03-05 12:00:00']);
+    Party::factory()->create(['expire_at' => now()->addMonth()]);
+    Party::factory()->create(['expire_at' => now()->addDays(3)]);
     Party::factory()->expired()->create();
 
     $page = browserPage(fn () => visit(route('admin.parties.index')));
 
-    $page->assertSeeIn('table tbody tr:first-child [data-slot=badge]', 'Online')
-        ->assertSeeIn('table tbody tr:last-child [data-slot=badge]', 'Expired')
+    $page->assertSeeIn('table tbody tr:nth-child(1) [data-expiry=none]', 'No expiry')
+        ->assertSeeIn('table tbody tr:nth-child(1)', '5 mars 2026')
+        ->assertSeeIn('table tbody tr:nth-child(1)', 'Online')
+        ->assertPresent('table tbody tr:nth-child(2) [data-expiry=active]')
+        ->assertPresent('table tbody tr:nth-child(3) [data-expiry=soon]')
+        ->assertPresent('table tbody tr:nth-child(4) [data-expiry=expired]')
+        ->assertSeeIn('table tbody tr:nth-child(4)', 'Expired')
         ->assertNoJavaScriptErrors();
 });
 

@@ -3,6 +3,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { Checkbox } from "@/components/ui/checkbox"
+import { formatShortDate } from "@/lib/datetime"
 
 type ValueType = "text" | "datetime"
 
@@ -26,10 +27,7 @@ function renderValue(type: ValueType, value: unknown): string | null {
             return String(value)
         }
 
-        return new Intl.DateTimeFormat(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short",
-        }).format(date)
+        return formatShortDate(String(value))
     }
 
     return String(value)
