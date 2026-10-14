@@ -109,6 +109,27 @@ it('reaches the transfers screen from the sidebar', function () {
 });
 
 /*
+ * Pest's browser server does not forward multipart bodies, so every picture
+ * fails to upload here: the panel is checked on that path.
+ */
+it('reports the pictures that failed to upload', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->click('New transfer')
+        ->assertVisible('#transfer-folder');
+
+    pickTransferFolder($page, 'Photobooth_Pinel_2026-10-14/IMG_0001.jpg');
+
+    $page->click('Create transfer')
+        ->assertPresent('[data-upload-status=done]')
+        ->assertSee('0 / 1 photos sent')
+        ->assertSee('0 already online · 1 failed')
+        ->assertSee('Failed: IMG_0001.jpg')
+        ->assertSee('Retry failed')
+        ->assertNoJavaScriptErrors();
+});
+
+/*
  * Both clicks are dispatched in the same task, as a double click lands: the
  * second one must find the create button gone rather than create a second
  * transfer. Pest's browser server does not forward multipart bodies, so the

@@ -92,7 +92,8 @@ export function useUploadQueue(onFinished: () => void) {
                 setCounts((current) => ({
                     ...current,
                     [outcome]: current[outcome] + 1,
-                    bytes: current.bytes + (outcome === "created" ? item.file.size : 0),
+                    // Pictures already online count too: the bar tracks the folder, not the network.
+                    bytes: current.bytes + item.file.size,
                 }))
             })
             setStatus("done")
