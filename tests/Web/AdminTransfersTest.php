@@ -100,6 +100,43 @@ it('creates the transfer with the chosen expiry', function () {
         ->and($transfer->expire_at->between(now()->addDays(29), now()->addDays(31)))->toBeTrue();
 });
 
+it('opens the new transfer from the folder picked on the page', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->assertSee('Drop the photobooth folder here');
+
+    pickTransferFolder($page, 'Photobooth_Pinel_2026-10-14/IMG_0001.jpg', '#transfer-page-folder');
+
+    $page->assertSee('New transfer')
+        ->assertValue('#transfer-name', 'Pinel')
+        ->assertSee('Photobooth_Pinel_2026-10-14')
+        ->assertButtonEnabled('Create transfer')
+        ->assertNoJavaScriptErrors();
+});
+
+it('veils the window while files are dragged over it, then opens the new transfer', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->assertSee('Drop the photobooth folder here')
+        ->script(<<<'JS'
+            () => {
+                const files = new DataTransfer()
+                files.items.add(new File(['jpeg'], 'IMG_0001.jpg', { type: 'image/jpeg' }))
+                window.droppedFiles = files
+                document.body.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: files }))
+            }
+        JS);
+
+    $page->assertPresent('[data-dragging=true]')
+        ->script(<<<'JS'
+            () => document.body.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: window.droppedFiles }))
+        JS);
+
+    $page->assertPresent('[data-dragging=false]')
+        ->assertSee('/ — 1 photo')
+        ->assertNoJavaScriptErrors();
+});
+
 it('reaches the transfers screen from the sidebar', function () {
     $page = browserPage(fn () => visit(route('admin.parties.index')));
 
@@ -182,11 +219,11 @@ it('creates a single transfer when create is clicked twice', function () {
  * the browser plugin cannot pass: the picked file is set by hand, its relative
  * path included, as a picked folder would give it.
  */
-function pickTransferFolder(object $page, string $relativePath): void
+function pickTransferFolder(object $page, string $relativePath, string $input = '#transfer-folder'): void
 {
     $page->script(<<<JS
         () => {
-            const input = document.querySelector('#transfer-folder')
+            const input = document.querySelector('{$input}')
             const file = new File(['jpeg'], '{$relativePath}'.split('/').pop(), { type: 'image/jpeg' })
             Object.defineProperty(file, 'webkitRelativePath', { value: '{$relativePath}'.includes('/') ? '{$relativePath}' : '' })
             const files = new DataTransfer()

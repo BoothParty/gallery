@@ -8,6 +8,7 @@ import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { FormField } from "@/components/form-field"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
 import { FolderPicker, type PickedFolder } from "@/components/transfers/folder-picker"
+import { PageDropZone } from "@/components/transfers/page-drop-zone"
 import { UploadProgress } from "@/components/transfers/upload-progress"
 import { Button } from "@/components/ui/button"
 import {
@@ -82,6 +83,12 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
         setDialog(state)
     }
 
+    const openWithFolder = (collected: CollectedFolder) => {
+        open({ transfer: null })
+        setFolder({ root: collected.root, analysis: analyseFolder(collected.files) })
+        setName(suggestName(collected.root))
+    }
+
     // The folder names the transfer unless a name was typed by hand.
     const pick = ({ root, files }: CollectedFolder) => {
         if (name.trim() === "" || name === suggestName(folder?.root ?? null)) {
@@ -138,6 +145,8 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
             description="Photo deliveries for clients without an online gallery. The client gets a plain download link."
             actions={<Button onClick={() => open({ transfer: null })}>New transfer</Button>}
         >
+            <PageDropZone enabled={dialog === null} onPick={openWithFolder} />
+
             <DataTable
                 data={tableRows}
                 columns={columns}

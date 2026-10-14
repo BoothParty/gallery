@@ -81,6 +81,12 @@ export async function collectFromDataTransfer(dataTransfer: DataTransfer): Promi
         throw new Error("Drop a single folder at a time.")
     }
 
+    // Without entries (files handed over by a script, or a browser without
+    // the entries API) the loose files are all there is.
+    if (entries.length === 0) {
+        return { root: null, files: Array.from(dataTransfer.files, (file) => ({ file, path: file.name })) }
+    }
+
     const files: DroppedFile[] = []
     const root = entries.find((entry) => entry.isDirectory)?.name ?? null
 
