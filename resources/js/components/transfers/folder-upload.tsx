@@ -35,6 +35,7 @@ export function FolderUpload({ resolveUploadUrl, disabled = false, onBusyChange,
     const [failed, setFailed] = useState<DroppedFile[]>([])
     const abortRef = useRef<AbortController | null>(null)
     const uploadUrlRef = useRef<string | null>(null)
+    const sendingRef = useRef(false)
 
     useEffect(() => onBusyChange(status === "uploading"), [status, onBusyChange])
 
@@ -81,24 +82,49 @@ export function FolderUpload({ resolveUploadUrl, disabled = false, onBusyChange,
 
     const selected = analysis?.groups.filter((group) => !excluded.has(group.folder)).flatMap((group) => group.items) ?? []
 
+    // A ref rather than the status: two clicks dispatched before React
+    // re-renders both see the send button, but only the first gets through.
     const send = async (items: DroppedFile[]) => {
+        if (sendingRef.current) {
+            return
+        }
+
+        sendingRef.current = true
+
+        try {
+            await sendNow(items)
+        } finally {
+            sendingRef.current = false
+        }
+    }
+
+    const sendNow = async (items: DroppedFile[]) => {
+        // Switched to uploading before the first await: the send button goes
+        // away and the dialog locks while the transfer is still being created.
+        const controller = new AbortController()
+        const failures: DroppedFile[] = []
+        abortRef.current = controller
         setError(null)
+        setTotal(items.length)
+        setCounts({ created: 0, skipped: 0, bytes: 0 })
+        setFailed([])
+        setStatus("uploading")
 
         try {
             uploadUrlRef.current ??= await resolveUploadUrl()
         } catch (reason) {
             setError((reason as Error).message)
+            setStatus("review")
 
             return
         }
 
-        const controller = new AbortController()
-        const failures: DroppedFile[] = []
-        abortRef.current = controller
-        setTotal(items.length)
-        setCounts({ created: 0, skipped: 0, bytes: 0 })
-        setFailed([])
-        setStatus("uploading")
+        // Cancelled, or the dialog unmounted, while the transfer was created.
+        if (controller.signal.aborted) {
+            setStatus("done")
+
+            return
+        }
 
         try {
             await runUploadQueue(uploadUrlRef.current, items, controller.signal, (item, outcome) => {
