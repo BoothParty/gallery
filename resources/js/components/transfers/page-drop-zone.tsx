@@ -5,7 +5,7 @@ import { collectFromDataTransfer, collectFromInput, type CollectedFolder } from 
 import { cn } from "@/lib/utils"
 
 type PageDropZoneProps = {
-    /** Off while the dialog is open: its own drop zone takes the folder then. */
+    /** Off while the dialog is open, its own drop zone taking the folder then, or while an upload runs. */
     enabled: boolean
     onPick: (collected: CollectedFolder) => void
 }
@@ -80,9 +80,10 @@ export function PageDropZone({ enabled, onPick }: PageDropZoneProps) {
         <>
             <button
                 type="button"
+                disabled={!enabled}
                 onClick={() => inputRef.current?.click()}
                 className={cn(
-                    "flex w-full items-center gap-4 rounded-lg border-[1.5px] border-dashed border-foreground/20 px-5 py-4.5 text-left transition-colors hover:border-foreground/45 hover:bg-card",
+                    "flex w-full items-center gap-4 rounded-lg border-[1.5px] border-dashed border-foreground/20 px-5 py-4.5 text-left transition-colors enabled:hover:border-foreground/45 enabled:hover:bg-card disabled:cursor-not-allowed disabled:opacity-50",
                     dragging && "border-foreground bg-card",
                 )}
             >
