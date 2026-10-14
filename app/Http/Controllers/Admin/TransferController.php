@@ -22,6 +22,8 @@ class TransferController extends Controller
             'rows' => Party::query()
                 ->where('kind', PartyKind::Transfer)
                 ->withCount('pictures')
+                ->withSum('pictures', 'size')
+                ->with(['pictures' => fn ($pictures) => $pictures->whereNotNull('thumbnail_path')->oldest('id')->limit(4)])
                 ->latest()
                 ->latest('id')
                 ->get()
@@ -30,6 +32,8 @@ class TransferController extends Controller
                     'name' => $transfer->name,
                     'display_name' => $transfer->display_name,
                     'pictures_count' => $transfer->pictures_count,
+                    'pictures_size' => (int) $transfer->pictures_sum_size,
+                    'thumbnail_urls' => $transfer->pictures->map->thumbnailUrl()->values(),
                     'expire_at' => $transfer->expire_at?->toIso8601String(),
                     'created_at' => $transfer->created_at?->toIso8601String(),
                     'public_url' => $transfer->publicUrl(),

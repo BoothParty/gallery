@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Party;
+use App\Models\Picture;
 use App\Models\User;
 
 beforeEach(function () {
@@ -14,6 +15,17 @@ it('lists transfers with their link', function () {
 
     $page->assertSee('Mariage Julie')
         ->assertSee('Copy link')
+        ->assertNoJavaScriptErrors();
+});
+
+it('sums up each transfer under its name', function () {
+    $transfer = Party::factory()->transfer()->create(['display_name' => 'Soirée Kerdal']);
+    Picture::factory()->for($transfer)->count(2)->create(['size' => 254_000_000]);
+
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->assertSeeIn('table tbody tr:first-child', 'Soirée Kerdal')
+        ->assertSeeIn('table tbody tr:first-child', '2 photos · 508 MB')
         ->assertNoJavaScriptErrors();
 });
 

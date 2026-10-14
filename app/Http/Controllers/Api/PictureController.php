@@ -37,6 +37,7 @@ class PictureController extends Controller
             'path' => $path,
             'width' => $width,
             'height' => $height,
+            'size' => $photo->getSize(),
         ]);
 
         CreatePictureThumbnail::dispatch($picture);

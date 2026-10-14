@@ -9,6 +9,7 @@ import { FormField } from "@/components/form-field"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
 import { FolderPicker, type PickedFolder } from "@/components/transfers/folder-picker"
 import { PageDropZone } from "@/components/transfers/page-drop-zone"
+import { TransferSummary } from "@/components/transfers/transfer-summary"
 import { UploadProgress } from "@/components/transfers/upload-progress"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +30,8 @@ type TransferRow = {
     name: string
     display_name: string | null
     pictures_count: number
+    pictures_size: number
+    thumbnail_urls: string[]
     expire_at: string | null
     created_at: string | null
     public_url: string
@@ -39,9 +42,18 @@ type TransferRow = {
 type PageProps = SidebarData & { rows: Omit<TransferRow, "state">[] }
 
 const columns = [
-    dataColumn<TransferRow>("display_name", "Name"),
+    dataColumn<TransferRow>("display_name", "Name", {
+        cell: (transfer) => (
+            <TransferSummary
+                name={transfer.display_name}
+                picturesCount={transfer.pictures_count}
+                picturesSize={transfer.pictures_size}
+                thumbnailUrls={transfer.thumbnail_urls}
+                expired={transfer.state === "Expired"}
+            />
+        ),
+    }),
     dataColumn<TransferRow>("state", "State", { cell: (transfer) => <StateBadge state={transfer.state} /> }),
-    dataColumn<TransferRow>("pictures_count", "Pictures"),
     dataColumn<TransferRow>("created_at", "Created", { type: "datetime" }),
     dataColumn<TransferRow>("expire_at", "Expires", { cell: (transfer) => <ExpiryBadge expireAt={transfer.expire_at} /> }),
     dataColumn<TransferRow>("public_url", "Link", { cell: (transfer) => <CopyButton value={transfer.public_url} label="Copy link" size="sm" /> }),

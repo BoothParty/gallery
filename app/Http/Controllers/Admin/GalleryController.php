@@ -51,6 +51,7 @@ class GalleryController extends Controller
                     'original_name' => $originalName,
                     'width' => $dimensions[0],
                     'height' => $dimensions[1],
+                    'size' => $photo->getSize(),
                 ]);
             } catch (UniqueConstraintViolationException) {
                 // A concurrent request stored the same path first.

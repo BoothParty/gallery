@@ -30,6 +30,19 @@ it('lists only transfers, newest first, with their link and picture count', func
         );
 });
 
+it('sums the weight of each transfer and lists its first four thumbnails', function () {
+    $transfer = Party::factory()->transfer()->create();
+    $pictures = Picture::factory()->for($transfer)->count(5)->create(['size' => 1_000_000]);
+    Picture::factory()->for($transfer)->withoutThumbnail()->create(['size' => 500_000]);
+
+    $this->get(route('admin.transfers.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('rows.0.pictures_size', 5_500_000)
+            ->where('rows.0.thumbnail_urls', $pictures->take(4)->map->thumbnailUrl()->values()->all())
+        );
+});
+
 it('creates a transfer named by a uuid and answers with its urls', function () {
     $response = $this->postJson(route('admin.transfers.store'), [
         'display_name' => 'Mariage Julie & Tom',
