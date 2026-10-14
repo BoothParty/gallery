@@ -36,7 +36,7 @@ it('prefills and updates a user from the dialog', function () {
 it('titles the page with the last breadcrumb segment', function () {
     $page = browserPage(fn () => visit(route('admin.users.index')));
 
-    $page->assertSeeIn('main > div > h1', 'Users')
+    $page->assertSeeIn('main > div h1', 'Users')
         ->assertSee('Administration')
         ->assertNoJavaScriptErrors();
 });

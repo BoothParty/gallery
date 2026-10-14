@@ -24,6 +24,18 @@ function openFirstPartyDetails(object $page): object
         ->click('table tbody tr:first-child td:nth-child(2)');
 }
 
+// ── Page header ───────────────────────────────────────────────────────────────
+
+it('counts the parties still online under the heading', function () {
+    Party::factory()->create(['expire_at' => null]);
+    Party::factory()->expired()->create();
+
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->assertSeeIn('main > div h1 + p', '2 parties, 1 still online')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Create dialog ─────────────────────────────────────────────────────────────
 
 it('offers an expiry date field in the create dialog', function () {

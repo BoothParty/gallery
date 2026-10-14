@@ -35,9 +35,13 @@ export type SidebarData = {
 type AdminLayoutProps = React.PropsWithChildren<{
     title: string
     sidebar: SidebarData
+    /** One line under the heading: what the page is for, or a count. */
+    description?: React.ReactNode
+    /** The page's main buttons, aligned with the heading. */
+    actions?: React.ReactNode
 }>
 
-export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
+export function AdminLayout({ title, sidebar, description, actions, children }: AdminLayoutProps) {
     const crumbs = title.split(" / ")
     const heading = crumbs[crumbs.length - 1]
     const currentParty = [...sidebar.parties, ...sidebar.searchableParties]
@@ -86,9 +90,19 @@ export function AdminLayout({ title, sidebar, children }: AdminLayoutProps) {
                         )}
                     </header>
                     <div className="flex flex-1 flex-col gap-5 p-[clamp(18px,2.5vw,28px)]">
-                        <h1 className="font-heading text-[clamp(25px,3vw,32px)] leading-tight">
-                            {heading}
-                        </h1>
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                            <div className="flex flex-col gap-1.5">
+                                <h1 className="font-heading text-[clamp(25px,3vw,32px)] leading-tight">
+                                    {heading}
+                                </h1>
+                                {description && (
+                                    <p className="max-w-[60ch] text-[13px] text-pretty text-muted-foreground">
+                                        {description}
+                                    </p>
+                                )}
+                            </div>
+                            {actions && <div className="flex items-center gap-2">{actions}</div>}
+                        </div>
                         {children}
                     </div>
                 </SidebarInset>

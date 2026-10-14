@@ -167,30 +167,29 @@ export default function PartiesIndex({
     ]
 
     const bannerUrl = bannerPreview ?? editedParty?.banner_url
+    const onlineCount = rows.filter((party) => !party.expire_at || new Date(party.expire_at) > new Date()).length
 
     return (
-        <AdminLayout title="Administration / Parties" sidebar={sidebar}>
+        <AdminLayout
+            title="Administration / Parties"
+            sidebar={sidebar}
+            description={`${rows.length} ${rows.length === 1 ? "party" : "parties"}, ${onlineCount} still online`}
+            actions={
+                <>
+                    <Button variant="outline" onClick={() => setBulkCreateModalOpen(true)}>
+                        <WandSparklesIcon className="size-4" />
+                        Create from events
+                    </Button>
+                    <Button onClick={() => openDialog(null)}>Create party</Button>
+                </>
+            }
+        >
             <DataTable
                 data={rows}
                 columns={columns}
                 emptyMessage="No parties found."
                 onRowClick={openDialog}
                 rowActions={rowActions}
-                toolbarAction={
-                    <>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setBulkCreateModalOpen(true)}
-                        >
-                            <WandSparklesIcon className="size-4" />
-                            Create from events
-                        </Button>
-                        <Button size="sm" onClick={() => openDialog(null)}>
-                            Create party
-                        </Button>
-                    </>
-                }
             />
 
             <PartyBulkCreateDialog

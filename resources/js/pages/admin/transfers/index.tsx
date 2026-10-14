@@ -107,17 +107,17 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
     ]
 
     return (
-        <AdminLayout title="Administration / Transfers" sidebar={sidebar}>
+        <AdminLayout
+            title="Administration / Transfers"
+            sidebar={sidebar}
+            description="Photo deliveries for clients without an online gallery. The client gets a plain download link."
+            actions={<Button onClick={() => open({ transfer: null })}>New transfer</Button>}
+        >
             <DataTable
                 data={rows}
                 columns={columns}
                 emptyMessage="No transfers yet."
                 rowActions={rowActions}
-                toolbarAction={
-                    <Button size="sm" onClick={() => open({ transfer: null })}>
-                        New transfer
-                    </Button>
-                }
             />
 
             <Dialog open={dialog !== null} onOpenChange={(isOpen) => !isOpen && !busy && setDialog(null)}>

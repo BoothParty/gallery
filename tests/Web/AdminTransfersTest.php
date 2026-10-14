@@ -32,7 +32,7 @@ it('reaches the transfers screen from the sidebar', function () {
     $page = browserPage(fn () => visit(route('admin.parties.index')));
 
     $page->click('Transfers')
-        ->assertSeeIn('main > div > h1', 'Transfers')
+        ->assertSeeIn('main > div h1', 'Transfers')
         ->assertNoJavaScriptErrors();
 });
 

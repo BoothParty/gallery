@@ -76,18 +76,17 @@ export default function UsersIndex({ rows, ...sidebar }: PageProps) {
     const idPrefix = editedUser ? "edit-user" : "create-user"
 
     return (
-        <AdminLayout title="Administration / Users" sidebar={sidebar}>
+        <AdminLayout
+            title="Administration / Users"
+            sidebar={sidebar}
+            actions={<Button onClick={() => openDialog(null)}>Create user</Button>}
+        >
             <DataTable
                 data={rows}
                 columns={columns}
                 emptyMessage="No users found."
                 onRowClick={openDialog}
                 rowActions={rowActions}
-                toolbarAction={
-                    <Button size="sm" onClick={() => openDialog(null)}>
-                        Create user
-                    </Button>
-                }
             />
 
             <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
