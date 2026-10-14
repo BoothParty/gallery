@@ -7,9 +7,9 @@ import { CopyButton } from "@/components/copy-button"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { FormField } from "@/components/form-field"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
+import { PartySummary } from "@/components/party-summary"
 import { FolderPicker, type PickedFolder } from "@/components/transfers/folder-picker"
 import { PageDropZone } from "@/components/transfers/page-drop-zone"
-import { TransferSummary } from "@/components/transfers/transfer-summary"
 import { UploadProgress } from "@/components/transfers/upload-progress"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,7 +31,7 @@ type TransferRow = {
     display_name: string | null
     pictures_count: number
     pictures_size: number
-    thumbnail_urls: string[]
+    thumbnail_urls: (string | null)[]
     expire_at: string | null
     created_at: string | null
     public_url: string
@@ -44,8 +44,8 @@ type PageProps = SidebarData & { rows: Omit<TransferRow, "state">[] }
 const columns = [
     dataColumn<TransferRow>("display_name", "Name", {
         cell: (transfer) => (
-            <TransferSummary
-                name={transfer.display_name}
+            <PartySummary
+                title={transfer.display_name ?? ""}
                 picturesCount={transfer.pictures_count}
                 picturesSize={transfer.pictures_size}
                 thumbnailUrls={transfer.thumbnail_urls}

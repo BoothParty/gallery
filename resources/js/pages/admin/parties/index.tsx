@@ -1,17 +1,17 @@
 import { FormEvent, useMemo, useState } from "react"
-import { Link, router, useForm } from "@inertiajs/react"
-import { ArrowUpRightIcon, DownloadIcon, WandSparklesIcon } from "lucide-react"
+import { router, useForm } from "@inertiajs/react"
+import { DownloadIcon, WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { CopyButton } from "@/components/copy-button"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
+import { PartySummary } from "@/components/party-summary"
 import { FormField } from "@/components/form-field"
 import {
     PartyBulkCreateDialog,
     type PartySourceEvent,
 } from "@/components/parties/bulk-create-dialog"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -41,6 +41,8 @@ type PartyRow = {
     user_id: number | null
     owner: string | null
     pictures_count: number
+    pictures_size: number
+    thumbnail_urls: (string | null)[]
     expire_at: string | null
     created_at: string | null
     banner_url: string | null
@@ -57,22 +59,22 @@ type PageProps = SidebarData & {
 }
 
 const columns = [
-    dataColumn<PartyRow>("name", "Name"),
-    dataColumn<PartyRow>("display_name", "Display name"),
-    dataColumn<PartyRow>("owner", "Owner"),
-    dataColumn<PartyRow>("state", "State", { cell: (party) => <StateBadge state={party.state} /> }),
-    dataColumn<PartyRow>("pictures_count", "Pictures", {
+    dataColumn<PartyRow>("name", "Name", {
+        value: (party) => [party.display_name, party.name].filter(Boolean).join(" "),
         cell: (party) => (
-            <Badge asChild variant="secondary">
-                <Link
-                    href={route("party.dashboard.pictures", party.name)}
-                    className="flex items-center gap-1"
-                >
-                    {party.pictures_count} <ArrowUpRightIcon data-icon="inline-end" />
-                </Link>
-            </Badge>
+            <PartySummary
+                title={party.display_name || party.name}
+                detail={party.display_name ? party.name : undefined}
+                picturesCount={party.pictures_count}
+                picturesSize={party.pictures_size}
+                thumbnailUrls={party.thumbnail_urls}
+                expired={party.state === "Expired"}
+                picturesHref={route("party.dashboard.pictures", party.name)}
+            />
         ),
     }),
+    dataColumn<PartyRow>("owner", "Owner"),
+    dataColumn<PartyRow>("state", "State", { cell: (party) => <StateBadge state={party.state} /> }),
     dataColumn<PartyRow>("expire_at", "Expires", { cell: (party) => <ExpiryBadge expireAt={party.expire_at} /> }),
     dataColumn<PartyRow>("created_at", "Created", { type: "datetime" }),
 ]

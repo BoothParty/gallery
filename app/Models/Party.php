@@ -6,6 +6,7 @@ use App\Enums\PartyActivityType;
 use App\Enums\PartyKind;
 use App\Services\SignedStorageUrl;
 use Database\Factories\PartyFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -79,6 +80,31 @@ class Party extends Model
     public function pictures(): HasMany
     {
         return $this->hasMany(Picture::class);
+    }
+
+    /**
+     * What an admin table row sums up: the picture count, their total weight
+     * and the first four thumbnails, loaded with a limit per party.
+     *
+     * @param  Builder<Party>  $query
+     */
+    public function scopeWithPicturesSummary(Builder $query): void
+    {
+        $query->withCount('pictures')
+            ->withSum('pictures', 'size')
+            ->with(['pictures' => fn (HasMany $pictures) => $pictures->whereNotNull('thumbnail_path')->oldest('id')->limit(4)]);
+    }
+
+    /**
+     * @return array{pictures_count: int, pictures_size: int, thumbnail_urls: list<string|null>}
+     */
+    public function picturesSummary(): array
+    {
+        return [
+            'pictures_count' => $this->pictures_count,
+            'pictures_size' => (int) $this->pictures_sum_size,
+            'thumbnail_urls' => $this->pictures->map->thumbnailUrl()->values()->all(),
+        ];
     }
 
     public function activities(): HasMany

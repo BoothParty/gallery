@@ -48,7 +48,7 @@ class PartyController extends Controller
             'rows' => Party::query()
                 ->where('kind', PartyKind::Event)
                 ->with('user:id,name')
-                ->withCount('pictures')
+                ->withPicturesSummary()
                 ->oldest('id')
                 ->get()
                 ->map(fn (Party $party): array => [
@@ -58,7 +58,7 @@ class PartyController extends Controller
                     'description' => $party->description,
                     'user_id' => $party->user_id,
                     'owner' => $party->user?->name,
-                    'pictures_count' => $party->pictures_count,
+                    ...$party->picturesSummary(),
                     'expire_at' => $party->expire_at?->toIso8601String(),
                     'created_at' => $party->created_at?->toIso8601String(),
                     'banner_url' => $party->bannerUrl(),

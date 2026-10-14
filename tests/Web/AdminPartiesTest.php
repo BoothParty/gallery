@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Party;
+use App\Models\Picture;
 use App\Models\User;
 
 beforeEach(function () {
@@ -48,6 +49,18 @@ it('shows the state and a tinted expiry date for each party', function () {
         ->assertPresent('table tbody tr:nth-child(3) [data-expiry=soon]')
         ->assertPresent('table tbody tr:nth-child(4) [data-expiry=expired]')
         ->assertSeeIn('table tbody tr:nth-child(4)', 'Expired')
+        ->assertNoJavaScriptErrors();
+});
+
+it('sums up each party under its name, with a link to its pictures', function () {
+    $party = Party::factory()->create(['name' => 'camille-antoine', 'display_name' => 'Camille & Antoine']);
+    Picture::factory()->for($party)->count(2)->create(['size' => 254_000_000]);
+
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->assertSeeIn('table tbody tr:first-child', 'Camille & Antoine')
+        ->assertSeeIn('table tbody tr:first-child', 'camille-antoine · 2 photos · 508 MB')
+        ->assertAttribute('table tbody tr:first-child a', 'href', route('party.dashboard.pictures', $party))
         ->assertNoJavaScriptErrors();
 });
 
