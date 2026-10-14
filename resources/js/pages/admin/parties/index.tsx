@@ -3,6 +3,7 @@ import { Link, router, useForm } from "@inertiajs/react"
 import { ArrowUpRightIcon, DownloadIcon, WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
+import { CopyButton } from "@/components/copy-button"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
 import { FormField } from "@/components/form-field"
@@ -91,7 +92,6 @@ export default function PartiesIndex({
     const [dialog, setDialog] = useState<DialogState>(null)
     const [isBulkCreateModalOpen, setBulkCreateModalOpen] = useState(false)
     const [bannerPreview, setBannerPreview] = useState<string | null>(null)
-    const [hostLinkCopied, setHostLinkCopied] = useState(false)
     const form = useForm({
         name: "",
         user_id: null as number | null,
@@ -117,7 +117,6 @@ export default function PartiesIndex({
             remove_banner: false,
         })
         setBannerPreview(null)
-        setHostLinkCopied(false)
         setDialog({ party })
     }
 
@@ -337,16 +336,7 @@ export default function PartiesIndex({
                                         value={editedParty.host_edit_url}
                                         onFocus={(event) => event.target.select()}
                                     />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            void navigator.clipboard.writeText(editedParty.host_edit_url)
-                                            setHostLinkCopied(true)
-                                        }}
-                                    >
-                                        {hostLinkCopied ? "Copied" : "Copy"}
-                                    </Button>
+                                    <CopyButton value={editedParty.host_edit_url} />
                                 </div>
                                 <Button
                                     type="button"

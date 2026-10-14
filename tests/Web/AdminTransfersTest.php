@@ -17,6 +17,29 @@ it('lists transfers with their link', function () {
         ->assertNoJavaScriptErrors();
 });
 
+/*
+ * Headless Chromium refuses clipboard writes, so the clipboard is stubbed once
+ * the real page is up: a script run earlier would land on about:blank.
+ */
+it('confirms a copied link for a moment', function () {
+    $transfer = Party::factory()->transfer()->create();
+
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->assertSee('Copy link')
+        ->script("Object.defineProperty(navigator, 'clipboard', { value: { writeText: (text) => { window.copiedText = text; return Promise.resolve() } } })");
+
+    $page->click('Copy link')
+        ->assertSee('Copied');
+
+    expect($page->script('window.copiedText'))->toBe($transfer->publicUrl());
+
+    $page->wait(2)
+        ->assertSee('Copy link')
+        ->assertDontSee('Copied')
+        ->assertNoJavaScriptErrors();
+});
+
 it('shows the state and the expiry date of each transfer', function () {
     Party::factory()->transfer()->create(['display_name' => 'Soirée Kerdal', 'expire_at' => now()->addDays(3)]);
     Party::factory()->transfer()->expired()->create(['display_name' => 'Mariage Lemoine']);
