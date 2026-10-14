@@ -7,6 +7,9 @@
 
 export type DroppedFile = { file: File, path: string }
 
+/** The root folder's name is kept apart: it only serves to suggest a name. */
+export type CollectedFolder = { root: string | null, files: DroppedFile[] }
+
 export type FolderGroup = { folder: string, items: DroppedFile[] }
 
 export type FolderAnalysis = {
@@ -67,7 +70,7 @@ async function walk(entry: FileSystemEntry, files: DroppedFile[]): Promise<void>
  * DataTransfer as soon as the handler yields, so the entries are taken before
  * the first await.
  */
-export async function collectFromDataTransfer(dataTransfer: DataTransfer): Promise<DroppedFile[]> {
+export async function collectFromDataTransfer(dataTransfer: DataTransfer): Promise<CollectedFolder> {
     const entries = Array.from(dataTransfer.items)
         .map((item) => item.webkitGetAsEntry())
         .filter((entry): entry is FileSystemEntry => entry !== null)
@@ -79,16 +82,40 @@ export async function collectFromDataTransfer(dataTransfer: DataTransfer): Promi
     }
 
     const files: DroppedFile[] = []
+    const root = entries.find((entry) => entry.isDirectory)?.name ?? null
 
     for (const entry of entries) {
         await walk(entry, files)
     }
 
-    return files
+    return { root, files }
 }
 
-export function collectFromInput(files: FileList): DroppedFile[] {
-    return Array.from(files).map((file) => ({ file, path: stripRoot(file.webkitRelativePath || file.name) }))
+export function collectFromInput(fileList: FileList): CollectedFolder {
+    const files = Array.from(fileList)
+    const relativePath = files[0]?.webkitRelativePath ?? ""
+
+    return {
+        root: relativePath.includes("/") ? relativePath.split("/")[0] : null,
+        files: files.map((file) => ({ file, path: stripRoot(file.webkitRelativePath || file.name) })),
+    }
+}
+
+/**
+ * The transfer name a booth folder suggests: "Photobooth_Pinel_2026-10-14"
+ * gives "Pinel". Falls back to the folder name itself, tidied.
+ */
+export function suggestName(root: string | null): string {
+    if (!root) {
+        return ""
+    }
+
+    const tidy = (value: string) => value.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim()
+    const stripped = root
+        .replace(/[_ -]?\d{4}[-_.]\d{2}[-_.]\d{2}.*$/, "")
+        .replace(/^photobooth[_ -]?/i, "")
+
+    return tidy(stripped) || tidy(root)
 }
 
 export function analyseFolder(files: DroppedFile[]): FolderAnalysis {
