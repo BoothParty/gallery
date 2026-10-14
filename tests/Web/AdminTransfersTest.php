@@ -92,7 +92,7 @@ it('creates the transfer with the chosen expiry', function () {
 
     $page->click('30 days')
         ->click('Create transfer')
-        ->assertSee('Link to send');
+        ->assertSee('Transfer created');
 
     $transfer = Party::query()->where('kind', 'transfer')->sole();
 
@@ -126,7 +126,26 @@ it('reports the pictures that failed to upload', function () {
         ->assertSee('0 already online · 1 failed')
         ->assertSee('Failed: IMG_0001.jpg')
         ->assertSee('Retry failed')
+        ->assertSee('Some pictures did not go through')
         ->assertNoJavaScriptErrors();
+});
+
+it('copies the link of the new transfer and closes', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->click('New transfer')
+        ->assertVisible('#transfer-folder')
+        ->script("Object.defineProperty(navigator, 'clipboard', { value: { writeText: (text) => { window.copiedText = text; return Promise.resolve() } } })");
+
+    pickTransferFolder($page, 'Photobooth_Pinel_2026-10-14/IMG_0001.jpg');
+
+    $page->click('Create transfer')
+        ->assertSee('Transfer created')
+        ->assertValue('#transfer-link', Party::query()->sole()->publicUrl())
+        ->click('Copy link and close')
+        ->assertMissing('[role=dialog]');
+
+    expect($page->script('window.copiedText'))->toBe(Party::query()->sole()->publicUrl());
 });
 
 /*
@@ -153,7 +172,7 @@ it('creates a single transfer when create is clicked twice', function () {
         }
     JS);
 
-    $page->assertSee('Link to send');
+    $page->assertSee('Transfer created');
 
     expect(Party::query()->where('kind', 'transfer')->count())->toBe(1);
 });

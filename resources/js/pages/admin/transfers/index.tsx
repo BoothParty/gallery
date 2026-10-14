@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { router } from "@inertiajs/react"
+import { CheckIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { CopyButton } from "@/components/copy-button"
@@ -147,11 +148,24 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
             <Dialog open={dialog !== null} onOpenChange={(isOpen) => !isOpen && queue.status !== "uploading" && setDialog(null)}>
                 <DialogContent className="max-h-[88vh] gap-5 overflow-y-auto sm:max-w-[540px]">
                     <DialogHeader>
-                        <DialogTitle>{transfer ? `Complete ${transfer.display_name}` : "New transfer"}</DialogTitle>
+                        {createdUrl && (
+                            <span className="mb-1 flex size-10 items-center justify-center rounded-full bg-success/14 text-success">
+                                <CheckIcon className="size-4.5" />
+                            </span>
+                        )}
+                        <DialogTitle>
+                            {createdUrl ? "Transfer created" : transfer ? `Complete ${transfer.display_name}` : "New transfer"}
+                        </DialogTitle>
                         <DialogDescription>
-                            {transfer
-                                ? "Drop the same folder again: pictures already online are skipped."
-                                : "Name the transfer, then send the link to the client."}
+                            {createdUrl
+                                ? queue.status === "uploading"
+                                    ? "Send this link to the client. The remaining pictures keep uploading, the link already works."
+                                    : queue.failed.length > 0
+                                        ? "Some pictures did not go through: retry them before sending the link."
+                                        : `Send this link to the client: they can download the ${queue.counts.created + queue.counts.skipped} photos at once.`
+                                : transfer
+                                    ? "Drop the same folder again: pictures already online are skipped."
+                                    : "Name the transfer, then send the link to the client."}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -216,16 +230,40 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                             </div>
                         </>
                     ) : (
-                        <UploadProgress queue={queue} />
-                    )}
+                        <>
+                            {createdUrl && (
+                                <div className="flex gap-1.5">
+                                    <Input
+                                        id="transfer-link"
+                                        aria-label="Link to send"
+                                        readOnly
+                                        value={createdUrl}
+                                        className="bg-background font-mono text-xs"
+                                        onFocus={(event) => event.target.select()}
+                                    />
+                                    <CopyButton value={createdUrl} />
+                                </div>
+                            )}
 
-                    {createdUrl && queue.status !== "uploading" && (
-                        <FormField id="transfer-link" label="Link to send">
-                            <div className="flex gap-2">
-                                <Input id="transfer-link" readOnly value={createdUrl} onFocus={(event) => event.target.select()} />
-                                <CopyButton value={createdUrl} />
+                            <UploadProgress queue={queue} />
+
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" variant="outline" disabled={queue.status === "uploading"} onClick={() => setDialog(null)}>
+                                    Close
+                                </Button>
+                                {createdUrl && (
+                                    <Button
+                                        type="button"
+                                        disabled={queue.status === "uploading"}
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(createdUrl).catch(() => {}).finally(() => setDialog(null))
+                                        }}
+                                    >
+                                        Copy link and close
+                                    </Button>
+                                )}
                             </div>
-                        </FormField>
+                        </>
                     )}
                 </DialogContent>
             </Dialog>
