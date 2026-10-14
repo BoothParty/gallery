@@ -79,7 +79,7 @@ export function DataTableToolbar<TData>({ table, toolbarAction }: DataTableToolb
                     placeholder="Search all columns..."
                     value={(table.getState().globalFilter as string) ?? ""}
                     onChange={(event) => table.setGlobalFilter(event.target.value)}
-                    className="h-8 w-[150px] lg:w-[250px]"
+                    className="h-8 w-[180px] bg-background lg:w-[280px]"
                 />
                 <div className="relative min-w-0 flex-1">
                     <div
