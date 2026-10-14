@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useMemo, useState } from "react"
 import { Link, router, useForm } from "@inertiajs/react"
 import { ArrowUpRightIcon, DownloadIcon, WandSparklesIcon } from "lucide-react"
 
@@ -43,10 +43,12 @@ type PartyRow = {
     created_at: string | null
     banner_url: string | null
     host_edit_url: string
+    /** Derived from expire_at on the page, so the table can filter on it. */
+    state: "Online" | "Expired"
 }
 
 type PageProps = SidebarData & {
-    rows: PartyRow[]
+    rows: Omit<PartyRow, "state">[]
     users: { id: number, name: string }[]
     partyDomain: string
     upcomingSourceEvents?: PartySourceEvent[]
@@ -56,6 +58,11 @@ const columns = [
     dataColumn<PartyRow>("name", "Name"),
     dataColumn<PartyRow>("display_name", "Display name"),
     dataColumn<PartyRow>("owner", "Owner"),
+    dataColumn<PartyRow>("state", "State", {
+        cell: (party) => (
+            <Badge variant={party.state === "Online" ? "success" : "neutral"}>{party.state}</Badge>
+        ),
+    }),
     dataColumn<PartyRow>("pictures_count", "Pictures", {
         cell: (party) => (
             <Badge asChild variant="secondary">
@@ -167,6 +174,10 @@ export default function PartiesIndex({
     ]
 
     const bannerUrl = bannerPreview ?? editedParty?.banner_url
+    const tableRows = useMemo(() => rows.map((row): PartyRow => ({
+        ...row,
+        state: row.expire_at && new Date(row.expire_at) <= new Date() ? "Expired" : "Online",
+    })), [rows])
 
     return (
         <AdminLayout
@@ -184,7 +195,7 @@ export default function PartiesIndex({
             }
         >
             <DataTable
-                data={rows}
+                data={tableRows}
                 columns={columns}
                 emptyMessage="No parties found."
                 onRowClick={openDialog}

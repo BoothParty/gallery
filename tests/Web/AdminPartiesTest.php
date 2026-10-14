@@ -33,6 +33,17 @@ it('explains the page under the heading', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('shows whether each party is online or expired', function () {
+    Party::factory()->create(['expire_at' => null]);
+    Party::factory()->expired()->create();
+
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->assertSeeIn('table tbody tr:first-child [data-slot=badge]', 'Online')
+        ->assertSeeIn('table tbody tr:last-child [data-slot=badge]', 'Expired')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Create dialog ─────────────────────────────────────────────────────────────
 
 it('offers an expiry date field in the create dialog', function () {

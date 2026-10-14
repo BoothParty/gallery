@@ -19,6 +19,11 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // State badges: live, about to lapse, no deadline, over.
+        success: "bg-success/14 text-success",
+        warning: "bg-destructive/12 text-destructive",
+        neutral: "bg-foreground/6 text-foreground/70",
+        faded: "border-border text-muted-foreground",
       },
     },
     defaultVariants: {
