@@ -26,6 +26,7 @@ it('sums up each transfer under its name', function () {
 
     $page->assertSeeIn('table tbody tr:first-child', 'Soirée Kerdal')
         ->assertSeeIn('table tbody tr:first-child', '2 photos · 508 MB')
+        ->assertSeeIn('table tbody tr:first-child', 'No download yet')
         ->assertNoJavaScriptErrors();
 });
 
