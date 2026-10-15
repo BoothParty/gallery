@@ -31,6 +31,7 @@ type TransferRow = {
     display_name: string | null
     pictures_count: number
     pictures_size: number
+    downloads_count: number
     thumbnail_urls: (string | null)[]
     expire_at: string | null
     created_at: string | null
@@ -55,6 +56,15 @@ const columns = [
     }),
     dataColumn<TransferRow>("state", "State", { cell: (transfer) => <StateBadge state={transfer.state} /> }),
     dataColumn<TransferRow>("created_at", "Created", { type: "datetime" }),
+    dataColumn<TransferRow>("downloads_count", "Activity", {
+        cell: (transfer) => (
+            <span className="text-[13px] text-muted-foreground">
+                {transfer.downloads_count === 0
+                    ? "No download yet"
+                    : `${transfer.downloads_count} ${transfer.downloads_count === 1 ? "download" : "downloads"}`}
+            </span>
+        ),
+    }),
     dataColumn<TransferRow>("expire_at", "Expires", { cell: (transfer) => <ExpiryBadge expireAt={transfer.expire_at} /> }),
     dataColumn<TransferRow>("public_url", "Link", { cell: (transfer) => <CopyButton value={transfer.public_url} label="Copy link" size="sm" /> }),
 ]

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PartyActivityType;
 use App\Enums\PartyKind;
 use App\Models\Party;
 use App\Models\Picture;
@@ -41,6 +42,17 @@ it('sums the weight of each transfer and lists its first four thumbnails', funct
             ->where('rows.0.pictures_size', 5_500_000)
             ->where('rows.0.thumbnail_urls', $pictures->take(4)->map->thumbnailUrl()->values()->all())
         );
+});
+
+it('counts the downloads of each transfer', function () {
+    $transfer = Party::factory()->transfer()->create();
+    $transfer->recordActivity(PartyActivityType::PicturesDownloaded, ['count' => 12]);
+    $transfer->recordActivity(PartyActivityType::PicturesDownloaded, ['count' => 3]);
+    $transfer->recordActivity(PartyActivityType::PicturesUploaded, ['count' => 15]);
+
+    $this->get(route('admin.transfers.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('rows.0.downloads_count', 2));
 });
 
 it('creates a transfer named by a uuid and answers with its urls', function () {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PartyActivityType;
 use App\Enums\PartyKind;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTransferRequest;
@@ -22,6 +23,7 @@ class TransferController extends Controller
             'rows' => Party::query()
                 ->where('kind', PartyKind::Transfer)
                 ->withPicturesSummary()
+                ->withCount(['activities as downloads_count' => fn ($activities) => $activities->where('type', PartyActivityType::PicturesDownloaded)])
                 ->latest()
                 ->latest('id')
                 ->get()
@@ -30,6 +32,7 @@ class TransferController extends Controller
                     'name' => $transfer->name,
                     'display_name' => $transfer->display_name,
                     ...$transfer->picturesSummary(),
+                    'downloads_count' => $transfer->downloads_count,
                     'expire_at' => $transfer->expire_at?->toIso8601String(),
                     'created_at' => $transfer->created_at?->toIso8601String(),
                     'public_url' => $transfer->publicUrl(),
