@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PartyKind;
 use App\Models\Party;
 
 class AdminDashboardDataService
@@ -20,6 +21,7 @@ class AdminDashboardDataService
     public function sidebarData(?int $currentPartyId = null): array
     {
         $searchableParties = Party::query()
+            ->where('kind', PartyKind::Event)
             ->orderBy('name')
             ->get(['id', 'name', 'expire_at'])
             ->map(fn (Party $availableParty): array => [

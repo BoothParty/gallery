@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PartyKind;
 use App\Models\Party;
 use App\Models\User;
 use Carbon\Carbon;
@@ -67,6 +68,15 @@ class PartyFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'expire_at' => $date,
+        ]);
+    }
+
+    public function transfer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'kind' => PartyKind::Transfer,
+            'name' => fake()->uuid(),
+            'display_name' => fake()->words(2, true),
         ]);
     }
 }
