@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react"
+import { FormEvent, useMemo, useState } from "react"
 import { Link, router, useForm } from "@inertiajs/react"
 import { ArrowUpRightIcon, DownloadIcon, WandSparklesIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
+import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
 import { FormField } from "@/components/form-field"
 import {
     PartyBulkCreateDialog,
@@ -29,7 +30,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/datetime"
+import { fromDateTimeLocalValue, toDateTimeLocalValue, withOnlineState } from "@/lib/datetime"
 
 type PartyRow = {
     id: number
@@ -43,10 +44,12 @@ type PartyRow = {
     created_at: string | null
     banner_url: string | null
     host_edit_url: string
+    /** Derived from expire_at on the page, so the table can filter on it. */
+    state: "Online" | "Expired"
 }
 
 type PageProps = SidebarData & {
-    rows: PartyRow[]
+    rows: Omit<PartyRow, "state">[]
     users: { id: number, name: string }[]
     partyDomain: string
     upcomingSourceEvents?: PartySourceEvent[]
@@ -56,6 +59,7 @@ const columns = [
     dataColumn<PartyRow>("name", "Name"),
     dataColumn<PartyRow>("display_name", "Display name"),
     dataColumn<PartyRow>("owner", "Owner"),
+    dataColumn<PartyRow>("state", "State", { cell: (party) => <StateBadge state={party.state} /> }),
     dataColumn<PartyRow>("pictures_count", "Pictures", {
         cell: (party) => (
             <Badge asChild variant="secondary">
@@ -68,7 +72,7 @@ const columns = [
             </Badge>
         ),
     }),
-    dataColumn<PartyRow>("expire_at", "Expires", { type: "datetime" }),
+    dataColumn<PartyRow>("expire_at", "Expires", { cell: (party) => <ExpiryBadge expireAt={party.expire_at} /> }),
     dataColumn<PartyRow>("created_at", "Created", { type: "datetime" }),
 ]
 
@@ -167,6 +171,7 @@ export default function PartiesIndex({
     ]
 
     const bannerUrl = bannerPreview ?? editedParty?.banner_url
+    const tableRows = useMemo((): PartyRow[] => withOnlineState(rows), [rows])
 
     return (
         <AdminLayout
@@ -184,7 +189,7 @@ export default function PartiesIndex({
             }
         >
             <DataTable
-                data={rows}
+                data={tableRows}
                 columns={columns}
                 emptyMessage="No parties found."
                 onRowClick={openDialog}
