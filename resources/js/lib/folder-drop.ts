@@ -81,6 +81,13 @@ export async function collectFromDataTransfer(dataTransfer: DataTransfer): Promi
         throw new Error("Drop a single folder at a time.")
     }
 
+    // The entries only matter to walk a folder. Loose files are read straight
+    // from the DataTransfer: WebKit hands out entries for files a script put
+    // there, then fails to read them for lack of a real path.
+    if (!entries.some((entry) => entry.isDirectory)) {
+        return { root: null, files: Array.from(dataTransfer.files, (file) => ({ file, path: file.name })) }
+    }
+
     const files: DroppedFile[] = []
     const root = entries.find((entry) => entry.isDirectory)?.name ?? null
 
