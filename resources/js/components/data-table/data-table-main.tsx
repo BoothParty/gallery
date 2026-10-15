@@ -19,6 +19,7 @@ import { DataTablePagination } from "@/components/data-table/data-table-paginati
 import { DataTableRowActions } from "@/components/data-table/data-table-row-actions"
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar"
 import type { RowAction } from "@/components/data-table/types"
+import { cn } from "@/lib/utils"
 import {
     Table,
     TableBody,
@@ -104,65 +105,70 @@ export function DataTable<TRow>({
     })
 
     return (
-        <div className="flex flex-col gap-4">
-            <DataTableToolbar table={table} toolbarAction={toolbarAction} />
-            <div className="overflow-hidden rounded-md border bg-card">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead
-                                        key={header.id}
-                                        colSpan={header.colSpan}
-                                        className={header.column.id === "actions" ? "w-0 px-6" : undefined}
+        <div className="overflow-hidden rounded-md border bg-card">
+            <div className="border-b px-3.5 py-3">
+                <DataTableToolbar table={table} toolbarAction={toolbarAction} />
+            </div>
+            <Table>
+                <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                                <TableHead
+                                    key={header.id}
+                                    colSpan={header.colSpan}
+                                    className={cn(
+                                        "h-auto bg-background px-3.5 py-2.5 text-[11px] font-medium tracking-[.1em] text-muted-foreground uppercase",
+                                        header.column.id === "actions" && "w-0 px-6",
+                                    )}
+                                >
+                                    {header.isPlaceholder
+                                        ? null
+                                        : flexRender(header.column.columnDef.header, header.getContext())}
+                                </TableHead>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableHeader>
+                <TableBody>
+                    {table.getRowModel().rows?.length ? (
+                        table.getRowModel().rows.map((row) => (
+                            <TableRow
+                                key={row.id}
+                                data-state={row.getIsSelected() && "selected"}
+                                className={cn("border-border/70 hover:bg-background", onRowClick && "cursor-pointer")}
+                                onClick={(event) => {
+                                    const target = event.target as HTMLElement
+
+                                    if (!onRowClick || target.closest("button, a, input, [role='menuitem'], [data-slot='checkbox']")) {
+                                        return
+                                    }
+
+                                    onRowClick(row.original)
+                                }}
+                            >
+                                {row.getVisibleCells().map((cell) => (
+                                    <TableCell
+                                        key={cell.id}
+                                        className={cn("px-3.5 py-2.5", cell.column.id === "actions" && "w-0 px-1")}
                                     >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </TableCell>
                                 ))}
                             </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && "selected"}
-                                    className={onRowClick ? "cursor-pointer" : undefined}
-                                    onClick={(event) => {
-                                        const target = event.target as HTMLElement
-
-                                        if (!onRowClick || target.closest("button, a, input, [role='menuitem'], [data-slot='checkbox']")) {
-                                            return
-                                        }
-
-                                        onRowClick(row.original)
-                                    }}
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell
-                                            key={cell.id}
-                                            className={cell.column.id === "actions" ? "w-0 px-1" : undefined}
-                                        >
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    {emptyMessage}
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                                {emptyMessage}
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+            <div className="border-t px-4 py-3">
+                <DataTablePagination table={table} />
             </div>
-            <DataTablePagination table={table} />
         </div>
     )
 }

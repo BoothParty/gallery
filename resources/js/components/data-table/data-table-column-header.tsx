@@ -30,7 +30,11 @@ export function DataTableColumnHeader<TData, TValue>({
         <div className={cn("flex items-center gap-2", className)}>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="-ml-3 h-8 data-[state=open]:bg-accent">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="-ml-2 h-7 gap-1.5 px-2 text-[length:inherit] font-medium tracking-[inherit] text-inherit uppercase hover:text-foreground data-[state=open]:bg-accent [&_svg:not([class*='size-'])]:size-3"
+                    >
                         <span>{title}</span>
                         {column.getIsSorted() === "desc" ? (
                             <ArrowDown />

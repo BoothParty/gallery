@@ -54,3 +54,14 @@ it('renders dialog titles clearly larger than their description', function () {
     // Instrument Serif has a small x-height: below ~1.4× the sans description it reads smaller.
     expect($fontSize('dialog-title'))->toBeGreaterThanOrEqual($fontSize('dialog-description') * 1.4);
 });
+
+it('pages through the table ten rows at a time', function () {
+    User::factory()->count(10)->create();
+
+    $page = browserPage(fn () => visit(route('admin.users.index')));
+
+    $page->assertSee('1–10 of 11')
+        ->click('Next')
+        ->assertSee('11–11 of 11')
+        ->assertNoJavaScriptErrors();
+});
