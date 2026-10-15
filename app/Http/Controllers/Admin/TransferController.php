@@ -21,7 +21,7 @@ class TransferController extends Controller
             ...$adminDashboardDataService->sidebarData(),
             'rows' => Party::query()
                 ->where('kind', PartyKind::Transfer)
-                ->withCount('pictures')
+                ->withPicturesSummary()
                 ->latest()
                 ->latest('id')
                 ->get()
@@ -29,7 +29,7 @@ class TransferController extends Controller
                     'id' => $transfer->id,
                     'name' => $transfer->name,
                     'display_name' => $transfer->display_name,
-                    'pictures_count' => $transfer->pictures_count,
+                    ...$transfer->picturesSummary(),
                     'expire_at' => $transfer->expire_at?->toIso8601String(),
                     'created_at' => $transfer->created_at?->toIso8601String(),
                     'public_url' => $transfer->publicUrl(),

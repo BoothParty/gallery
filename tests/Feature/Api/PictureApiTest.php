@@ -165,18 +165,20 @@ it('returns the correct JSON structure on store', function () {
         ]);
 });
 
-it('stores the picture dimensions in the database', function () {
+it('stores the picture dimensions and weight in the database', function () {
     Sanctum::actingAs(User::factory()->create());
     $party = Party::factory()->create();
+    $photo = UploadedFile::fake()->image('booth.jpg', 1600, 1200);
 
     $this->postJson(route('pictures.store', $party), [
-        'photo' => UploadedFile::fake()->image('booth.jpg', 1600, 1200),
+        'photo' => $photo,
     ])->assertCreated();
 
     $this->assertDatabaseHas('pictures', [
         'party_id' => $party->id,
         'width' => 1600,
         'height' => 1200,
+        'size' => $photo->getSize(),
     ]);
 });
 

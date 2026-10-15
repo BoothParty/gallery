@@ -25,6 +25,7 @@ class Picture extends Model
         'thumbnail_path',
         'width',
         'height',
+        'size',
         'hidden_at',
     ];
 

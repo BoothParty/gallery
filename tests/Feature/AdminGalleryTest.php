@@ -154,12 +154,16 @@ it('records the relative path of a picture sent with paths and answers in json',
     Queue::fake();
     $party = Party::factory()->transfer()->create();
 
+    $photo = UploadedFile::fake()->image('IMG_0042.jpg', 1200, 800);
+
     $this->postJson(route('party.dashboard.pictures.store', $party), [
-        'photos' => [UploadedFile::fake()->image('IMG_0042.jpg', 1200, 800)],
+        'photos' => [$photo],
         'paths' => ['raw/IMG_0042.jpg'],
     ])->assertOk()->assertExactJson(['created' => 1, 'skipped' => 0]);
 
-    expect($party->pictures()->sole()->original_name)->toBe('raw/IMG_0042.jpg');
+    expect($party->pictures()->sole())
+        ->original_name->toBe('raw/IMG_0042.jpg')
+        ->size->toBe($photo->getSize());
     Queue::assertPushed(CreatePictureThumbnail::class, 1);
 });
 

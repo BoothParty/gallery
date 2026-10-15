@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Party;
+use App\Models\Picture;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -62,6 +63,19 @@ it('exposes the owner and the picture count of each party', function () {
             ->where('rows.0.user_id', $owner->id)
             ->where('rows.0.owner', 'Owner Label')
             ->where('rows.0.pictures_count', 0)
+        );
+});
+
+it('sums up the pictures of each party like the transfers', function () {
+    $party = Party::factory()->create();
+    $pictures = Picture::factory()->for($party)->count(5)->create(['size' => 2_000_000]);
+
+    $this->get(route('admin.parties.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('rows.0.pictures_count', 5)
+            ->where('rows.0.pictures_size', 10_000_000)
+            ->where('rows.0.thumbnail_urls', $pictures->take(4)->map->thumbnailUrl()->values()->all())
         );
 });
 

@@ -48,12 +48,17 @@ export function normalizeFacetValue(value: unknown): string {
 export function dataColumn<TRow>(
     key: keyof TRow & string,
     label: string,
-    options: { type?: ValueType, cell?: (row: TRow) => React.ReactNode } = {},
+    options: {
+        type?: ValueType
+        cell?: (row: TRow) => React.ReactNode
+        /** What the column sorts, searches and filters on, when not the raw key. */
+        value?: (row: TRow) => unknown
+    } = {},
 ): ColumnDef<TRow> {
     const type = options.type ?? "text"
 
     return {
-        accessorKey: key,
+        ...(options.value ? { id: key, accessorFn: options.value } : { accessorKey: key }),
         header: ({ column }) => <DataTableColumnHeader column={column} title={label} />,
         meta: { label },
         filterFn: (row, columnId, filterValues) => {
