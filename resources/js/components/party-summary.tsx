@@ -12,13 +12,15 @@ type PartySummaryProps = {
     expired: boolean
     /** Turns the picture count into a link to the pictures screen. */
     picturesHref?: string
+    /** Set while the pictures are going out: replaces the count with the progress. */
+    upload?: { settled: number, total: number }
 }
 
 /**
  * First cell of a party or transfer row: a 2 × 2 mosaic of its pictures, its
  * name and its weight.
  */
-export function PartySummary({ title, detail, picturesCount, picturesSize, thumbnailUrls, expired, picturesHref }: PartySummaryProps) {
+export function PartySummary({ title, detail, picturesCount, picturesSize, thumbnailUrls, expired, picturesHref, upload }: PartySummaryProps) {
     const pictures = `${picturesCount} ${picturesCount === 1 ? "photo" : "photos"}`
 
     return (
@@ -36,13 +38,25 @@ export function PartySummary({ title, detail, picturesCount, picturesSize, thumb
                 <span className="truncate font-heading text-lg leading-tight">{title}</span>
                 <span className="truncate text-xs text-muted-foreground tabular-nums">
                     {detail && `${detail} · `}
-                    {picturesHref ? (
-                        <Link href={picturesHref} className="underline-offset-3 hover:text-foreground hover:underline">
-                            {pictures}
-                        </Link>
-                    ) : pictures}
-                    {picturesSize > 0 && ` · ${formatBytes(picturesSize)}`}
+                    {upload ? `Sending ${upload.settled} / ${upload.total} photos` : (
+                        <>
+                            {picturesHref ? (
+                                <Link href={picturesHref} className="underline-offset-3 hover:text-foreground hover:underline">
+                                    {pictures}
+                                </Link>
+                            ) : pictures}
+                            {picturesSize > 0 && ` · ${formatBytes(picturesSize)}`}
+                        </>
+                    )}
                 </span>
+                {upload && (
+                    <div className="mt-0.5 h-0.75 w-35 overflow-hidden rounded-full bg-foreground/10">
+                        <div
+                            className="h-full bg-foreground transition-[width] duration-150"
+                            style={{ width: `${Math.round((upload.settled / upload.total) * 100)}%` }}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { router } from "@inertiajs/react"
 
 import type { DroppedFile } from "@/lib/folder-drop"
 import { runUploadQueue, SessionExpiredError } from "@/lib/upload-queue"
@@ -34,6 +35,16 @@ export function useUploadQueue(onFinished: () => void) {
         const warn = (event: BeforeUnloadEvent) => event.preventDefault()
         window.addEventListener("beforeunload", warn)
 
+        // Leaving the page through Inertia unmounts it and stops the queue:
+        // ask first. Partial reloads and form submissions stay on the page.
+        const removeGuard = router.on("before", (event) => {
+            const { method, only } = event.detail.visit
+
+            if (method === "get" && only.length === 0) {
+                return window.confirm("Pictures are still uploading. Leave the page and stop the upload?")
+            }
+        })
+
         let lock: WakeLockSentinel | null = null
         let released = false
         navigator.wakeLock?.request("screen")
@@ -48,6 +59,7 @@ export function useUploadQueue(onFinished: () => void) {
         return () => {
             released = true
             window.removeEventListener("beforeunload", warn)
+            removeGuard()
             void lock?.release()
         }
     }, [status])

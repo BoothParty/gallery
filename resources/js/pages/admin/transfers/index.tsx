@@ -33,6 +33,8 @@ type TransferRow = {
     pictures_size: number
     downloads_count: number
     thumbnail_urls: (string | null)[]
+    /** Set on the page while this transfer's pictures are going out. */
+    upload?: { settled: number, total: number }
     expire_at: string | null
     created_at: string | null
     public_url: string
@@ -51,6 +53,7 @@ const columns = [
                 picturesSize={transfer.pictures_size}
                 thumbnailUrls={transfer.thumbnail_urls}
                 expired={transfer.state === "Expired"}
+                upload={transfer.upload}
             />
         ),
     }),
@@ -83,6 +86,9 @@ const daysFromNow = (days: number) => new Date(Date.now() + days * 86_400_000).t
 
 export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
     const [dialog, setDialog] = useState<DialogState>(null)
+    // Closing keeps the dialog's state: an upload goes on behind it and can be shown again.
+    const [isOpen, setIsOpen] = useState(false)
+    const [uploadingName, setUploadingName] = useState<string | null>(null)
     const [folder, setFolder] = useState<PickedFolder | null>(null)
     const [excluded, setExcluded] = useState<Set<string>>(new Set())
     const [name, setName] = useState("")
@@ -91,11 +97,21 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
     const reloadRows = useCallback(() => router.reload({ only: ["rows"] }), [])
     const queue = useUploadQueue(reloadRows)
     const transfer = dialog?.transfer ?? null
-    const tableRows = useMemo((): TransferRow[] => withOnlineState(rows), [rows])
+    const uploading = queue.status === "uploading"
+    const baseRows = useMemo((): TransferRow[] => withOnlineState(rows), [rows])
+    const tableRows = uploading && uploadingName
+        ? baseRows.map((row) => row.name === uploadingName ? { ...row, upload: { settled: queue.settled, total: queue.items.length } } : row)
+        : baseRows
     const selected = folder?.analysis.groups.filter((group) => !excluded.has(group.folder)).flatMap((group) => group.items) ?? []
     const canSend = selected.length > 0 && (transfer !== null || name.trim() !== "")
 
     const open = (state: DialogState) => {
+        setIsOpen(true)
+
+        if (uploading) {
+            return
+        }
+
         setFolder(null)
         setExcluded(new Set())
         setName("")
@@ -134,14 +150,20 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
         }
 
         setCreatedUrl(body.public_url)
+        setUploadingName(body.name)
+        reloadRows()
 
         return body.upload_url
     }
 
-    const send = () => queue.start(
-        transfer ? async () => route("party.dashboard.pictures.store", transfer.name) : createTransfer,
-        selected,
-    )
+    const send = () => {
+        setUploadingName(transfer?.name ?? null)
+
+        return queue.start(
+            transfer ? async () => route("party.dashboard.pictures.store", transfer.name) : createTransfer,
+            selected,
+        )
+    }
 
     const rowActions: RowAction<TransferRow>[] = [
         { label: "Open gallery", onClick: (row) => window.open(row.public_url, "_blank", "noopener") },
@@ -165,9 +187,9 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
             title="Administration / Transfers"
             sidebar={sidebar}
             description="Photo deliveries for clients without an online gallery. The client gets a plain download link."
-            actions={<Button onClick={() => open({ transfer: null })}>New transfer</Button>}
+            actions={<Button onClick={() => open({ transfer: null })}>{uploading ? "Show upload" : "New transfer"}</Button>}
         >
-            <PageDropZone enabled={dialog === null} onPick={openWithFolder} />
+            <PageDropZone enabled={!isOpen && !uploading} onPick={openWithFolder} />
 
             <DataTable
                 data={tableRows}
@@ -176,7 +198,7 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                 rowActions={rowActions}
             />
 
-            <Dialog open={dialog !== null} onOpenChange={(isOpen) => !isOpen && queue.status !== "uploading" && setDialog(null)}>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="max-h-[88vh] gap-5 overflow-y-auto sm:max-w-[540px]">
                     <DialogHeader>
                         {createdUrl && (
@@ -190,7 +212,7 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                         <DialogDescription>
                             {createdUrl
                                 ? queue.status === "uploading"
-                                    ? "Send this link to the client. The remaining pictures keep uploading, the link already works."
+                                    ? "Send this link to the client. The remaining pictures keep uploading, even once this window is closed."
                                     : queue.failed.length > 0
                                         ? "Some pictures did not go through: retry them before sending the link."
                                         : `Send this link to the client: they can download the ${queue.counts.created + queue.counts.skipped} photos at once.`
@@ -252,7 +274,7 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                                 <span className={`min-w-40 flex-1 text-xs ${queue.error ? "text-destructive" : "text-muted-foreground"}`}>
                                     {note}
                                 </span>
-                                <Button type="button" variant="outline" onClick={() => setDialog(null)}>
+                                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                                     Cancel
                                 </Button>
                                 <Button type="button" disabled={!canSend} onClick={() => void send()}>
@@ -279,15 +301,14 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                             <UploadProgress queue={queue} />
 
                             <div className="flex justify-end gap-2">
-                                <Button type="button" variant="outline" disabled={queue.status === "uploading"} onClick={() => setDialog(null)}>
+                                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                                     Close
                                 </Button>
                                 {createdUrl && (
                                     <Button
                                         type="button"
-                                        disabled={queue.status === "uploading"}
                                         onClick={() => {
-                                            navigator.clipboard.writeText(createdUrl).catch(() => {}).finally(() => setDialog(null))
+                                            navigator.clipboard.writeText(createdUrl).catch(() => {}).finally(() => setIsOpen(false))
                                         }}
                                     >
                                         Copy link and close

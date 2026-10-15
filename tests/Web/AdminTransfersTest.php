@@ -199,6 +199,37 @@ it('copies the link of the new transfer and closes', function () {
 });
 
 /*
+ * The picture requests are held so the upload stays in flight while the
+ * dialog is closed and opened again.
+ */
+it('keeps uploading once the dialog is closed and shows it in the row', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->click('New transfer')
+        ->assertVisible('#transfer-folder')
+        ->script(<<<'JS'
+            () => {
+                const fetch = window.fetch
+                window.fetch = (url, options) => String(url).endsWith('/dashboard/pictures') ? new Promise(() => {}) : fetch(url, options)
+            }
+        JS);
+
+    pickTransferFolder($page, 'Photobooth_Pinel_2026-10-14/IMG_0001.jpg');
+
+    $page->click('Create transfer')
+        ->assertSee('even once this window is closed')
+        ->click('Close')
+        ->assertMissing('[role=dialog]')
+        ->assertSeeIn('table tbody tr:first-child', 'Pinel')
+        ->assertSeeIn('table tbody tr:first-child', 'Sending 0 / 1 photos')
+        ->assertButtonDisabled('Drop the photobooth folder here')
+        ->click('Show upload')
+        ->assertSee('Transfer created')
+        ->assertSee('Sending 0 / 1 photos')
+        ->assertNoJavaScriptErrors();
+});
+
+/*
  * Both clicks are dispatched in the same task, as a double click lands: the
  * second one must find the create button gone rather than create a second
  * transfer. Pest's browser server does not forward multipart bodies, so the
