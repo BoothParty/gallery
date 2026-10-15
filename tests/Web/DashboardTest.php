@@ -33,7 +33,7 @@ it('shows the party overview with stats, latest pictures and activity', function
 
     $page = browserPage(fn () => visit(route('party.dashboard.show', $party)));
 
-    $page->assertSeeIn('main > div > h1', 'alpha-party')
+    $page->assertSeeIn('main > div h1', 'alpha-party')
         ->assertSee("Domaine des Oliviers · galerie en ligne jusqu'au 10 septembre 2099")
         ->assertSee('+0 dans la dernière heure')
         ->assertSee('Aucune photo pour le moment.')

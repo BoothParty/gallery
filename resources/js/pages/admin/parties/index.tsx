@@ -169,28 +169,26 @@ export default function PartiesIndex({
     const bannerUrl = bannerPreview ?? editedParty?.banner_url
 
     return (
-        <AdminLayout title="Administration / Parties" sidebar={sidebar}>
+        <AdminLayout
+            title="Administration / Parties"
+            sidebar={sidebar}
+            description="Events with an online gallery. Guests browse and download the photobooth pictures from the party link."
+            actions={
+                <>
+                    <Button variant="outline" onClick={() => setBulkCreateModalOpen(true)}>
+                        <WandSparklesIcon className="size-4" />
+                        Create from events
+                    </Button>
+                    <Button onClick={() => openDialog(null)}>Create party</Button>
+                </>
+            }
+        >
             <DataTable
                 data={rows}
                 columns={columns}
                 emptyMessage="No parties found."
                 onRowClick={openDialog}
                 rowActions={rowActions}
-                toolbarAction={
-                    <>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setBulkCreateModalOpen(true)}
-                        >
-                            <WandSparklesIcon className="size-4" />
-                            Create from events
-                        </Button>
-                        <Button size="sm" onClick={() => openDialog(null)}>
-                            Create party
-                        </Button>
-                    </>
-                }
             />
 
             <PartyBulkCreateDialog

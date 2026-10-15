@@ -24,6 +24,15 @@ function openFirstPartyDetails(object $page): object
         ->click('table tbody tr:first-child td:nth-child(2)');
 }
 
+// ── Page header ───────────────────────────────────────────────────────────────
+
+it('explains the page under the heading', function () {
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->assertSeeIn('main > div h1 + p', 'Events with an online gallery.')
+        ->assertNoJavaScriptErrors();
+});
+
 // ── Create dialog ─────────────────────────────────────────────────────────────
 
 it('offers an expiry date field in the create dialog', function () {
