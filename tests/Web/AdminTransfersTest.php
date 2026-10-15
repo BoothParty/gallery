@@ -53,15 +53,51 @@ it('shows the state and the expiry date of each transfer', function () {
         ->assertNoJavaScriptErrors();
 });
 
-it('offers a folder picker in the new transfer dialog', function () {
+it('starts the new transfer dialog with the folder', function () {
     $page = browserPage(fn () => visit(route('admin.transfers.index')));
 
     $page->click('New transfer')
-        ->assertVisible('#transfer-name')
-        ->assertAttribute('#transfer-expire-at', 'type', 'datetime-local')
         ->assertPresent('#transfer-folder[webkitdirectory]')
         ->assertSee('Drop the photobooth folder here')
+        ->assertVisible('#transfer-name')
+        ->assertSee('Add a folder of pictures first.')
+        ->assertButtonDisabled('Create transfer')
+        ->assertSee('The link stays available with no time limit.')
+        ->click('30 days')
+        ->assertSee('The link will expire on')
         ->assertNoJavaScriptErrors();
+});
+
+it('names the transfer after the picked folder', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->click('New transfer')
+        ->assertVisible('#transfer-folder');
+
+    pickTransferFolder($page, 'Photobooth_Pinel_2026-10-14/IMG_0001.jpg');
+
+    $page->assertValue('#transfer-name', 'Pinel')
+        ->assertSee('Photobooth_Pinel_2026-10-14')
+        ->assertButtonEnabled('Create transfer')
+        ->assertNoJavaScriptErrors();
+});
+
+it('creates the transfer with the chosen expiry', function () {
+    $page = browserPage(fn () => visit(route('admin.transfers.index')));
+
+    $page->click('New transfer')
+        ->assertVisible('#transfer-folder');
+
+    pickTransferFolder($page, 'Photobooth_Pinel_2026-10-14/IMG_0001.jpg');
+
+    $page->click('30 days')
+        ->click('Create transfer')
+        ->assertSee('Link to send');
+
+    $transfer = Party::query()->where('kind', 'transfer')->sole();
+
+    expect($transfer->display_name)->toBe('Pinel')
+        ->and($transfer->expire_at->between(now()->addDays(29), now()->addDays(31)))->toBeTrue();
 });
 
 it('reaches the transfers screen from the sidebar', function () {
@@ -74,35 +110,25 @@ it('reaches the transfers screen from the sidebar', function () {
 
 /*
  * Both clicks are dispatched in the same task, as a double click lands: the
- * second one must find the send button gone rather than create a second
+ * second one must find the create button gone rather than create a second
  * transfer. Pest's browser server does not forward multipart bodies, so the
  * pictures themselves fail to upload; only the transfers created are counted.
  */
-it('creates a single transfer when send is clicked twice', function () {
+it('creates a single transfer when create is clicked twice', function () {
     $page = browserPage(fn () => visit(route('admin.transfers.index')));
 
     $page->click('New transfer')
         ->fill('#transfer-name', 'Mariage Julie');
 
-    // Playwright only feeds a webkitdirectory input from a real directory,
-    // which the browser plugin cannot pass: the picked file is set by hand.
-    $page->script(<<<'JS'
-        () => {
-            const input = document.querySelector('#transfer-folder')
-            const files = new DataTransfer()
-            files.items.add(new File(['jpeg'], 'IMG_0001.jpg', { type: 'image/jpeg' }))
-            input.files = files.files
-            input.dispatchEvent(new Event('change', { bubbles: true }))
-        }
-    JS);
+    pickTransferFolder($page, 'IMG_0001.jpg');
 
-    $page->assertSee('Send 1 photos');
+    $page->assertButtonEnabled('Create transfer');
 
     $page->script(<<<'JS'
         () => {
-            const send = [...document.querySelectorAll('button')].find((button) => button.textContent.startsWith('Send'))
-            send.click()
-            send.click()
+            const create = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Create transfer')
+            create.click()
+            create.click()
         }
     JS);
 
@@ -110,3 +136,23 @@ it('creates a single transfer when send is clicked twice', function () {
 
     expect(Party::query()->where('kind', 'transfer')->count())->toBe(1);
 });
+
+/**
+ * Playwright only feeds a webkitdirectory input from a real directory, which
+ * the browser plugin cannot pass: the picked file is set by hand, its relative
+ * path included, as a picked folder would give it.
+ */
+function pickTransferFolder(object $page, string $relativePath): void
+{
+    $page->script(<<<JS
+        () => {
+            const input = document.querySelector('#transfer-folder')
+            const file = new File(['jpeg'], '{$relativePath}'.split('/').pop(), { type: 'image/jpeg' })
+            Object.defineProperty(file, 'webkitRelativePath', { value: '{$relativePath}'.includes('/') ? '{$relativePath}' : '' })
+            const files = new DataTransfer()
+            files.items.add(file)
+            input.files = files.files
+            input.dispatchEvent(new Event('change', { bubbles: true }))
+        }
+    JS);
+}

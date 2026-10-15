@@ -6,7 +6,8 @@ import { CopyButton } from "@/components/copy-button"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { FormField } from "@/components/form-field"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
-import { FolderUpload } from "@/components/transfers/folder-upload"
+import { FolderPicker, type PickedFolder } from "@/components/transfers/folder-picker"
+import { UploadProgress } from "@/components/transfers/upload-progress"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -16,7 +17,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { fromDateTimeLocalValue, withOnlineState } from "@/lib/datetime"
+import { useUploadQueue } from "@/hooks/use-upload-queue"
+import { formatShortDate, withOnlineState } from "@/lib/datetime"
+import { analyseFolder, suggestName, type CollectedFolder } from "@/lib/folder-drop"
 import { xsrfHeaders } from "@/lib/upload-queue"
 
 type TransferRow = {
@@ -45,27 +48,54 @@ const columns = [
 /** "new" opens the creation dialog, a row opens the completion of that transfer. */
 type DialogState = { transfer: TransferRow | null } | null
 
+const EXPIRY_CHOICES = [
+    { days: 0, label: "No expiry" },
+    { days: 7, label: "7 days" },
+    { days: 30, label: "30 days" },
+    { days: 90, label: "90 days" },
+]
+
+const daysFromNow = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString()
+
 export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
     const [dialog, setDialog] = useState<DialogState>(null)
-    const [busy, setBusy] = useState(false)
+    const [folder, setFolder] = useState<PickedFolder | null>(null)
+    const [excluded, setExcluded] = useState<Set<string>>(new Set())
     const [name, setName] = useState("")
-    const [expireAt, setExpireAt] = useState("")
+    const [expiryDays, setExpiryDays] = useState(0)
     const [createdUrl, setCreatedUrl] = useState<string | null>(null)
+    const reloadRows = useCallback(() => router.reload({ only: ["rows"] }), [])
+    const queue = useUploadQueue(reloadRows)
     const transfer = dialog?.transfer ?? null
     const tableRows = useMemo((): TransferRow[] => withOnlineState(rows), [rows])
+    const selected = folder?.analysis.groups.filter((group) => !excluded.has(group.folder)).flatMap((group) => group.items) ?? []
+    const canSend = selected.length > 0 && (transfer !== null || name.trim() !== "")
 
     const open = (state: DialogState) => {
+        setFolder(null)
+        setExcluded(new Set())
         setName("")
-        setExpireAt("")
+        setExpiryDays(0)
         setCreatedUrl(null)
+        queue.reset()
         setDialog(state)
+    }
+
+    // The folder names the transfer unless a name was typed by hand.
+    const pick = ({ root, files }: CollectedFolder) => {
+        if (name.trim() === "" || name === suggestName(folder?.root ?? null)) {
+            setName(suggestName(root))
+        }
+
+        setFolder({ root, analysis: analyseFolder(files) })
+        setExcluded(new Set())
     }
 
     const createTransfer = async (): Promise<string> => {
         const response = await fetch(route("admin.transfers.store"), {
             method: "POST",
             headers: { ...xsrfHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify({ display_name: name, expire_at: fromDateTimeLocalValue(expireAt) }),
+            body: JSON.stringify({ display_name: name, expire_at: expiryDays ? daysFromNow(expiryDays) : null }),
         })
         const body = await response.json().catch(() => null)
 
@@ -78,7 +108,10 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
         return body.upload_url
     }
 
-    const reloadRows = useCallback(() => router.reload({ only: ["rows"] }), [])
+    const send = () => queue.start(
+        transfer ? async () => route("party.dashboard.pictures.store", transfer.name) : createTransfer,
+        selected,
+    )
 
     const rowActions: RowAction<TransferRow>[] = [
         { label: "Open gallery", onClick: (row) => window.open(row.public_url, "_blank", "noopener") },
@@ -94,6 +127,9 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
         },
     ]
 
+    const note = queue.error
+        ?? (!folder ? "Add a folder of pictures first." : !transfer && name.trim() === "" ? "Name the transfer." : null)
+
     return (
         <AdminLayout
             title="Administration / Transfers"
@@ -108,57 +144,82 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                 rowActions={rowActions}
             />
 
-            <Dialog open={dialog !== null} onOpenChange={(isOpen) => !isOpen && !busy && setDialog(null)}>
-                <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
+            <Dialog open={dialog !== null} onOpenChange={(isOpen) => !isOpen && queue.status !== "uploading" && setDialog(null)}>
+                <DialogContent className="max-h-[88vh] gap-5 overflow-y-auto sm:max-w-[540px]">
                     <DialogHeader>
                         <DialogTitle>{transfer ? `Complete ${transfer.display_name}` : "New transfer"}</DialogTitle>
                         <DialogDescription>
                             {transfer
                                 ? "Drop the same folder again: pictures already online are skipped."
-                                : "Name the transfer, drop the photobooth folder, then send the link to the client."}
+                                : "Name the transfer, then send the link to the client."}
                         </DialogDescription>
                     </DialogHeader>
 
-                    {!transfer && (
-                        <div className="space-y-4">
-                            <FormField id="transfer-name" label="Name">
-                                <Input
-                                    id="transfer-name"
-                                    value={name}
-                                    disabled={createdUrl !== null}
-                                    onChange={(event) => setName(event.target.value)}
-                                    required
-                                />
-                            </FormField>
-                            <FormField
-                                id="transfer-expire-at"
-                                label="Expiry date (optional)"
-                                hint="Leave empty to keep the gallery available indefinitely."
-                            >
-                                <Input
-                                    id="transfer-expire-at"
-                                    type="datetime-local"
-                                    value={expireAt}
-                                    disabled={createdUrl !== null}
-                                    onChange={(event) => setExpireAt(event.target.value)}
-                                />
-                            </FormField>
-                        </div>
+                    {queue.status === "idle" ? (
+                        <>
+                            <FolderPicker
+                                folder={folder}
+                                excluded={excluded}
+                                onExcludedChange={setExcluded}
+                                onPick={pick}
+                                onClear={() => setFolder(null)}
+                            />
+
+                            {!transfer && (
+                                <>
+                                    <FormField id="transfer-name" label="Transfer name">
+                                        <Input
+                                            id="transfer-name"
+                                            value={name}
+                                            placeholder="Mariage Lemoine"
+                                            onChange={(event) => setName(event.target.value)}
+                                            required
+                                        />
+                                    </FormField>
+
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-medium">Available for</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {EXPIRY_CHOICES.map((choice) => (
+                                                <Button
+                                                    key={choice.days}
+                                                    type="button"
+                                                    size="sm"
+                                                    variant={expiryDays === choice.days ? "default" : "outline"}
+                                                    aria-pressed={expiryDays === choice.days}
+                                                    className="rounded-full"
+                                                    onClick={() => setExpiryDays(choice.days)}
+                                                >
+                                                    {choice.label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {expiryDays
+                                                ? `The link will expire on ${formatShortDate(daysFromNow(expiryDays), false)}.`
+                                                : "The link stays available with no time limit."}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                                <span className={`min-w-40 flex-1 text-xs ${queue.error ? "text-destructive" : "text-muted-foreground"}`}>
+                                    {note}
+                                </span>
+                                <Button type="button" variant="outline" onClick={() => setDialog(null)}>
+                                    Cancel
+                                </Button>
+                                <Button type="button" disabled={!canSend} onClick={() => void send()}>
+                                    {transfer ? `Send ${selected.length} photos` : "Create transfer"}
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <UploadProgress queue={queue} />
                     )}
 
-                    <FolderUpload
-                        key={transfer?.id ?? "new"}
-                        resolveUploadUrl={
-                            transfer
-                                ? async () => route("party.dashboard.pictures.store", transfer.name)
-                                : createTransfer
-                        }
-                        disabled={!transfer && name.trim() === ""}
-                        onBusyChange={setBusy}
-                        onFinished={reloadRows}
-                    />
-
-                    {createdUrl && !busy && (
+                    {createdUrl && queue.status !== "uploading" && (
                         <FormField id="transfer-link" label="Link to send">
                             <div className="flex gap-2">
                                 <Input id="transfer-link" readOnly value={createdUrl} onFocus={(event) => event.target.select()} />
