@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react"
 import { router } from "@inertiajs/react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
+import { CopyButton } from "@/components/copy-button"
 import { DataTable, dataColumn, type RowAction } from "@/components/data-table"
 import { FormField } from "@/components/form-field"
 import { ExpiryBadge, StateBadge } from "@/components/expiry-badges"
@@ -32,31 +33,13 @@ type TransferRow = {
 
 type PageProps = SidebarData & { rows: Omit<TransferRow, "state">[] }
 
-function CopyLinkButton({ url }: { url: string }) {
-    const [copied, setCopied] = useState(false)
-
-    return (
-        <Button
-            size="sm"
-            variant="outline"
-            onClick={(event) => {
-                event.stopPropagation()
-                void navigator.clipboard.writeText(url)
-                setCopied(true)
-            }}
-        >
-            {copied ? "Copied" : "Copy link"}
-        </Button>
-    )
-}
-
 const columns = [
     dataColumn<TransferRow>("display_name", "Name"),
     dataColumn<TransferRow>("state", "State", { cell: (transfer) => <StateBadge state={transfer.state} /> }),
     dataColumn<TransferRow>("pictures_count", "Pictures"),
     dataColumn<TransferRow>("created_at", "Created", { type: "datetime" }),
     dataColumn<TransferRow>("expire_at", "Expires", { cell: (transfer) => <ExpiryBadge expireAt={transfer.expire_at} /> }),
-    dataColumn<TransferRow>("public_url", "Link", { cell: (transfer) => <CopyLinkButton url={transfer.public_url} /> }),
+    dataColumn<TransferRow>("public_url", "Link", { cell: (transfer) => <CopyButton value={transfer.public_url} label="Copy link" size="sm" /> }),
 ]
 
 /** "new" opens the creation dialog, a row opens the completion of that transfer. */
@@ -179,7 +162,7 @@ export default function TransfersIndex({ rows, ...sidebar }: PageProps) {
                         <FormField id="transfer-link" label="Link to send">
                             <div className="flex gap-2">
                                 <Input id="transfer-link" readOnly value={createdUrl} onFocus={(event) => event.target.select()} />
-                                <CopyLinkButton url={createdUrl} />
+                                <CopyButton value={createdUrl} />
                             </div>
                         </FormField>
                     )}
