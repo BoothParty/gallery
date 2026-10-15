@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipStream\CompressionMethod;
+use ZipStream\ZipStream;
 
 class PartyController extends Controller
 {
@@ -97,12 +100,50 @@ class PartyController extends Controller
      */
     public function poster(Party $party, PartyPosterGenerator $partyPosterGenerator): HttpResponse
     {
-        $filename = Str::slug($party->name).'-affiche.png';
-
         return response($partyPosterGenerator->generate($party), 200, [
             'Content-Type' => 'image/png',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Disposition' => 'attachment; filename="'.$this->posterFilename($party).'"',
         ]);
+    }
+
+    /**
+     * Stream the posters of several parties as a single ZIP archive, offered
+     * right after a bulk creation since browsers block a burst of downloads.
+     *
+     * ponytail: posters render synchronously one after another, which holds
+     * for a dozen parties; move to a queued job if batches grow much larger.
+     */
+    public function posters(Request $request, PartyPosterGenerator $partyPosterGenerator): StreamedResponse
+    {
+        $names = $request->validate([
+            'parties' => ['required', 'array', 'min:1'],
+            'parties.*' => ['required', 'string', 'distinct', 'exists:parties,name'],
+        ])['parties'];
+
+        $parties = Party::query()->whereIn('name', $names)->oldest('id')->get();
+
+        return response()->stream(
+            function () use ($parties, $partyPosterGenerator): void {
+                set_time_limit(0);
+
+                $zip = new ZipStream(
+                    sendHttpHeaders: false,
+                    defaultCompressionMethod: CompressionMethod::STORE,
+                );
+
+                foreach ($parties as $party) {
+                    $zip->addFile($this->posterFilename($party), $partyPosterGenerator->generate($party));
+                }
+
+                $zip->finish();
+            },
+            200,
+            [
+                'Content-Type' => 'application/zip',
+                'Content-Disposition' => 'attachment; filename="affiches.zip"',
+                'X-Accel-Buffering' => 'no',
+            ],
+        );
     }
 
     /**
@@ -153,6 +194,11 @@ class PartyController extends Controller
         $party->delete();
 
         return to_route('admin.parties.index');
+    }
+
+    private function posterFilename(Party $party): string
+    {
+        return Str::slug($party->name).'-affiche.png';
     }
 
     /**
