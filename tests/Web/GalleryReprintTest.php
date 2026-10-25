@@ -58,3 +58,23 @@ it('refuses a selection over the cap without sending it', function () {
 
     expect(PrintJob::count())->toBe(0);
 });
+
+it('toasts and keeps the selection when the party expires after page load', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->count(2)->for($party)->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+
+    $page->click('Sélectionner')
+        ->click('#gallery a:nth-child(1)')
+        ->assertSeeIn('[data-selection-count]', '1');
+
+    $party->update(['expire_at' => now()->subDay()]);
+
+    $page->click('[data-reprint-button]')
+        ->assertSee("La réimpression n'a pas pu être lancée")
+        ->assertSeeIn('[data-selection-count]', '1')
+        ->assertNoJavaScriptErrors();
+
+    expect(PrintJob::count())->toBe(0);
+});

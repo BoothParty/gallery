@@ -205,6 +205,7 @@ export default function Gallery({
         }
 
         const ids = selection.selectedIds;
+        const failed = () => flash("La réimpression n'a pas pu être lancée");
 
         router.post(
             `/${encodeURIComponent(party.name)}/prints`,
@@ -220,7 +221,22 @@ export default function Gallery({
                     flash(ids.length === 1 ? "1 photo envoyée à l'impression" : `${ids.length} photos envoyées à l'impression`);
                     selection.exit();
                 },
-                onError: () => flash("La réimpression n'a pas pu être lancée"),
+                onError: failed,
+                /*
+                 * `onError` only covers validation errors. Throttle (429), an
+                 * expired party (403) or CSRF (419) answer with a non-Inertia
+                 * response, and a dropped connection never answers at all:
+                 * toast them too, and return false so Inertia doesn't open
+                 * its raw error dialog.
+                 */
+                onHttpException: () => {
+                    failed();
+                    return false;
+                },
+                onNetworkError: () => {
+                    failed();
+                    return false;
+                },
             },
         );
     }, [flash, maxDownloadPictures, party.name, selection]);
