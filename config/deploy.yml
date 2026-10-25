@@ -18,10 +18,16 @@ servers:
       # que le worker ne démarre pas : le conteneur serait "unhealthy" en boucle.
       no-healthcheck: true
 
+# Sur le VPS Oracle, Apache garde les ports 80/443 et termine le TLS (certificat
+# *.boothparty.fr) : kamal-proxy n'écoute que sur la loopback, derrière lui.
 proxy:
   host: boothparty.fr
   app_port: 80
-  ssl: true
+  run:
+    http_port: 8081
+    https_port: 8444
+    bind_ips:
+      - 127.0.0.1
   healthcheck:
     path: /up
     interval: 3
