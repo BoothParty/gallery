@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\PartyController;
 use App\Http\Controllers\Api\PartyStateController;
 use App\Http\Controllers\Api\PictureController;
+use App\Http\Controllers\Api\PrintJobController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('parties/{party}/pictures', PictureController::class)
         ->only(['index', 'store', 'show', 'destroy'])
         ->scoped();
+
+    Route::get('parties/{party}/print-jobs', [PrintJobController::class, 'index'])
+        ->name('print-jobs.index');
+    // `scopeBindings()` for the same cross-party reason as the pictures above.
+    Route::post('parties/{party}/print-jobs/{printJob}/printed', [PrintJobController::class, 'printed'])
+        ->scopeBindings()
+        ->name('print-jobs.printed');
 });
 
 /**
