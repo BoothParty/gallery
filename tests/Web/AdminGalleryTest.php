@@ -2,6 +2,7 @@
 
 use App\Models\Party;
 use App\Models\Picture;
+use App\Models\PrintJob;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
@@ -237,4 +238,35 @@ it('has no smoke on the administration gallery page', function () {
 
     $page->assertSee('3 pictures')
         ->assertNoSmoke();
+});
+
+it('keeps the print filter when changing the page size', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->create();
+    PrintJob::factory()->for($picture)->create();
+
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', ['party' => $party, 'print' => 'pending'])));
+
+    $page->assertVisible('[data-print-pending]')
+        ->click('[data-slot="select-trigger"]')
+        ->click('[data-slot="select-item"]:has-text("48")')
+        ->assertQueryStringHas('print', 'pending')
+        ->assertVisible('[data-print-pending]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('clears the selection when toggling the print filter', function () {
+    $party = Party::factory()->create();
+    $pictures = Picture::factory()->for($party)->count(3)->create();
+    PrintJob::factory()->for($pictures->first())->create();
+
+    $page = browserPage(fn () => visit(route('party.dashboard.pictures', $party)));
+
+    $page->click(':nth-match([aria-label="Select picture"], 1)')
+        ->assertSee('1 of 3 selected')
+        ->click('[data-pending-prints-filter]')
+        ->assertQueryStringHas('print', 'pending')
+        ->assertDontSee('selected')
+        ->assertDontSee('Delete 1 picture')
+        ->assertNoJavaScriptErrors();
 });

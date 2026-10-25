@@ -1,3 +1,5 @@
+import { PrinterIcon } from "lucide-react"
+
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 
@@ -11,6 +13,7 @@ export type GalleryPicture = {
     thumbnailUrl: string | null
     width: number | null
     height: number | null
+    printPending: boolean
 }
 
 interface GalleryItemProps {
@@ -49,6 +52,16 @@ function GalleryItem({ picture, index, isSelected, onToggle, onOpen }: GalleryIt
                     aria-label="Thumbnail being generated"
                     data-picture-placeholder
                 />
+            )}
+
+            {picture.printPending && (
+                <div
+                    className="absolute top-1.5 left-1.5 rounded-full bg-black/60 p-1 text-white backdrop-blur-sm"
+                    title="Print pending"
+                    data-print-pending
+                >
+                    <PrinterIcon className="h-3.5 w-3.5" />
+                </div>
             )}
 
             {isSelected && (

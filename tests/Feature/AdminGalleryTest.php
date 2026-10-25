@@ -3,6 +3,7 @@
 use App\Jobs\CreatePictureThumbnail;
 use App\Models\Party;
 use App\Models\Picture;
+use App\Models\PrintJob;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -219,4 +220,32 @@ it('rejects a path longer than 255 characters', function () {
         'photos' => [UploadedFile::fake()->image('a.jpg')],
         'paths' => [str_repeat('a', 256).'.jpg'],
     ])->assertUnprocessable()->assertJsonValidationErrors('paths.0');
+});
+
+it('filters the pictures waiting for a print', function () {
+    $party = Party::factory()->create();
+    [$waiting, $printed, $untouched] = Picture::factory()->for($party)->count(3)->create();
+    PrintJob::factory()->for($waiting)->create();
+    PrintJob::factory()->for($printed)->printed()->create();
+
+    $this->get(route('party.dashboard.pictures', ['party' => $party, 'print' => 'pending']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pictures.total', 1)
+            ->where('pictures.data.0.id', $waiting->id)
+            ->where('pictures.data.0.printPending', true)
+            ->where('pendingPrintsOnly', true)
+        );
+});
+
+it('ignores an unknown print filter', function () {
+    $party = Party::factory()->create();
+    Picture::factory()->for($party)->count(3)->create();
+
+    $this->get(route('party.dashboard.pictures', ['party' => $party, 'print' => 'foo']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pictures.total', 3)
+            ->where('pendingPrintsOnly', false)
+        );
 });

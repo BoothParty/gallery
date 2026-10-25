@@ -27,7 +27,11 @@ class PartyDashboardController extends Controller
             ? $request->integer('per_page', 24)
             : 24;
 
+        $pendingPrintsOnly = $request->query('print') === 'pending';
+
         $pictures = $party->pictures()
+            ->withPrintPending()
+            ->when($pendingPrintsOnly, fn ($query) => $query->whereHas('printJobs', fn ($jobs) => $jobs->pending()))
             ->latest()
             ->latest('id')
             ->paginate($perPage)
@@ -37,6 +41,7 @@ class PartyDashboardController extends Controller
                 'thumbnailUrl' => $picture->thumbnailUrl(),
                 'width' => $picture->width,
                 'height' => $picture->height,
+                'printPending' => (bool) $picture->print_pending,
             ]);
 
         return Inertia::render('admin/gallery/index', [
@@ -47,6 +52,7 @@ class PartyDashboardController extends Controller
             ],
             'pictures' => $pictures,
             'perPage' => $perPage,
+            'pendingPrintsOnly' => $pendingPrintsOnly,
         ]);
     }
 }
