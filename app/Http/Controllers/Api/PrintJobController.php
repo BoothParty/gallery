@@ -20,11 +20,12 @@ class PrintJobController extends Controller
 
     public function printed(Party $party, PrintJob $printJob): PrintJobResource
     {
-        if ($printJob->printed_at === null) {
-            $printJob->update(['printed_at' => now()]);
+        $marked = PrintJob::whereKey($printJob->id)->whereNull('printed_at')->update(['printed_at' => now()]);
+
+        if ($marked === 1) {
             $party->recordActivity(PartyActivityType::PicturesPrinted, ['count' => 1]);
         }
 
-        return new PrintJobResource($printJob->load('picture'));
+        return new PrintJobResource($printJob->refresh()->load('picture'));
     }
 }
