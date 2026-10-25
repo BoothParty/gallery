@@ -61,6 +61,7 @@ class PartyController extends Controller
 
         return $party->pictures()
             ->unless($isHost, fn ($query) => $query->visible())
+            ->when($isHost, fn ($query) => $query->withPrintPending())
             ->latest()
             ->latest('id')
             ->paginate(self::PICTURES_PER_PAGE);

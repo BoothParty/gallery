@@ -41,6 +41,8 @@ export interface Picture {
     height: number | null;
     /** Taken off the guests' gallery by the host. Only ever true in a host's own page. */
     hidden: boolean;
+    /** A reprint is queued for the booth. Only sent to the host. */
+    print_pending?: boolean;
     created_at: string;
     updated_at: string;
 }

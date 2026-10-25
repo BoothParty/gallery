@@ -3,6 +3,7 @@
 use App\Http\Controllers\PartyController;
 use App\Models\Party;
 use App\Models\Picture;
+use App\Models\PrintJob;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -290,5 +291,42 @@ it('passes the refresh cadence to the page', function () {
             ->where('refresh.cold', 60)
             ->where('refresh.warm_after', 120)
             ->where('refresh.cold_after', 300)
+        );
+});
+
+// ── Print state ───────────────────────────────────────────────────────────────
+
+it('tells the host which pictures wait for a print', function () {
+    $party = Party::factory()->create();
+    $waiting = Picture::factory()->for($party)->create();
+    $printed = Picture::factory()->for($party)->create();
+    $both = Picture::factory()->for($party)->create();
+    PrintJob::factory()->for($waiting)->create();
+    PrintJob::factory()->for($printed)->printed()->create();
+    PrintJob::factory()->for($both)->printed()->create();
+    PrintJob::factory()->for($both)->create();
+
+    $this->withSession(['party_host' => [$party->id => true]])
+        ->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pictures.data', fn ($pictures) => collect($pictures)->pluck('print_pending', 'id')->sortKeys()->all() === [
+                $waiting->id => true,
+                $printed->id => false,
+                $both->id => true,
+            ])
+        );
+});
+
+it('never sends print state to a guest', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->create();
+    PrintJob::factory()->for($picture)->create();
+
+    $this->get(route('party.gallery', $party))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('pictures.data', 1)
+            ->missing('pictures.data.0.print_pending')
         );
 });
