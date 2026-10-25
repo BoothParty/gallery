@@ -20,6 +20,7 @@ interface GalleryGridProps {
     isHidden?: (picture: Picture) => boolean;
     onToggleHidden?: (id: number, hidden: boolean) => void;
     isPrintPending?: (picture: Picture) => boolean;
+    onCancelPrint?: (id: number) => void;
 }
 
 function Skeletons() {
@@ -45,6 +46,7 @@ export default function GalleryGrid({
     isHidden = (picture) => picture.hidden,
     onToggleHidden,
     isPrintPending = (picture) => picture.print_pending === true,
+    onCancelPrint,
 }: GalleryGridProps) {
     const gridRef = useRef<HTMLDivElement>(null);
     const selectModeRef = useRef(selectMode);
@@ -52,8 +54,9 @@ export default function GalleryGrid({
 
     /**
      * PhotoSwipe listens on the same anchors. Capturing the click one phase
-     * earlier lets select mode — and the host's masking control, which sits
-     * inside an anchor — swallow it before the lightbox ever sees it.
+     * earlier lets select mode — and the host's masking and print-cancelling
+     * controls, which sit inside an anchor — swallow it before the lightbox
+     * ever sees it.
      */
     useEffect(() => {
         const grid = gridRef.current;
@@ -63,6 +66,17 @@ export default function GalleryGrid({
         }
 
         const onClickCapture = (event: MouseEvent) => {
+            const cancelPrintButton = (event.target as HTMLElement).closest<HTMLElement>('[data-cancel-print]');
+
+            if (cancelPrintButton !== null) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                onCancelPrint?.(Number(cancelPrintButton.dataset.cancelPrint));
+
+                return;
+            }
+
             const hideButton = (event.target as HTMLElement).closest<HTMLElement>('[data-hide-button]');
 
             if (hideButton !== null) {
@@ -93,7 +107,7 @@ export default function GalleryGrid({
         grid.addEventListener('click', onClickCapture, true);
 
         return () => grid.removeEventListener('click', onClickCapture, true);
-    }, [onSelect, onToggleHidden]);
+    }, [onCancelPrint, onSelect, onToggleHidden]);
 
     return (
         <InfiniteScroll

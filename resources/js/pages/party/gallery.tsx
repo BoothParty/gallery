@@ -106,6 +106,27 @@ const SHOWN_TOAST = 'Photo remise en ligne';
 
 const VISIBILITY_ERROR_TOAST = "La photo n'a pas pu être mise à jour";
 
+/**
+ * Route every way a host request can fail to the same handler. `onError` only
+ * covers validation errors: throttle (429), an expired party (403), CSRF (419)
+ * or a missing picture (404) answer with a non-Inertia response, and a dropped
+ * connection never answers at all. Returning false keeps Inertia from opening
+ * its raw error dialog over the gallery.
+ */
+function onAnyFailure(handle: () => void) {
+    return {
+        onError: handle,
+        onHttpException: () => {
+            handle();
+            return false;
+        },
+        onNetworkError: () => {
+            handle();
+            return false;
+        },
+    };
+}
+
 /** Past this many pixels of scroll, a refresh would move the grid under the reader. */
 const SILENT_REFRESH_SCROLL_LIMIT = 200;
 
@@ -187,16 +208,21 @@ export default function Gallery({
     );
 
     /*
-     * Ids already sent to the printer, kept locally so their badges show up
-     * without reloading `pictures` (same reasoning as `maskEdits`).
+     * Print state the host changed from this page, kept locally so badges
+     * appear and disappear without reloading `pictures` (same reasoning as
+     * `maskEdits`).
      */
-    const [printRequests, setPrintRequests] = useState<Set<number>>(new Set());
+    const [printEdits, setPrintEdits] = useState<Record<number, boolean>>({});
     const [reprinting, setReprinting] = useState(false);
 
     const isPrintPending = useCallback(
-        (picture: Picture) => printRequests.has(picture.id) || picture.print_pending === true,
-        [printRequests],
+        (picture: Picture) => printEdits[picture.id] ?? picture.print_pending === true,
+        [printEdits],
     );
+
+    const setPrintPending = useCallback((ids: number[], pending: boolean) => {
+        setPrintEdits((current) => ({ ...current, ...Object.fromEntries(ids.map((id) => [id, pending])) }));
+    }, []);
 
     const onReprint = useCallback(() => {
         if (selection.count > maxDownloadPictures) {
@@ -205,7 +231,6 @@ export default function Gallery({
         }
 
         const ids = selection.selectedIds;
-        const failed = () => flash("La réimpression n'a pas pu être lancée");
 
         router.post(
             `/${encodeURIComponent(party.name)}/prints`,
@@ -217,29 +242,32 @@ export default function Gallery({
                 onStart: () => setReprinting(true),
                 onFinish: () => setReprinting(false),
                 onSuccess: () => {
-                    setPrintRequests((current) => new Set([...current, ...ids]));
+                    setPrintPending(ids, true);
                     flash(ids.length === 1 ? "1 photo envoyée à l'impression" : `${ids.length} photos envoyées à l'impression`);
                     selection.exit();
                 },
-                onError: failed,
-                /*
-                 * `onError` only covers validation errors. Throttle (429), an
-                 * expired party (403) or CSRF (419) answer with a non-Inertia
-                 * response, and a dropped connection never answers at all:
-                 * toast them too, and return false so Inertia doesn't open
-                 * its raw error dialog.
-                 */
-                onHttpException: () => {
-                    failed();
-                    return false;
-                },
-                onNetworkError: () => {
-                    failed();
-                    return false;
-                },
+                ...onAnyFailure(() => flash("La réimpression n'a pas pu être lancée")),
             },
         );
-    }, [flash, maxDownloadPictures, party.name, selection]);
+    }, [flash, maxDownloadPictures, party.name, selection, setPrintPending]);
+
+    const onCancelPrint = useCallback(
+        (id: number) => {
+            setPrintPending([id], false);
+
+            router.delete(`/${encodeURIComponent(party.name)}/pictures/${id}/prints`, {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['picturesState'],
+                onSuccess: () => flash('Impression annulée'),
+                ...onAnyFailure(() => {
+                    setPrintPending([id], true);
+                    flash("L'impression n'a pas pu être annulée");
+                }),
+            });
+        },
+        [flash, party.name, setPrintPending],
+    );
 
     const shareMode = photoShare.supported && !hidePictures;
 
@@ -387,6 +415,7 @@ export default function Gallery({
                         isHidden={isHidden}
                         onToggleHidden={onToggleHidden}
                         isPrintPending={isPrintPending}
+                        onCancelPrint={onCancelPrint}
                     />
                 )}
             </main>

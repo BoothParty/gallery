@@ -115,19 +115,29 @@ export default function PhotoTile({
                 </button>
             )}
 
-            {printPending && (
-                <span
-                    data-print-pending
-                    title="Impression en attente"
-                    aria-label="Impression en attente"
-                    role="img"
-                    className={`pointer-events-none absolute top-2 flex h-[26px] w-[26px] items-center justify-center rounded-full border border-dashed border-cream/85 bg-ink/35 text-cream ${
-                        canEdit && !selectMode ? 'left-10' : 'left-2'
-                    }`}
-                >
-                    <PrinterIcon size={13} />
-                </span>
-            )}
+            {printPending &&
+                (canEdit && !selectMode ? (
+                    <button
+                        type="button"
+                        data-print-pending
+                        data-cancel-print={id}
+                        title="Annuler l'impression"
+                        aria-label="Annuler l'impression"
+                        className="absolute top-2 left-10 flex h-[26px] w-[26px] items-center justify-center rounded-full border border-dashed border-cream/85 bg-ink/35 p-0 text-cream transition-all duration-150 hover:bg-ink/60"
+                    >
+                        <PrinterIcon size={13} />
+                    </button>
+                ) : (
+                    <span
+                        data-print-pending
+                        title="Impression en attente"
+                        aria-label="Impression en attente"
+                        role="img"
+                        className="pointer-events-none absolute top-2 left-2 flex h-[26px] w-[26px] items-center justify-center rounded-full border border-dashed border-cream/85 bg-ink/35 text-cream"
+                    >
+                        <PrinterIcon size={13} />
+                    </span>
+                ))}
 
             <span
                 className={`pointer-events-none absolute inset-0 transition-all duration-200 ${
