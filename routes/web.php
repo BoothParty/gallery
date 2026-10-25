@@ -10,6 +10,7 @@ use App\Http\Controllers\PartyDashboardController;
 use App\Http\Controllers\PartyMetadataController;
 use App\Http\Controllers\PictureDownloadController;
 use App\Http\Controllers\PictureFileController;
+use App\Http\Controllers\PictureReprintController;
 use App\Http\Controllers\PictureVisibilityController;
 use App\Http\Middleware\ResolvePartyHost;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,10 @@ Route::prefix('{party}')->name('party.')->group(function () {
         ->scopeBindings()
         ->middleware(['party.host', 'throttle:party-metadata'])
         ->name('pictures.visibility');
+
+    Route::post('prints', PictureReprintController::class)
+        ->middleware(['party.host', 'throttle:party-metadata'])
+        ->name('prints.store');
 
     Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function () {
         Route::get('/', [PartyDashboardController::class, 'show'])->name('show');

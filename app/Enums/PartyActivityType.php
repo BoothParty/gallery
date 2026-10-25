@@ -12,6 +12,8 @@ enum PartyActivityType: string
     case PicturesShown = 'pictures_shown';
     case PicturesDownloaded = 'pictures_downloaded';
     case MetadataUpdated = 'metadata_updated';
+    case PrintsRequested = 'prints_requested';
+    case PicturesPrinted = 'pictures_printed';
 
     /**
      * How close two occurrences must be to read as one entry in the feed.
@@ -52,6 +54,8 @@ enum PartyActivityType: string
             self::PicturesHidden => "{$pictures} masquée{$plural}",
             self::PicturesShown => "{$pictures} remise{$plural} en ligne",
             self::PicturesDownloaded => "{$pictures} téléchargée{$plural}",
+            self::PrintsRequested => "{$pictures} envoyée{$plural} à l'impression",
+            self::PicturesPrinted => "{$pictures} réimprimée{$plural}",
             self::MetadataUpdated => 'Présentation de la galerie modifiée',
         };
     }

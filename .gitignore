@@ -27,3 +27,5 @@ Thumbs.db
 .claude
 # Pest browser test screenshots
 /tests/Browser
+
+/.superpowers
