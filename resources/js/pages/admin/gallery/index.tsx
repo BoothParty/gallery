@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react"
-import { useForm } from "@inertiajs/react"
-import { UploadIcon } from "lucide-react"
+import { router, useForm } from "@inertiajs/react"
+import { PrinterIcon, UploadIcon } from "lucide-react"
 
 import { AdminLayout, type SidebarData } from "@/components/admin-layout"
 import { GalleryDeleteDialog } from "@/components/gallery/gallery-delete-dialog"
@@ -44,6 +44,7 @@ type PageProps = SidebarData & {
     party: { id: number; name: string }
     pictures: PaginatedPictures
     perPage: number
+    pendingPrintsOnly: boolean
 }
 
 export default function GalleryIndex({
@@ -53,6 +54,7 @@ export default function GalleryIndex({
     party,
     pictures,
     perPage,
+    pendingPrintsOnly,
 }: PageProps) {
     const [selected, setSelected] = useState<Set<number>>(new Set())
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -125,10 +127,31 @@ export default function GalleryIndex({
                 onBulkDelete={() => setDeleteDialogOpen(true)}
                 isDeleting={deleteForm.processing}
                 toolbarAction={
-                    <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
-                        <UploadIcon className="mr-1.5 h-3.5 w-3.5" />
-                        Upload pictures
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            size="sm"
+                            variant={pendingPrintsOnly ? "secondary" : "outline"}
+                            aria-pressed={pendingPrintsOnly}
+                            data-pending-prints-filter
+                            onClick={() =>
+                                router.visit(route("party.dashboard.pictures", party.name), {
+                                    data: {
+                                        per_page: perPage,
+                                        ...(!pendingPrintsOnly && { print: "pending" }),
+                                    },
+                                    only: ["pictures", "perPage", "pendingPrintsOnly"],
+                                    preserveScroll: true,
+                                })
+                            }
+                        >
+                            <PrinterIcon className="mr-1.5 h-3.5 w-3.5" />
+                            Pending prints
+                        </Button>
+                        <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
+                            <UploadIcon className="mr-1.5 h-3.5 w-3.5" />
+                            Upload pictures
+                        </Button>
+                    </div>
                 }
             />
 
@@ -146,6 +169,7 @@ export default function GalleryIndex({
                 to={pictures.to}
                 total={pictures.total}
                 perPage={perPage}
+                pendingPrintsOnly={pendingPrintsOnly}
                 partyName={party.name}
             />
 

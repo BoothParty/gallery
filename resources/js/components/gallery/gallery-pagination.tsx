@@ -24,7 +24,7 @@ const PER_PAGE_OPTIONS = [24, 48, 72, 96]
  * a prefetched response, which requires identical visit options.
  */
 const PAGE_VISIT_OPTIONS = {
-    only: ["pictures", "perPage"],
+    only: ["pictures", "perPage", "pendingPrintsOnly"],
     preserveScroll: true,
 }
 
@@ -35,6 +35,7 @@ interface GalleryPaginationProps {
     to: number | null
     total: number
     perPage: number
+    pendingPrintsOnly: boolean
     partyName: string
 }
 
@@ -45,13 +46,14 @@ export function GalleryPagination({
     to,
     total,
     perPage,
+    pendingPrintsOnly,
     partyName,
 }: GalleryPaginationProps) {
     const url = route("party.dashboard.pictures", partyName)
 
     const visitOptions = (page: number, newPerPage: number) => ({
         ...PAGE_VISIT_OPTIONS,
-        data: { page, per_page: newPerPage },
+        data: { page, per_page: newPerPage, ...(pendingPrintsOnly && { print: "pending" }) },
     })
 
     const navigate = (page: number, newPerPage = perPage) => {
@@ -77,7 +79,7 @@ export function GalleryPagination({
                 )
             })
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPage, lastPage, perPage, partyName])
+    }, [currentPage, lastPage, perPage, pendingPrintsOnly, partyName])
 
     const canPrevious = currentPage > 1
     const canNext = currentPage < lastPage
