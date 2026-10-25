@@ -78,3 +78,56 @@ it('toasts and keeps the selection when the party expires after page load', func
 
     expect(PrintJob::count())->toBe(0);
 });
+
+// ── Cancelling ──────────────────────────────────────────────────────────────
+
+it('cancels a pending print from its badge', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->create();
+    PrintJob::factory()->for($picture)->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+
+    $page->click('[data-cancel-print="'.$picture->id.'"]')
+        ->assertMissing('[data-print-pending]')
+        ->assertSee('Impression annulée')
+        ->assertMissing('.pswp--open')
+        ->assertNoJavaScriptErrors();
+
+    expect(PrintJob::count())->toBe(0);
+});
+
+it('offers no cancel control in select mode', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->create();
+    PrintJob::factory()->for($picture)->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+
+    $page->click('Sélectionner')
+        ->assertPresent('[data-print-pending]')
+        ->assertMissing('[data-cancel-print]')
+        ->assertNoJavaScriptErrors();
+});
+
+it('puts the badge back when the cancellation fails', function () {
+    $party = Party::factory()->create();
+    $picture = Picture::factory()->for($party)->create();
+    PrintJob::factory()->for($picture)->create();
+
+    $page = browserPage(fn () => visit(route('party.gallery', $party).'?token='.$party->host_token));
+
+    $page->assertPresent('[data-cancel-print="'.$picture->id.'"]');
+
+    /*
+     * The picture is gone by the time the host taps, so the route answers 404.
+     * Quietly, so the gallery's polled state stays cached and the tile is not
+     * refreshed away before the click.
+     */
+    $picture->deleteQuietly();
+
+    $page->click('[data-cancel-print="'.$picture->id.'"]')
+        ->assertSee("L'impression n'a pas pu être annulée")
+        ->assertPresent('[data-print-pending]')
+        ->assertNoJavaScriptErrors();
+});
