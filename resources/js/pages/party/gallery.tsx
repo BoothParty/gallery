@@ -41,6 +41,8 @@ export interface Picture {
     height: number | null;
     /** Taken off the guests' gallery by the host. Only ever true in a host's own page. */
     hidden: boolean;
+    /** A reprint is queued for the booth. Only sent to the host. */
+    print_pending?: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -183,6 +185,61 @@ export default function Gallery({
         },
         [flash, party.name],
     );
+
+    /*
+     * Ids already sent to the printer, kept locally so their badges show up
+     * without reloading `pictures` (same reasoning as `maskEdits`).
+     */
+    const [printRequests, setPrintRequests] = useState<Set<number>>(new Set());
+    const [reprinting, setReprinting] = useState(false);
+
+    const isPrintPending = useCallback(
+        (picture: Picture) => printRequests.has(picture.id) || picture.print_pending === true,
+        [printRequests],
+    );
+
+    const onReprint = useCallback(() => {
+        if (selection.count > maxDownloadPictures) {
+            flash(`Sélection trop grande : ${maxDownloadPictures} photos maximum par réimpression`);
+            return;
+        }
+
+        const ids = selection.selectedIds;
+        const failed = () => flash("La réimpression n'a pas pu être lancée");
+
+        router.post(
+            `/${encodeURIComponent(party.name)}/prints`,
+            { ids },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['picturesState'],
+                onStart: () => setReprinting(true),
+                onFinish: () => setReprinting(false),
+                onSuccess: () => {
+                    setPrintRequests((current) => new Set([...current, ...ids]));
+                    flash(ids.length === 1 ? "1 photo envoyée à l'impression" : `${ids.length} photos envoyées à l'impression`);
+                    selection.exit();
+                },
+                onError: failed,
+                /*
+                 * `onError` only covers validation errors. Throttle (429), an
+                 * expired party (403) or CSRF (419) answer with a non-Inertia
+                 * response, and a dropped connection never answers at all:
+                 * toast them too, and return false so Inertia doesn't open
+                 * its raw error dialog.
+                 */
+                onHttpException: () => {
+                    failed();
+                    return false;
+                },
+                onNetworkError: () => {
+                    failed();
+                    return false;
+                },
+            },
+        );
+    }, [flash, maxDownloadPictures, party.name, selection]);
 
     const shareMode = photoShare.supported && !hidePictures;
 
@@ -329,6 +386,7 @@ export default function Gallery({
                         canEdit={canEdit}
                         isHidden={isHidden}
                         onToggleHidden={onToggleHidden}
+                        isPrintPending={isPrintPending}
                     />
                 )}
             </main>
@@ -345,6 +403,9 @@ export default function Gallery({
                 mode={shareMode ? 'share' : 'zip'}
                 shareStatus={photoShare.status}
                 shareProgress={photoShare.progress}
+                canReprint={canEdit}
+                reprinting={reprinting}
+                onReprint={onReprint}
                 onShare={onShare}
                 onSubmit={onSubmitDownload}
             />

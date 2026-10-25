@@ -19,6 +19,7 @@ interface GalleryGridProps {
     canEdit?: boolean;
     isHidden?: (picture: Picture) => boolean;
     onToggleHidden?: (id: number, hidden: boolean) => void;
+    isPrintPending?: (picture: Picture) => boolean;
 }
 
 function Skeletons() {
@@ -43,6 +44,7 @@ export default function GalleryGrid({
     canEdit = false,
     isHidden = (picture) => picture.hidden,
     onToggleHidden,
+    isPrintPending = (picture) => picture.print_pending === true,
 }: GalleryGridProps) {
     const gridRef = useRef<HTMLDivElement>(null);
     const selectModeRef = useRef(selectMode);
@@ -129,6 +131,7 @@ export default function GalleryGrid({
                         selected={isSelected(picture.id)}
                         hidden={isHidden(picture)}
                         canEdit={canEdit}
+                        printPending={isPrintPending(picture)}
                     />
                 ))}
             </div>

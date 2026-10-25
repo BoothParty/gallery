@@ -13,6 +13,8 @@ interface PhotoTileProps {
     hidden?: boolean;
     /** Show the host's masking control. */
     canEdit?: boolean;
+    /** A reprint is queued for the booth. */
+    printPending?: boolean;
 }
 
 function EyeOffIcon({ size }: { size: number }) {
@@ -34,6 +36,16 @@ function EyeIcon({ size }: { size: number }) {
     );
 }
 
+export function PrinterIcon({ size }: { size: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4.5 5.5V2.5h7v3" />
+            <rect x="2" y="5.5" width="12" height="5.5" rx="1" />
+            <path d="M4.5 9.5h7v4h-7z" />
+        </svg>
+    );
+}
+
 export default function PhotoTile({
     id,
     url,
@@ -45,6 +57,7 @@ export default function PhotoTile({
     selected = false,
     hidden = false,
     canEdit = false,
+    printPending = false,
 }: PhotoTileProps) {
     const hideLabel = hidden ? 'Remettre en ligne' : 'Masquer pour les invités';
 
@@ -100,6 +113,20 @@ export default function PhotoTile({
                 >
                     {hidden ? <EyeOffIcon size={13} /> : <EyeIcon size={13} />}
                 </button>
+            )}
+
+            {printPending && (
+                <span
+                    data-print-pending
+                    title="Impression en attente"
+                    aria-label="Impression en attente"
+                    role="img"
+                    className={`pointer-events-none absolute top-2 flex h-[26px] w-[26px] items-center justify-center rounded-full border border-dashed border-cream/85 bg-ink/35 text-cream ${
+                        canEdit && !selectMode ? 'left-10' : 'left-2'
+                    }`}
+                >
+                    <PrinterIcon size={13} />
+                </span>
             )}
 
             <span
