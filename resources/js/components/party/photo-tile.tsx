@@ -36,7 +36,7 @@ function EyeIcon({ size }: { size: number }) {
     );
 }
 
-function PrinterIcon({ size }: { size: number }) {
+export function PrinterIcon({ size }: { size: number }) {
     return (
         <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M4.5 5.5V2.5h7v3" />

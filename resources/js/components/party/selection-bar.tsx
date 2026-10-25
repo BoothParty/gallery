@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 
+import { PrinterIcon } from '@/components/party/photo-tile';
 import { MAX_STACK_THUMBNAILS, STACK_ELEMENT_ID, THUMBNAIL_OFFSET, THUMBNAIL_SIZE } from '@/components/party/selection-stack';
 import type { ShareProgress, ShareStatus } from '@/hooks/use-photo-share';
 
@@ -18,6 +19,9 @@ interface SelectionBarProps {
     mode: 'share' | 'zip';
     shareStatus: ShareStatus;
     shareProgress: ShareProgress;
+    canReprint: boolean;
+    reprinting: boolean;
+    onReprint: () => void;
     onShare: () => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }
@@ -32,6 +36,9 @@ export default function SelectionBar({
     mode,
     shareStatus,
     shareProgress,
+    canReprint,
+    reprinting,
+    onReprint,
     onShare,
     onSubmit,
 }: SelectionBarProps) {
@@ -93,22 +100,37 @@ export default function SelectionBar({
                     </div>
                 </div>
 
-                <button
-                    data-download-button
-                    type={sharing ? 'button' : 'submit'}
-                    onClick={sharing ? onShare : undefined}
-                    disabled={count === 0 || busy}
-                    className="relative overflow-hidden rounded-full px-5 py-3 text-sm whitespace-nowrap transition-opacity disabled:cursor-default enabled:cursor-pointer enabled:bg-cream enabled:text-ink disabled:bg-cream/20 disabled:text-cream/50"
-                >
-                    {label}
-                    {downloading && (
-                        <span
-                            data-download-progress
-                            className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-ink/40 transition-transform duration-200"
-                            style={{ transform: `scaleX(${ratio})` }}
-                        />
+                <div className="flex flex-none items-center gap-2.5">
+                    {canReprint && (
+                        <button
+                            data-reprint-button
+                            type="button"
+                            aria-label="Réimprimer"
+                            onClick={onReprint}
+                            disabled={count === 0 || reprinting}
+                            className="flex items-center gap-2 rounded-full border border-cream/45 px-4 py-3 text-sm whitespace-nowrap text-cream transition-opacity disabled:cursor-default disabled:opacity-50 enabled:cursor-pointer"
+                        >
+                            <PrinterIcon size={16} />
+                            <span className="hidden sm:inline">Réimprimer</span>
+                        </button>
                     )}
-                </button>
+                    <button
+                        data-download-button
+                        type={sharing ? 'button' : 'submit'}
+                        onClick={sharing ? onShare : undefined}
+                        disabled={count === 0 || busy}
+                        className="relative overflow-hidden rounded-full px-5 py-3 text-sm whitespace-nowrap transition-opacity disabled:cursor-default enabled:cursor-pointer enabled:bg-cream enabled:text-ink disabled:bg-cream/20 disabled:text-cream/50"
+                    >
+                        {label}
+                        {downloading && (
+                            <span
+                                data-download-progress
+                                className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-ink/40 transition-transform duration-200"
+                                style={{ transform: `scaleX(${ratio})` }}
+                            />
+                        )}
+                    </button>
+                </div>
             </form>
         </div>
     );

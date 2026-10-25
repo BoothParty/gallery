@@ -186,6 +186,45 @@ export default function Gallery({
         [flash, party.name],
     );
 
+    /*
+     * Ids already sent to the printer, kept locally so their badges show up
+     * without reloading `pictures` (same reasoning as `maskEdits`).
+     */
+    const [printRequests, setPrintRequests] = useState<Set<number>>(new Set());
+    const [reprinting, setReprinting] = useState(false);
+
+    const isPrintPending = useCallback(
+        (picture: Picture) => printRequests.has(picture.id) || picture.print_pending === true,
+        [printRequests],
+    );
+
+    const onReprint = useCallback(() => {
+        if (selection.count > maxDownloadPictures) {
+            flash(`Sélection trop grande : ${maxDownloadPictures} photos maximum par réimpression`);
+            return;
+        }
+
+        const ids = selection.selectedIds;
+
+        router.post(
+            `/${encodeURIComponent(party.name)}/prints`,
+            { ids },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['picturesState'],
+                onStart: () => setReprinting(true),
+                onFinish: () => setReprinting(false),
+                onSuccess: () => {
+                    setPrintRequests((current) => new Set([...current, ...ids]));
+                    flash(ids.length === 1 ? "1 photo envoyée à l'impression" : `${ids.length} photos envoyées à l'impression`);
+                    selection.exit();
+                },
+                onError: () => flash("La réimpression n'a pas pu être lancée"),
+            },
+        );
+    }, [flash, maxDownloadPictures, party.name, selection]);
+
     const shareMode = photoShare.supported && !hidePictures;
 
     const changes = useGalleryChanges(party.name, {
@@ -331,6 +370,7 @@ export default function Gallery({
                         canEdit={canEdit}
                         isHidden={isHidden}
                         onToggleHidden={onToggleHidden}
+                        isPrintPending={isPrintPending}
                     />
                 )}
             </main>
@@ -347,6 +387,9 @@ export default function Gallery({
                 mode={shareMode ? 'share' : 'zip'}
                 shareStatus={photoShare.status}
                 shareProgress={photoShare.progress}
+                canReprint={canEdit}
+                reprinting={reprinting}
+                onReprint={onReprint}
                 onShare={onShare}
                 onSubmit={onSubmitDownload}
             />
