@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -73,6 +74,17 @@ class Picture extends Model
     }
 
     /**
+     * Add a boolean `print_pending` telling whether a reprint of the picture
+     * is still waiting for the booth.
+     *
+     * @param  Builder<Picture>  $query
+     */
+    public function scopeWithPrintPending(Builder $query): void
+    {
+        $query->withExists(['printJobs as print_pending' => fn ($jobs) => $jobs->pending()]);
+    }
+
+    /**
      * Whether the host has taken this picture off the guests' gallery.
      */
     public function isHidden(): bool
@@ -83,6 +95,11 @@ class Picture extends Model
     public function party(): BelongsTo
     {
         return $this->belongsTo(Party::class);
+    }
+
+    public function printJobs(): HasMany
+    {
+        return $this->hasMany(PrintJob::class);
     }
 
     /**

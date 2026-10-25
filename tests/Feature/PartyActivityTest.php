@@ -66,7 +66,16 @@ it('describes each activity in plain words', function (PartyActivityType $type, 
     [PartyActivityType::PicturesShown, ['count' => 1], '1 photo remise en ligne'],
     [PartyActivityType::PicturesDownloaded, ['count' => 12], '12 photos téléchargées'],
     [PartyActivityType::MetadataUpdated, [], 'Présentation de la galerie modifiée'],
+    [PartyActivityType::PrintsRequested, ['count' => 1], '1 photo envoyée à l\'impression'],
+    [PartyActivityType::PrintsRequested, ['count' => 3], '3 photos envoyées à l\'impression'],
+    [PartyActivityType::PicturesPrinted, ['count' => 1], '1 photo réimprimée'],
+    [PartyActivityType::PicturesPrinted, ['count' => 3], '3 photos réimprimées'],
 ]);
+
+it('lists and folds the print activities', function (PartyActivityType $type) {
+    expect($type->isListed())->toBeTrue()
+        ->and($type->foldWithin()->totalMinutes)->toBe(15.0);
+})->with([PartyActivityType::PrintsRequested, PartyActivityType::PicturesPrinted]);
 
 it('removes the activities with their party', function () {
     $party = Party::factory()->create();
