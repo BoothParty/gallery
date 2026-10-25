@@ -9,14 +9,6 @@ beforeEach(function () {
     Storage::fake('s3');
 });
 
-/**
- * @return array<string, array<int, bool>>
- */
-function hostSession(Party $party): array
-{
-    return ['party_host' => [$party->id => true]];
-}
-
 // ── Toggling ────────────────────────────────────────────────────────────────
 
 it('lets the host take a picture off the guests gallery', function () {

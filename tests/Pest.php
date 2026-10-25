@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Party;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\BrowserPage;
 use Tests\TestCase;
@@ -79,4 +80,12 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * @return array<string, array<int, bool>>
+ */
+function hostSession(Party $party): array
+{
+    return ['party_host' => [$party->id => true]];
 }
