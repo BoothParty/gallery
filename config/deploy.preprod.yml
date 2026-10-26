@@ -1,0 +1,48 @@
+# Destination "preprod" : même VPS Oracle que la prod, derrière son Apache.
+#
+#   kamal setup -d preprod
+#
+# Apache termine le TLS et relaie à kamal-proxy (cf. docker/apache/). Les noms
+# restent à un seul niveau sous boothparty.fr, seul niveau que couvre le
+# certificat wildcard.
+#
+# Service renommé : les accessoires (conteneurs, volumes, dossiers) ne doivent
+# pas croiser ceux de la prod sur le même hôte.
+service: boothparty-gallery-preprod
+
+proxy:
+  host: preprod.boothparty.fr
+
+env:
+  clear:
+    APP_URL: https://preprod.boothparty.fr
+    DB_HOST: boothparty-gallery-preprod-db
+    AWS_ENDPOINT: http://boothparty-gallery-preprod-s3:9000
+    AWS_BROWSER_ENDPOINT: https://preprod-s3.boothparty.fr
+    UMAMI_SCRIPT_URL: https://preprod-umami.boothparty.fr/script.js
+    ZOHO_REDIRECT_URI: https://preprod.boothparty.fr/auth/zoho/callback
+    # Les affiches imprimées depuis la preprod ne doivent pas viser la prod.
+    PARTY_DOMAIN: preprod.boothparty.fr
+
+# Ports de loopback décalés d'un cran par rapport à la prod.
+accessories:
+  db:
+    port: "127.0.0.1:13307:3306"
+  s3:
+    options:
+      publish:
+        - "127.0.0.1:9002:9001"
+    proxy:
+      host: preprod-s3.boothparty.fr
+      ssl: false
+    volumes:
+      - boothparty_gallery_preprod_s3_data:/data
+  umami-db:
+    port: "127.0.0.1:5433:5432"
+  umami:
+    env:
+      clear:
+        DATABASE_URL: postgresql://umami:umami@boothparty-gallery-preprod-umami-db:5432/umami
+    proxy:
+      host: preprod-umami.boothparty.fr
+      ssl: false

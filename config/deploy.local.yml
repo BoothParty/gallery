@@ -13,12 +13,21 @@ servers:
 ssh:
   user: root
 
+# Même architecture que le poste : le builder distant de deploy.yml est ignoré.
+builder:
+  arch: amd64
+
+# Pas d'Apache devant la VM : kamal-proxy reprend les ports par défaut.
+proxy:
+  host: boothparty.test
+  run:
+    http_port: 80
+    https_port: 443
+    bind_ips:
+      - 0.0.0.0
+
 # La VM n'a pas de domaine : ajouter dans le /etc/hosts du poste
 #   10.117.19.66  boothparty.test s3.boothparty.test
-#
-# Le rôle web est enregistré sur "*" auprès du proxy : il répond donc à
-# n'importe quel nom, l'IP comprise. Seul APP_URL doit suivre, pour les liens
-# absolus générés hors requête.
 env:
   clear:
     APP_URL: http://boothparty.test
