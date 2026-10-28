@@ -66,3 +66,42 @@ it('prints the gallery host under the configured party domain', function () {
     expect($party->publicHost())->toBe('hosted-party.example.test')
         ->and($party->publicUrl())->toBe('https://hosted-party.example.test');
 });
+
+it('downloads the posters of several parties as a single zip', function () {
+    Party::factory()->create(['name' => 'first-party']);
+    Party::factory()->create(['name' => 'second-party']);
+
+    $response = $this->get(route('admin.parties.posters', ['parties' => ['first-party', 'second-party']]));
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/zip')
+        ->assertHeader('Content-Disposition', 'attachment; filename="affiches.zip"');
+
+    $path = tempnam(sys_get_temp_dir(), 'posters');
+    file_put_contents($path, $response->streamedContent());
+
+    $zip = new ZipArchive;
+    $zip->open($path);
+
+    expect($zip->numFiles)->toBe(2)
+        ->and($zip->locateName('first-party-affiche.png'))->not->toBeFalse()
+        ->and($zip->locateName('second-party-affiche.png'))->not->toBeFalse();
+
+    $zip->close();
+    unlink($path);
+});
+
+it('rejects a posters download naming an unknown party', function () {
+    Party::factory()->create(['name' => 'known-party']);
+
+    $this->getJson(route('admin.parties.posters', ['parties' => ['known-party', 'ghost-party']]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('parties.1');
+});
+
+it('keeps the posters download for authenticated admins', function () {
+    auth()->logout();
+
+    $this->get(route('admin.parties.posters', ['parties' => ['any']]))
+        ->assertRedirect();
+});

@@ -129,6 +129,38 @@ it('creates the selected parties from the bulk create dialog', function () {
     expect(Party::query()->where('name', 'browser-bulk-party')->exists())->toBeTrue();
 });
 
+it('offers the posters of the created parties once the bulk creation succeeds', function () {
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->click('Create from events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->click('#bulk-create-select-0')
+        ->fill('#bulk-create-party-name-0', 'browser-poster-party')
+        ->click('Create 1 party')
+        ->assertSee('1 party created')
+        ->assertSee('Download poster')
+        ->assertVisible('#bulk-create-download-posters')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->attribute('#bulk-create-download-posters', 'href'))
+        ->toEndWith('/admin/parties/browser-poster-party/poster');
+});
+
+it('bundles the posters in a zip when several parties are created', function () {
+    $page = browserPage(fn () => visit(route('admin.parties.index')));
+
+    $page->click('Create from events')
+        ->assertVisible('#bulk-create-party-name-0')
+        ->click('#bulk-create-select-0')
+        ->click('#bulk-create-select-1')
+        ->click('Create 2 parties')
+        ->assertSee('Download all 2 posters (.zip)')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->attribute('#bulk-create-download-posters', 'href'))
+        ->toContain('/admin/parties/posters?parties[0]=');
+});
+
 it('reloads the upcoming events from the bulk create dialog', function () {
     $page = browserPage(fn () => visit(route('admin.parties.index')));
 
